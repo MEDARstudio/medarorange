@@ -46,22 +46,22 @@ const PORTFOLIO_PROJECTS: CaseStudy[] = [
     year: '2025',
     category: '3d-webgl',
     categoryLabel: 'Haute Horlogerie 3D & WebGL',
-    tagline: 'L’anatomie du temps réinventée en shaders de titane et de saphir.',
-    description: 'Conception d’un flagship digital immersif et configurateur 3D temps-réel à 60 FPS pour le lancement mondial d’un garde-temps révolutionnaire.',
+    tagline: 'The anatomy of time reinvented through titanium and sapphire shaders.',
+    description: 'Creation of an immersive digital flagship and real-time 60 FPS 3D configurator for the worldwide launch of a revolutionary timepiece.',
     metrics: {
       stat: '+185%',
-      label: 'Taux de conversion sur précommandes'
+      label: 'Pre-order conversion rate'
     },
-    deliverables: ['Direction Artistique', 'Configurateur 3D WebGL', 'Design System'],
+    deliverables: ['Art Direction', '3D WebGL Configurator', 'Design System'],
     gradientTheme: 'from-[#ff4b26]/50 via-[#7c1e13]/60 to-[#0c0c10]',
     accentColor: '#ff4b26',
     imagePromptFallback: 'Dark obsidian watch dial exploded in 3D WebGL space',
     award: 'Awwwards Site of the Month',
     detailedContext: {
-      challenge: 'Sublimer la complexité micromécanique d’une montre à complication sans jamais alourdir le parcours d’achat sur mobile et desktop.',
-      artDirection: 'Tonalités obsidienne et bronze sablé. Typographie monumentale à empattements tranchants couplée à une interface sans friction.',
+      challenge: 'Elevating the micromechanical complexity of a complicated watch without adding friction to the purchase journey on mobile and desktop.',
+      artDirection: 'Obsidian and sandblasted bronze tones. Monumental sharp-serif typography paired with a frictionless interface.',
       stack: ['Three.js / GLSL', 'React 19', 'Web Audio API', 'Headless Shopify'],
-      result: 'Plus de 420 000 visiteurs uniques lors des 48h de lancement et un panier moyen en hausse de 42% par rapport aux collections précédentes.'
+      result: 'Over 420,000 unique visitors during the 48-hour launch and a 42% increase in average order value compared to prior collections.'
     }
   },
   {
@@ -70,23 +70,23 @@ const PORTFOLIO_PROJECTS: CaseStudy[] = [
     client: 'Kinetik Architecture',
     year: '2025',
     category: 'brand-identity',
-    categoryLabel: 'Identité & Spatial Design',
-    tagline: 'Harmonie entre lumière zénithale et structures géométriques vivantes.',
-    description: 'Plateforme institutionnelle et système visuel génératif pour un studio international d’ingénierie bioclimatique.',
+    categoryLabel: 'Identity & Spatial Design',
+    tagline: 'Harmonizing zenithal light with living geometric structures.',
+    description: 'Institutional web platform and generative visual identity system for an international bioclimatic engineering practice.',
     metrics: {
       stat: '€24M',
-      label: 'Projets d’appels d’offres remportés'
+      label: 'Tender proposals secured'
     },
-    deliverables: ['Identité de Marque', 'Plateforme Digitale', 'Animations Cinématiques'],
+    deliverables: ['Brand Identity', 'Digital Platform', 'Cinematic Motion'],
     gradientTheme: 'from-[#f59e0b]/50 via-[#ea580c]/60 to-[#0c0c10]',
     accentColor: '#f59e0b',
     imagePromptFallback: 'Solar warm architectural pavilion dusk photography',
     award: 'FWA of the Day',
     detailedContext: {
-      challenge: 'Traduire l’impermanence de la lumière naturelle à travers un langage digital interactif capable d’évoluer selon la latitude de l’utilisateur.',
-      artDirection: 'Inspiré par le crépuscule d’Atacama : nuances ambrées chaleureuses, contrastes typographiques radicaux et carrousels asymétriques.',
+      challenge: 'Translating the impermanence of natural daylight into an interactive digital language evolving with the visitor’s latitude.',
+      artDirection: 'Inspired by Atacama twilights: warm amber gradients, radical typographic contrast, and asymmetrical layouts.',
       stack: ['Next.js', 'Framer Motion', 'Tailwind CSS', 'Sanity CMS'],
-      result: 'Hausse de 240% des demandes de partenariats institutionnels et reconnaissance au sein des biennales de Venise et Copenhague.'
+      result: '240% increase in institutional partnership inquiries and recognition at the Venice and Copenhagen architecture biennales.'
     }
   },
   {
@@ -95,48 +95,48 @@ const PORTFOLIO_PROJECTS: CaseStudy[] = [
     client: 'Maison Elysium Paris',
     year: '2024',
     category: 'ecommerce-luxe',
-    categoryLabel: 'E-Commerce Haute Couture',
-    tagline: 'L’émotion tactile de la soie transposée dans le flux du pixel.',
-    description: 'Refonte complète du commerce digital de la maison de haute couture parisienne, alliant vitesse extrême et poésie visuelle.',
+    categoryLabel: 'Haute Couture E-Commerce',
+    tagline: 'The tactile elegance of haute couture silk translated into pixel flows.',
+    description: 'Complete digital commerce redesign for the Parisian fashion house, uniting swift performance with visual poetry.',
     metrics: {
       stat: '+210%',
-      label: 'Temps moyen passé en consultation'
+      label: 'Average session duration'
     },
-    deliverables: ['Audit d’Expérience', 'Direction Éditoriale', 'Développement Headless'],
+    deliverables: ['Experience Audit', 'Editorial Direction', 'Headless Development'],
     gradientTheme: 'from-[#e0a96d]/40 via-[#5b3b19]/60 to-[#0c0c10]',
     accentColor: '#e0a96d',
     imagePromptFallback: 'Haute couture editorial silk drapery and Parisian typography',
     award: 'Club des Directeurs Artistiques',
     detailedContext: {
-      challenge: 'Conserver la noblesse et la lenteur contemplative du défilé tout en assurant un temps de chargement inférieur à 0.8 seconde.',
-      artDirection: 'Compositions broadsheet déstructurées, grain photographique velouté et lettrines néo-classiques.',
+      challenge: 'Retaining the contemplative nobility of a runway show while maintaining sub-0.8s page load speeds worldwide.',
+      artDirection: 'Deconstructed broadsheet compositions, velvety photographic grain, and neoclassical typography.',
       stack: ['Shopify Plus Headless', 'Vite', 'Turborepo', 'GSAP'],
-      result: 'Progression de 180% des ventes internationales et doublement des commandes privées sur mesure.'
+      result: '180% surge in international sales and doubling of private bespoke client orders.'
     }
   },
   {
     id: 'chroma-odyssey',
     title: 'Chroma Odyssey',
-    client: 'Fondation d’Art Contemporain',
+    client: 'Contemporary Art Foundation',
     year: '2024',
     category: 'generative-art',
-    categoryLabel: 'Art Génératif & Installation',
-    tagline: 'Une toile numérique infinie modelée par les flux des visiteurs.',
-    description: 'Dispositif curatorial interactif permettant au public de sculpter des œuvres numériques par les ondes sonores et le geste.',
+    categoryLabel: 'Generative Art & Spatial Installation',
+    tagline: 'An infinite digital canvas sculpted by audience presence and motion.',
+    description: 'Interactive curatorial installation enabling the public to sculpt digital artworks through sound waves and gestural interaction.',
     metrics: {
       stat: '180K+',
-      label: 'Interactions génératives enregistrées'
+      label: 'Generative interactions recorded'
     },
-    deliverables: ['R&D Shaders', 'Installation Web & In-Situ', 'Sound Design'],
+    deliverables: ['Shader R&D', 'Web & In-Situ Installation', 'Sound Design'],
     gradientTheme: 'from-[#2ee9a7]/40 via-[#0f766e]/60 to-[#0c0c10]',
     accentColor: '#2ee9a7',
     imagePromptFallback: 'Generative chromatic wave patterns in museum dark room',
     award: 'Red Dot Best of the Best',
     detailedContext: {
-      challenge: 'Garantir un rendu visuel fluide et captivant capable de fonctionner aussi bien sur des écrans tactiles 8K de 12 mètres que sur mobile.',
-      artDirection: 'Exploration des lois de réfraction des fluides non newtoniens : vert d’eau cinétique, indigo profond et pulsations harmoniques.',
+      challenge: 'Delivering fluid, captivating generative visuals running effortlessly on 12-meter 8K museum touchscreens as well as mobile devices.',
+      artDirection: 'Exploring non-Newtonian fluid refraction: kinetic mint, deep indigo, and harmonic pulsations.',
       stack: ['WebGL 2.0', 'Custom Compute Shaders', 'WebSockets', 'Canvas API'],
-      result: 'L’installation a voyagé dans 6 musées européens et a été élue expérience interactive de l’année.'
+      result: 'The installation toured 6 European contemporary art museums and was named Interactive Experience of the Year.'
     }
   },
   {
@@ -145,22 +145,22 @@ const PORTFOLIO_PROJECTS: CaseStudy[] = [
     client: 'Nexus Labs Berlin',
     year: '2025',
     category: '3d-webgl',
-    categoryLabel: 'Interface Spatiale & IA',
-    tagline: 'Rendre intelligible et tactile l’orchestration des modèles neuronaux.',
-    description: 'Interface de contrôle et portail de visualisation en temps réel pour une suite d’intelligence artificielle décentralisée.',
+    categoryLabel: 'Spatial UI & AI Visualization',
+    tagline: 'Transforming complex neural model orchestration into a tactile, intuitive interface.',
+    description: 'Real-time control dashboard and visual portal designed for an enterprise decentralized artificial intelligence suite.',
     metrics: {
       stat: '-40%',
-      label: 'Temps de décision pour les analystes'
+      label: 'Analyst decision-making time'
     },
-    deliverables: ['UX / UI Systémique', 'Visualisation de Données', 'Front-End High-Perf'],
+    deliverables: ['Systemic UX / UI', 'Data Visualization', 'High-Perf Front-End'],
     gradientTheme: 'from-[#38bdf8]/40 via-[#1e3a8a]/60 to-[#0c0c10]',
     accentColor: '#38bdf8',
     award: 'Awwwards Developer Award',
     detailedContext: {
-      challenge: 'Représenter des milliards de paramètres d’apprentissage automatique sous une forme ergonomique intuitive et sensorielle.',
-      artDirection: 'Grille d’ingénierie ultra-précise, accents cyan luminescents et typographie monospace calibrée aux ratios d’or.',
+      challenge: 'Representing billions of machine-learning parameters in an intuitive, ergonomic, and sensory visual format.',
+      artDirection: 'Ultra-precise engineering grid, luminescent cyan accents, and monospace typography calibrated to golden ratios.',
       stack: ['React 19', 'D3.js', 'WebGL', 'Tailwind CSS'],
-      result: 'Adoption immédiate par plus de 45 000 ingénieurs dans le monde et levée de fonds Series A de 30M€.'
+      result: 'Adopted by more than 45,000 engineers globally with a €30M Series A round closed.'
     }
   },
   {
@@ -169,21 +169,21 @@ const PORTFOLIO_PROJECTS: CaseStudy[] = [
     client: 'Valence Publishing New York',
     year: '2024',
     category: 'brand-identity',
-    categoryLabel: 'Plateforme Éditoriale & Typographie',
-    tagline: 'L’art du livre rare réincarné dans une bibliothèque numérique sculpturale.',
-    description: 'Conception d’un sanctuaire de lecture numérique et catalogue raisonné d’éditions d’art numérotées.',
+    categoryLabel: 'Editorial Platform & Typography',
+    tagline: 'The craft of rare books reincarnated in a sculptural digital library.',
+    description: 'Design of a digital reading sanctuary and catalog raisonné for numbered art publications.',
     metrics: {
       stat: '100%',
-      label: 'Des tirages de tête épuisés en 12h'
+      label: 'Limited editions sold out in 12h'
     },
-    deliverables: ['Typographie Sur Mesure', 'Direction Éditoriale', 'E-Commerce'],
+    deliverables: ['Custom Typography', 'Editorial Direction', 'E-Commerce'],
     gradientTheme: 'from-[#e2e8f0]/30 via-[#475569]/50 to-[#0c0c10]',
     accentColor: '#ffffff',
     detailedContext: {
-      challenge: 'Créer une expérience de feuilletage virtuel qui restitue le poids du papier et la texture des encres typographiques.',
-      artDirection: 'Monochrome contrasté inspiré des presses d’imprimerie artisanales du XXe siècle.',
+      challenge: 'Crafting a virtual browsing sensation that honors the tactile weight of paper and typographic ink textures.',
+      artDirection: 'High-contrast monochrome inspired by 20th-century artisan printing presses.',
       stack: ['Next.js', 'Canvas Paper Simulator', 'Shopify Plus'],
-      result: 'Tous les exemplaires d’artistes ont trouvé acquéreur en moins de 12 heures lors de la nocturne de lancement.'
+      result: 'All numbered artist editions were acquired within 12 hours during the opening preview.'
     }
   }
 ];
@@ -194,15 +194,15 @@ const AGENCY_SERVICES: AgencyService[] = [
     id: 'visual-identity',
     number: '01',
     title: 'Visual Identity',
-    scope: ['Logo', 'Couleurs', 'Typographie', 'Brand System'],
-    description: 'Création d’identités de marque intemporelles et mémorables. Nous façonnons votre grammaire visuelle intégrale pour asseoir une présence forte et distinctive sur tous vos marchés.',
+    scope: ['Logo', 'Colors', 'Typography', 'Brand System'],
+    description: 'Creation of timeless, unforgettable brand identities. We define your complete visual grammar to command a strong and distinct presence across all markets.',
     deliverables: [
-      'Logotype principal, signatures & monogrammes vectoriels',
-      'Charte chromatique exclusive & profils numériques / print',
-      'Système typographique hiérarchisé & licences d’usage',
-      'Brand Guidelines & Design System complet'
+      'Primary logotypes, signatures & vector monograms',
+      'Exclusive chromatic system & digital/print color profiles',
+      'Hierarchical typographic system & commercial licenses',
+      'Comprehensive Brand Guidelines & Design System'
     ],
-    tag: 'Fondation de Marque',
+    tag: 'Brand Foundation',
     accent: '#ff4b26'
   },
   {
@@ -210,14 +210,14 @@ const AGENCY_SERVICES: AgencyService[] = [
     number: '02',
     title: 'Graphic Design',
     scope: ['Posters', 'Flyers', 'Brochures', 'Packaging', 'Advertising'],
-    description: 'Design éditorial et publicitaire haute précision. De l’affiche monumentale au packaging d’exception, nous concevons des objets graphiques tactiles qui captivent immédiatement.',
+    description: 'High-precision editorial and promotional design. From monumental display posters to luxury packaging, we engineer tactile graphic objects that instantly captivate.',
     deliverables: [
-      'Posters grand format & affiches culturelles / corporate',
-      'Plaquettes commerciales, dossiers de presse & brochures',
-      'Packaging produit, étiquettes & coffrets haut de gamme',
-      'Campagnes publicitaires d’affichage & prints percutants'
+      'Large-format posters & cultural/corporate displays',
+      'Commercial brochures, press kits & editorial booklets',
+      'Product packaging, labels & luxury gift boxes',
+      'High-impact print advertising campaigns'
     ],
-    tag: 'Impact Graphique & Print',
+    tag: 'Graphic Impact & Print',
     accent: '#e0a96d'
   },
   {
@@ -225,14 +225,14 @@ const AGENCY_SERVICES: AgencyService[] = [
     number: '03',
     title: 'Digital Design',
     scope: ['Social Media', 'Campaigns', 'Web Visuals', 'Banners'],
-    description: 'Conception de contenus digitaux percutants et ergonomiques. Nous captivons vos audiences sur tous les canaux numériques avec des visuels qui convertissent l’attention en valeur.',
+    description: 'Creation of high-converting digital visual assets. We engage audiences across all digital channels with designs that convert attention into brand value.',
     deliverables: [
-      'Direction artistique réseaux sociaux (Instagram, LinkedIn, X)',
-      'Kits de lancement de campagne web & déclinaisons multi-formats',
-      'Bannières publicitaires digitales haute performance (CTR)',
-      'Visuels de hero banners, landings & newsletters premium'
+      'Social media art direction (Instagram, LinkedIn, X)',
+      'Multi-format digital campaign rollout kits',
+      'High-CTR digital advertising banners',
+      'Hero visuals, landing page assets & premium newsletters'
     ],
-    tag: 'Stratégie Numérique',
+    tag: 'Digital Strategy',
     accent: '#38bdf8'
   },
   {
@@ -240,12 +240,12 @@ const AGENCY_SERVICES: AgencyService[] = [
     number: '04',
     title: 'Sports Design',
     scope: ['Football Graphics', 'Matchday', 'Kits', 'Social Campaigns'],
-    description: 'Design sportif d’élite pour clubs professionnels, marques et athlètes. Nous transmettons l’énergie brute et l’intensité de la compétition à travers des visuels cinétiques et vibrants.',
+    description: 'Elite athletic and sports design for professional clubs, brands, and athletes. We channel raw competitive intensity into vibrant, kinetic visuals.',
     deliverables: [
-      'Affiches Matchday, compositions d’avant-match & line-ups',
-      'Design conceptuel & officiel de maillots (Kits football)',
-      'Campagnes visuelles pour annonces de transferts & billetterie',
-      'Habillages graphiques de stades, bannières & réseaux sportifs'
+      'Matchday posters, pre-game compositions & starting lineups',
+      'Official & conceptual football kit design',
+      'Transfer announcement campaigns & ticketing graphics',
+      'Stadium visual environmental graphics & social assets'
     ],
     tag: 'Athletic & Football Culture',
     accent: '#2ee9a7'
@@ -255,81 +255,81 @@ const AGENCY_SERVICES: AgencyService[] = [
     number: '05',
     title: '3D & Creative',
     scope: ['3D Products', 'Jewelry', 'Objects', 'Promotional Visuals'],
-    description: 'Modélisation et rendus 3D hyper-réalistes d’objets et produits. Idéal pour sublimer vos pièces d’horlogerie, bijoux précieux ou créations avant même leur production physique.',
+    description: 'Hyper-realistic 3D modeling and rendering of physical objects and products. Elevating timepieces, precious jewelry, and luxury concepts before physical production.',
     deliverables: [
-      'Rendus 3D photo-réalistes de produits & packagings',
-      'Modélisation de haute joaillerie, métaux précieux & pierres',
-      'Visualisations volumétriques & simulations d’éclairage studio',
-      'Animations 3D promotionnelles & packshots dynamiques'
+      'Photorealistic 3D product & packaging renders',
+      'Fine jewelry modeling: precious metals, gemstones & diamonds',
+      'Volumetric lighting simulations & studio atmospheres',
+      '3D promotional animations & dynamic packshots'
     ],
-    tag: 'CGI & Immersion 3D',
+    tag: 'CGI & 3D Immersion',
     accent: '#a855f7'
   },
   {
     id: 'print-production',
     number: '06',
     title: 'Print Production',
-    scope: ['Préparation Professionnelle Pour Impression'],
-    description: 'Expertise technique pré-presse irréprochable. Nous garantissons une restitution fidèle des couleurs, des encres et des finitions chez votre imprimeur sans mauvaise surprise.',
+    scope: ['Professional Prepress & Print Preparation'],
+    description: 'Flawless prepress technical expertise. We guarantee faithful color reproduction, ink calibration, and luxury finishes at your printing facility without surprises.',
     deliverables: [
-      'Fichiers PAO certifiés conformes aux normes d’imprimerie (PDF/X)',
-      'Séparation quadrichromie CMJN & gestion des tons directs Pantone',
-      'Calibrage des vernis sélectifs, dorures à chaud & gaufrages',
-      'Vérification des fonds perdus, traits de coupe & suivi de BAT'
+      'Certified prepress files complying with ISO print standards (PDF/X)',
+      'CMYK color separation & Pantone spot-color management',
+      'Selective varnishes, hot foil stamping & embossing calibration',
+      'Bleed verification, crop mark inspection & printer proof oversight'
     ],
-    tag: 'Haute Précision Pré-Presse',
+    tag: 'Prepress High Precision',
     accent: '#ffffff'
   }
 ];
 
-// Founder Profile & Approach for Qui Sommes-Nous
+// Founder Profile & Approach for About Section
 const STUDIO_FOUNDER: TeamMember = {
   name: 'Mohamed Amine Amarir',
-  role: 'Fondateur & Directeur Artistique',
-  focus: 'Design Graphique, Communication Visuelle, Design Sportif & 3D',
-  bio: 'Fondateur de Medar Studio, Mohamed Amine Amarir imagine et conçoit des solutions visuelles sur mesure pour les marques, entreprises, projets sportifs et créateurs. Son approche combine créativité, rigueur géométrique et sens aiguisé du détail pour métamorphoser chaque idée en une identité visuelle forte, moderne et mémorable.',
-  tag: 'Fondateur & Direction Artistique'
+  role: 'Founder & Studio Director',
+  focus: 'Studio Direction, Strategic Vision & Brand Architecture',
+  bio: 'Founder of Medar Studio, Mohamed Amine Amarir guides the studio’s strategic vision and curatorial standard. He established Medar Studio to unite an elite collective of specialized designers, 3D artists, typographers, and creative engineers. Under his leadership, the studio’s multidisciplinary team crafts bespoke visual solutions for brands, corporations, sports organizations, and creators worldwide.',
+  tag: 'Founder & Studio Leadership'
 };
 
 // Core Approach Pillars derived from official manifesto
 const STUDIO_APPROACH: StudioValue[] = [
   {
     number: '01',
-    title: 'Solutions Sur Mesure',
-    description: 'Créations visuelles exclusives façonnées pour les marques, entreprises, projets sportifs et créateurs, sans gabarit préfabriqué.'
+    title: 'Bespoke Solutions',
+    description: 'Custom visual systems engineered for forward-thinking brands, companies, sports franchises, and creators — completely free from generic templates.'
   },
   {
     number: '02',
-    title: 'Du Digital à l’Impression',
-    description: 'Une maîtrise intégrale de la chaîne visuelle, des campagnes numériques percutantes aux fichiers d’impression haute précision certifiés.'
+    title: 'From Digital to Print',
+    description: 'Seamless mastery across the entire creative spectrum, from high-converting digital campaigns to certified luxury print production.'
   },
   {
     number: '03',
-    title: 'Design Sportif & 3D',
-    description: 'Une expertise singulière combinant l’intensité des visuels de matchday et l’impact immersif de la modélisation 3D photoréaliste.'
+    title: 'Sports Design & 3D',
+    description: 'A signature specialization fusing the raw kinetic energy of athletic matchdays with photorealistic 3D spatial craft.'
   },
   {
     number: '04',
-    title: 'Précision & Mémorabilité',
-    description: 'Un sens du détail sans compromis pour transformer chaque concept en une identité visuelle pérenne, moderne et marquante.'
+    title: 'Precision & Memorability',
+    description: 'Uncompromising attention to typography, proportion, and finishing to deliver timeless, high-impact brand equity.'
   }
 ];
 
 // Default Studio General Info
 const DEFAULT_STUDIO_INFO: StudioGeneralInfo = {
   studioName: 'Medar Studio',
-  tagline: 'Direction Artistique & Creative Tech',
-  officialQuote: 'Medar Studio est un studio créatif fondé par Mohamed Amine Amarir, dédié au design graphique et à la communication visuelle.',
-  officialParagraph: 'Nous créons des solutions visuelles sur mesure pour les marques, entreprises, projets sportifs et créateurs, du digital à l’impression, en passant par le design sportif et la 3D. Notre approche combine créativité, précision et sens du détail pour transformer chaque idée en une identité visuelle forte, moderne et mémorable.',
+  tagline: 'Creative Design & Visual Communications Studio',
+  officialQuote: 'Medar Studio is a multidisciplinary creative design studio founded by Mohamed Amine Amarir, dedicated to graphic design and visual communications.',
+  officialParagraph: 'Our studio engineers bespoke visual solutions for brands, businesses, sports organizations, and creators — spanning digital experiences to print production, sports design, and 3D. Our approach combines creative ingenuity, mathematical precision, and obsessive attention to detail to transform each idea into an enduring, modern, and memorable visual universe.',
   city: 'Paris 10e',
   address: "28 Rue d'Hauteville, 75010 Paris",
   foundedYear: '2021',
   email: 'bonjour@medarstudio.fr',
   phone: '+33 1 89 71 34 20',
   founderName: 'Mohamed Amine Amarir',
-  founderRole: 'Fondateur & Directeur Artistique',
-  founderFocus: 'Design Graphique, Communication Visuelle, Design Sportif & 3D',
-  founderBio: 'Fondateur de Medar Studio, Mohamed Amine Amarir imagine et conçoit des solutions visuelles sur mesure pour les marques, entreprises, projets sportifs et créateurs. Son approche combine créativité, rigueur géométrique et sens aiguisé du détail pour métamorphoser chaque idée en une identité visuelle forte, moderne et mémorable.'
+  founderRole: 'Studio Founder',
+  founderFocus: 'Creative Direction, Studio Leadership, Brand Architecture & 3D Vision',
+  founderBio: 'Founder of Medar Studio, Mohamed Amine Amarir guides the studio’s strategic vision and curatorial standard. He established Medar Studio to unite an elite collective of specialized designers, 3D artists, typographers, and creative engineers. Under his leadership, the studio’s multidisciplinary team crafts bespoke visual solutions for brands, corporations, sports organizations, and creators worldwide.'
 };
 
 const App: React.FC = () => {
@@ -537,7 +537,7 @@ const App: React.FC = () => {
               onClick={() => scrollToSection('projets')}
               className="hover:text-white transition-colors bg-transparent border-none cursor-pointer whitespace-nowrap"
             >
-              Projets
+              Works
             </button>
             <button 
               onClick={() => scrollToSection('services')}
@@ -549,7 +549,7 @@ const App: React.FC = () => {
               onClick={() => scrollToSection('qui-sommes-nous')}
               className="hover:text-white transition-colors bg-transparent border-none cursor-pointer whitespace-nowrap"
             >
-              Qui Sommes-Nous
+              About
             </button>
             <button 
               onClick={() => scrollToSection('contact')}
@@ -565,7 +565,7 @@ const App: React.FC = () => {
               onClick={() => scrollToSection('contact')}
               className="px-4 lg:px-5 py-2.5 bg-white text-black hover:bg-[#ff4b26] hover:text-white text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer whitespace-nowrap"
             >
-              Démarrer un Projet
+              Start a Project
             </button>
           </div>
 
@@ -590,13 +590,18 @@ const App: React.FC = () => {
             className="fixed inset-0 z-30 bg-[#0c0c10]/98 backdrop-blur-2xl flex flex-col justify-center px-8 md:hidden"
           >
             <div className="flex flex-col gap-6 text-2xl font-heading font-bold text-white mb-10">
-              {['Projets', 'Services', 'Qui Sommes-Nous', 'Contact'].map((item) => (
+              {[
+                { label: 'Works', id: 'projets' },
+                { label: 'Services', id: 'services' },
+                { label: 'About', id: 'qui-sommes-nous' },
+                { label: 'Contact', id: 'contact' }
+              ].map((item) => (
                 <button
-                  key={item}
-                  onClick={() => scrollToSection(item === 'Qui Sommes-Nous' ? 'qui-sommes-nous' : item.toLowerCase())}
+                  key={item.id}
+                  onClick={() => scrollToSection(item.id)}
                   className="text-left hover:text-[#ff4b26] transition-colors bg-transparent border-none py-2"
                 >
-                  {item}
+                  {item.label}
                 </button>
               ))}
             </div>
@@ -605,7 +610,7 @@ const App: React.FC = () => {
               onClick={() => scrollToSection('contact')}
               className="w-full py-4 bg-[#ff4b26] text-white font-bold uppercase tracking-wider text-sm text-center"
             >
-              Démarrer un Projet
+              Start a Project
             </button>
 
             <div className="mt-8 pt-8 border-t border-white/10 text-xs font-mono text-neutral-400 space-y-1">
@@ -625,25 +630,25 @@ const App: React.FC = () => {
         <motion.div style={{ y, opacity }} className="w-full">
           {/* Studio Trust Marker / Editorial Tag */}
           <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-neutral-400 mb-6 tracking-widest uppercase">
-            <span className="text-[#ff4b26] font-semibold">Direction Artistique & Creative Tech</span>
+            <span className="text-[#ff4b26] font-semibold">Art Direction & Creative Tech</span>
             <span aria-hidden="true" className="text-neutral-600">·</span>
-            <span>Studio Fondé à Paris</span>
+            <span>Studio Founded in Paris</span>
             <span aria-hidden="true" className="text-neutral-600">·</span>
-            <span className="tabular-nums">Disponibilité Q2 2026</span>
+            <span className="tabular-nums">Booking Q2 2026</span>
           </div>
 
           {/* Hero Main Headline with Balanced Wrap */}
           <h1 className="font-heading text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black text-white tracking-tight leading-[1.05] max-w-5xl mb-8">
-            Nous sculptons le futur digital des{' '}
+            We sculpt the digital future of{' '}
             <GradientText 
-              text="marques visionnaires." 
+              text="visionary brands." 
               variant={currentMood === 'solaris' ? 'gold' : currentMood === 'kinetic-mint' ? 'silver' : 'vermilion'}
             />
           </h1>
 
           {/* Value proposition paragraph */}
           <p className="text-base sm:text-lg md:text-xl text-neutral-300 font-light max-w-3xl leading-relaxed mb-12">
-            Medar Studio fusionne haute exigence plastique et architectures 3D WebGL temps-réel. Nous concevons des identités visuelles intemporelles et des plateformes numériques d’exception qui convertissent l’émotion en valeur pérenne.
+            Medar Studio fuses high aesthetic discipline with real-time 3D WebGL architectures. We engineer timeless visual identities and extraordinary digital platforms that translate raw emotion into enduring brand equity.
           </p>
 
           {/* Hero Actions */}
@@ -653,7 +658,7 @@ const App: React.FC = () => {
               data-hover="true"
               className="px-8 py-4 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white text-xs font-bold uppercase tracking-widest transition-all duration-200 flex items-center gap-3"
             >
-              <span>Explorer les Réalisations</span>
+              <span>Explore Works</span>
               <ArrowDownRight className="w-4 h-4" />
             </button>
 
@@ -663,7 +668,7 @@ const App: React.FC = () => {
               className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/15 text-white text-xs font-bold uppercase tracking-widest transition-all duration-200 flex items-center gap-3"
             >
               <Sparkles className="w-4 h-4 text-[#ff4b26]" />
-              <span>Découvrir nos Services</span>
+              <span>Discover Our Services</span>
             </button>
           </div>
         </motion.div>
@@ -671,20 +676,20 @@ const App: React.FC = () => {
         {/* Studio Editorial Ticker / Institutional References */}
         <div className="mt-20 pt-8 border-t border-white/[0.08] grid grid-cols-2 md:grid-cols-4 gap-6 text-xs text-neutral-400 font-mono">
           <div>
-            <span className="block text-white font-bold tabular-nums text-sm">14 PRIX MAJEURS</span>
-            <span className="text-[11px] text-neutral-500">Awwwards, FWA, Club des DA</span>
+            <span className="block text-white font-bold tabular-nums text-sm">14 MAJOR AWARDS</span>
+            <span className="text-[11px] text-neutral-500">Awwwards, FWA, Red Dot</span>
           </div>
           <div>
-            <span className="block text-white font-bold tabular-nums text-sm">+185% IMPACT</span>
-            <span className="text-[11px] text-neutral-500">Croissance moyenne de conversion</span>
+            <span className="block text-white font-bold tabular-nums text-sm">+185% CONVERSION</span>
+            <span className="text-[11px] text-neutral-500">Average client lift</span>
           </div>
           <div>
-            <span className="block text-white font-bold tabular-nums text-sm">PARIS & TOKYO</span>
-            <span className="text-[11px] text-neutral-500">Rayonnement international</span>
+            <span className="block text-white font-bold tabular-nums text-sm">PARIS & GLOBAL</span>
+            <span className="text-[11px] text-neutral-500">International reach</span>
           </div>
           <div>
-            <span className="block text-white font-bold tabular-nums text-sm">CODE SUR-MESURE</span>
-            <span className="text-[11px] text-neutral-500">Zéro template, 100% propriétaire</span>
+            <span className="block text-white font-bold tabular-nums text-sm">BESPOKE CODE</span>
+            <span className="text-[11px] text-neutral-500">Zero templates, 100% custom</span>
           </div>
         </div>
       </section>
@@ -700,26 +705,26 @@ const App: React.FC = () => {
           <div>
             <div className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest mb-3 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#ff4b26]" />
-              <span>Archives Sélectionnées · Format Post 4:5</span>
+              <span>Selected Archives · 4:5 Post Format</span>
             </div>
             <h2 className="font-heading text-3xl md:text-5xl font-bold tracking-tight text-white">
-              Œuvres Digitales & Cas d'Étude.
+              Digital Works & Case Studies.
             </h2>
           </div>
 
           <p className="text-sm md:text-base text-neutral-400 max-w-md leading-relaxed">
-            Visuels et pièces maîtresses calibrés au ratio 4:5 pour les réseaux et supports éditoriaux, combinant impact graphique et performance technique.
+            Signature artworks and visual deliverables calibrated to the 4:5 ratio for digital and editorial showcase, uniting artistic distinction and technical precision.
           </p>
         </div>
 
         {/* Filter Bar (Interactive Segmented Buttons) */}
         <div className="flex flex-wrap items-center gap-2 mb-12 p-1.5 bg-[#121218] border border-white/[0.08] w-fit">
           {[
-            { id: 'all', label: 'Tous les Projets' },
+            { id: 'all', label: 'All Works' },
             { id: '3d-webgl', label: '3D WebGL & Shaders' },
-            { id: 'brand-identity', label: 'Identité de Marque' },
-            { id: 'ecommerce-luxe', label: 'E-Commerce de Luxe' },
-            { id: 'generative-art', label: 'Art Génératif' }
+            { id: 'brand-identity', label: 'Brand Identity' },
+            { id: 'ecommerce-luxe', label: 'Luxury E-Commerce' },
+            { id: 'generative-art', label: 'Generative Art' }
           ].map((tab) => (
             <button
               key={tab.id}
@@ -751,7 +756,7 @@ const App: React.FC = () => {
 
       {/* 
         =======================================================================
-        SERVICES SECTION — VENDRE VOS PRESTATIONS (Présentation en Cartes)
+        SERVICES SECTION — CORE CAPABILITIES (Card Grid)
         =======================================================================
       */}
       <section id="services" className="py-24 md:py-32 px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
@@ -760,14 +765,14 @@ const App: React.FC = () => {
           <div>
             <div className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest mb-3 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#ff4b26]" />
-              <span>Prestations d'Élite · Ce Que Nous Faisons</span>
+              <span>Core Capabilities · What We Do</span>
             </div>
             <h2 className="font-heading text-3xl md:text-5xl font-bold tracking-tight text-white max-w-2xl">
-              SERVICES — Vendre vos prestations.
+              SERVICES — Engineering Visual Impact.
             </h2>
           </div>
           <p className="text-sm md:text-base text-neutral-400 max-w-md leading-relaxed">
-            Chaque prestation est conçue comme un vecteur d'impact direct. Du logo sculpté sur mesure aux visuels de matchday et à la modélisation 3D, découvrez nos 6 pôles de création.
+            Each service is engineered as a direct catalyst for brand equity. From bespoke visual identities to high-intensity matchday sports design and photorealistic 3D, discover our 6 core disciplines.
           </p>
         </div>
 
@@ -786,8 +791,8 @@ const App: React.FC = () => {
 
       {/* 
         =======================================================================
-        QUI SOMMES-NOUS — L'ATELIER MEDAR STUDIO
-        Fondé par Mohamed Amine Amarir · Manifeste officiel et approche d'excellence
+        ABOUT SECTION — MEDAR STUDIO COLLECTIVE
+        Founded by Mohamed Amine Amarir · Studio leadership and creative team
         =======================================================================
       */}
       <section id="qui-sommes-nous" className="py-24 md:py-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08] w-full box-border overflow-hidden">
@@ -796,14 +801,14 @@ const App: React.FC = () => {
           <div className="max-w-2xl">
             <div className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest mb-3 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#ff4b26] shrink-0" />
-              <span>Studio Créatif · Fondé par {studioInfo.founderName}</span>
+              <span>Creative Studio · Founded by {studioInfo.founderName}</span>
             </div>
             <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white break-words">
-              QUI SOMMES-NOUS
+              ABOUT MEDAR STUDIO
             </h2>
           </div>
           <p className="text-sm md:text-base text-neutral-400 max-w-md leading-relaxed break-words">
-            Un studio créatif dédié au design graphique et à la communication visuelle, combinant créativité, précision et sens du détail.
+            A multidisciplinary creative studio dedicated to graphic design and visual communications, blending creative intuition with mathematical precision.
           </p>
         </div>
 
@@ -813,7 +818,7 @@ const App: React.FC = () => {
 
           <div className="relative z-10 max-w-4xl w-full">
             <span className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest block mb-4">
-              Manifeste & Présentation Officielle
+              Studio Manifesto & Official Profile
             </span>
             <blockquote className="font-heading text-lg sm:text-xl md:text-2xl lg:text-3xl text-white font-bold leading-relaxed tracking-tight mb-6 break-words">
               « <span className="text-white">{studioInfo.officialQuote}</span> »
@@ -826,24 +831,24 @@ const App: React.FC = () => {
           {/* Key Facts Ribbon */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 pt-8 mt-8 border-t border-white/[0.08] text-xs font-mono w-full">
             <div className="min-w-0">
-              <span className="text-[10px] sm:text-[11px] text-neutral-500 uppercase tracking-wider block mb-1">Fondateur</span>
+              <span className="text-[10px] sm:text-[11px] text-neutral-500 uppercase tracking-wider block mb-1">Founder</span>
               <span className="text-white font-bold text-xs sm:text-sm block truncate">{studioInfo.founderName}</span>
               <span className="text-neutral-400 text-[10px] sm:text-[11px] truncate block">{studioInfo.founderRole}</span>
             </div>
             <div className="min-w-0">
               <span className="text-[10px] sm:text-[11px] text-neutral-500 uppercase tracking-wider block mb-1">Discipline</span>
-              <span className="text-white font-bold text-xs sm:text-sm block truncate">Design Graphique</span>
-              <span className="text-neutral-400 text-[10px] sm:text-[11px] truncate block">Communication Visuelle</span>
+              <span className="text-white font-bold text-xs sm:text-sm block truncate">Graphic Design</span>
+              <span className="text-neutral-400 text-[10px] sm:text-[11px] truncate block">Visual Communication</span>
             </div>
             <div className="min-w-0">
-              <span className="text-[10px] sm:text-[11px] text-neutral-500 uppercase tracking-wider block mb-1">Expertises</span>
+              <span className="text-[10px] sm:text-[11px] text-neutral-500 uppercase tracking-wider block mb-1">Expertise</span>
               <span className="text-white font-bold text-xs sm:text-sm block truncate">Digital & Print</span>
-              <span className="text-neutral-400 text-[10px] sm:text-[11px] truncate block">Design Sportif & 3D</span>
+              <span className="text-neutral-400 text-[10px] sm:text-[11px] truncate block">Sports Design & 3D</span>
             </div>
             <div className="min-w-0">
-              <span className="text-[10px] sm:text-[11px] text-neutral-500 uppercase tracking-wider block mb-1">Approche</span>
-              <span className="text-white font-bold text-xs sm:text-sm block truncate">100% Sur Mesure</span>
-              <span className="text-neutral-400 text-[10px] sm:text-[11px] truncate block">Précision & Détail</span>
+              <span className="text-[10px] sm:text-[11px] text-neutral-500 uppercase tracking-wider block mb-1">Approach</span>
+              <span className="text-white font-bold text-xs sm:text-sm block truncate">100% Bespoke</span>
+              <span className="text-neutral-400 text-[10px] sm:text-[11px] truncate block">Precision & Detail</span>
             </div>
           </div>
         </div>
@@ -853,10 +858,10 @@ const App: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-3">
             <div>
               <span className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest block mb-1">
-                Direction Créative & Vision
+                Studio Leadership & Vision
               </span>
               <h3 className="font-heading text-2xl md:text-3xl font-bold text-white tracking-tight">
-                Le Fondateur
+                The Founder
               </h3>
             </div>
             <span className="text-xs font-mono text-neutral-400 uppercase tracking-widest border border-white/10 px-3 py-1 self-start sm:self-auto">
@@ -902,10 +907,10 @@ const App: React.FC = () => {
         <div className="mb-16 w-full">
           <div className="mb-8">
             <span className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest block mb-1">
-              Méthodologie & Rigueur
+              Methodology & Precision
             </span>
             <h3 className="font-heading text-2xl md:text-3xl font-bold text-white tracking-tight">
-              Notre Approche en 4 Piliers
+              Our Core 4 Pillars
             </h3>
           </div>
 
@@ -939,13 +944,13 @@ const App: React.FC = () => {
         <div className="p-6 sm:p-8 md:p-12 bg-gradient-to-r from-[#14141d] to-[#0c0c10] border border-white/[0.1] flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-8 w-full box-border">
           <div className="max-w-xl">
             <span className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest block mb-2">
-              Collaborer Avec Medar Studio
+              Collaborate With Medar Studio
             </span>
             <h4 className="font-heading text-xl sm:text-2xl md:text-3xl font-bold text-white tracking-tight mb-2 break-words">
-              Donnons vie à votre identité visuelle.
+              Let’s bring your visual identity to life.
             </h4>
             <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed break-words">
-              Marques, entreprises, projets sportifs ou créateurs : parlons de vos objectifs et bâtissons une image moderne, forte et mémorable.
+              Brands, corporations, sports projects, and creators: let’s align on your objectives and engineer a modern, enduring visual universe.
             </p>
           </div>
 
@@ -953,7 +958,7 @@ const App: React.FC = () => {
             onClick={() => scrollToSection('contact')}
             className="w-full sm:w-auto px-8 py-4 bg-[#ff4b26] hover:bg-white text-white hover:text-black font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-3 shrink-0 cursor-pointer shadow-[0_4px_20px_rgba(255,75,38,0.35)]"
           >
-            <span>Démarrer un Projet</span>
+            <span>Start a Project</span>
             <ArrowUpRight className="w-4 h-4" />
           </button>
         </div>
@@ -970,20 +975,20 @@ const App: React.FC = () => {
           <div className="lg:col-span-5 space-y-8">
             <div>
               <div className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest mb-3">
-                Démarrer une Collaboration
+                Initiate a Partnership
               </div>
               <h2 className="font-heading text-3xl md:text-5xl font-bold tracking-tight text-white mb-6">
-                Parlons de Votre Prochaine Œuvre.
+                Let’s Discuss Your Next Commission.
               </h2>
               <p className="text-sm md:text-base text-neutral-300 leading-relaxed mb-8">
-                Nous sélectionnons un nombre restreint de projets par trimestre pour garantir à chaque partenaire l’attention intégrale de nos fondateurs et directeurs artistiques.
+                We take on a curated number of commissions each quarter to guarantee that every client receives the undivided attention of our studio directors and specialist creative team.
               </p>
             </div>
 
             <div className="space-y-4 pt-4 border-t border-white/[0.08] font-mono text-xs">
               <div className="flex items-center gap-3 text-neutral-300">
                 <MapPin className="w-4 h-4 text-[#ff4b26]" />
-                <span>Atelier Paris : 28 Rue d'Hauteville, 75010 Paris</span>
+                <span>Paris Studio: 28 Rue d'Hauteville, 75010 Paris</span>
               </div>
               <div className="flex items-center gap-3 text-neutral-300">
                 <Mail className="w-4 h-4 text-[#ff4b26]" />
@@ -993,13 +998,13 @@ const App: React.FC = () => {
               </div>
               <div className="flex items-center gap-3 text-neutral-300">
                 <Clock className="w-4 h-4 text-[#ff4b26]" />
-                <span>Temps de réponse moyen : Moins de 24 heures</span>
+                <span>Average response time: Within 24 hours</span>
               </div>
             </div>
 
             <div className="p-4 bg-white/[0.03] border border-white/[0.08] text-xs text-neutral-400">
-              <span className="text-white font-semibold block mb-1">Confidentialité Stricte</span>
-              Toutes les informations et idées partagées dans ce formulaire sont soumises à un accord de confidentialité implicite d'atelier.
+              <span className="text-white font-semibold block mb-1">Strict Confidentiality</span>
+              All project briefs, intellectual property, and inquiries submitted through this form are governed by our studio non-disclosure standard.
             </div>
           </div>
 
@@ -1015,16 +1020,16 @@ const App: React.FC = () => {
                   <Check className="w-7 h-7" />
                 </div>
                 <h3 className="font-heading text-2xl font-bold text-white">
-                  Brief Transmis à l’Atelier.
+                  Brief Received by Studio.
                 </h3>
                 <p className="text-sm text-neutral-300 max-w-md mx-auto leading-relaxed">
-                  Merci {formData.name}. Nos directeurs de création étudient votre demande et reviendront vers vous sous 24h avec une première esquisse stratégique.
+                  Thank you {formData.name}. Our studio creative team is reviewing your brief and will respond within 24 hours with a strategic orientation.
                 </p>
                 <button
                   onClick={() => setFormSubmitted(false)}
                   className="mt-4 px-6 py-2.5 bg-white/10 hover:bg-white text-white hover:text-black text-xs font-mono uppercase tracking-wider transition-colors"
                 >
-                  Envoyer un autre message
+                  Submit Another Inquiry
                 </button>
               </motion.div>
             ) : (
@@ -1032,7 +1037,7 @@ const App: React.FC = () => {
                 {/* 1. Project Type Selector */}
                 <div>
                   <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-2">
-                    Prestation Souhaitée
+                    Requested Capability
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {[
@@ -1062,7 +1067,7 @@ const App: React.FC = () => {
                 {/* 2. Budget Selector */}
                 <div>
                   <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-2">
-                    Enveloppe Budgétaire
+                    Target Budget
                   </label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {['25k€ - 50k€', '50k€ - 100k€', '100k€ - 200k€', '> 200k€'].map((range) => (
@@ -1086,27 +1091,27 @@ const App: React.FC = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-1.5">
-                      Votre Nom & Prénom *
+                      Full Name *
                     </label>
                     <input
                       type="text"
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="e.g. Alexandre Moreau"
+                      placeholder="e.g. Alexander Vance"
                       className="w-full bg-white/5 border border-white/10 px-4 py-3 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-[#ff4b26]"
                     />
                   </div>
                   <div>
                     <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-1.5">
-                      Email Professionnel *
+                      Work Email *
                     </label>
                     <input
                       type="email"
                       required
                       value={formData.email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="alexandre@entreprise.fr"
+                      placeholder="alexander@company.com"
                       className="w-full bg-white/5 border border-white/10 px-4 py-3 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-[#ff4b26]"
                     />
                   </div>
@@ -1114,26 +1119,26 @@ const App: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-1.5">
-                    Entreprise / Marque
+                    Company / Organization
                   </label>
                   <input
                     type="text"
                     value={formData.company}
                     onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    placeholder="e.g. Maison de Haute Joaillerie"
+                    placeholder="e.g. Fine Watchmaking House or Athletic Brand"
                     className="w-full bg-white/5 border border-white/10 px-4 py-3 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-[#ff4b26]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-1.5">
-                    Vision & Contraintes du Projet
+                    Project Scope & Ambition
                   </label>
                   <textarea
                     rows={4}
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    placeholder="Décrivez vos ambitions artistiques, vos délais souhaités ou vos inspirations..."
+                    placeholder="Describe your creative ambitions, key deliverables, target schedule, or references..."
                     className="w-full bg-white/5 border border-white/10 px-4 py-3 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-[#ff4b26] resize-none"
                   />
                 </div>
@@ -1145,10 +1150,10 @@ const App: React.FC = () => {
                   className="w-full py-4 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white font-bold text-xs uppercase tracking-widest transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {isSubmitting ? (
-                    <span>Envoi en cours...</span>
+                    <span>Transmitting brief...</span>
                   ) : (
                     <>
-                      <span>Transmettre le Brief au Studio</span>
+                      <span>Submit Brief to Studio</span>
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
@@ -1179,21 +1184,21 @@ const App: React.FC = () => {
             <span aria-hidden="true">·</span>
             <span>{studioInfo.city}</span>
             <span aria-hidden="true">·</span>
-            <span>Tous droits réservés © 2026</span>
+            <span>All rights reserved © 2026</span>
           </div>
 
           {/* Navigation Links with Back to Top grouped cleanly in center */}
           <div className="flex flex-wrap items-center gap-6">
-            <a href="#projets" className="hover:text-white transition-colors">Projets</a>
+            <a href="#projets" className="hover:text-white transition-colors">Works</a>
             <a href="#services" className="hover:text-white transition-colors">Services</a>
-            <a href="#qui-sommes-nous" className="hover:text-white transition-colors">Qui Sommes-Nous</a>
+            <a href="#qui-sommes-nous" className="hover:text-white transition-colors">About</a>
             <a href="#contact" className="hover:text-white transition-colors">Contact</a>
             <span aria-hidden="true" className="text-neutral-700 hidden sm:inline">·</span>
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className="text-neutral-300 hover:text-[#ff4b26] transition-colors bg-transparent border-none cursor-pointer flex items-center gap-1.5"
             >
-              <span>↑ Haut de Page</span>
+              <span>↑ Back to Top</span>
             </button>
           </div>
 

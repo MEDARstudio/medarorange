@@ -39,7 +39,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, onNavigat
               <span aria-hidden="true">/</span>
               <span className="tabular-nums">{project.year}</span>
               <span aria-hidden="true">/</span>
-              <span className="text-[#ff4b26]">Format 4:5</span>
+              <span className="text-[#ff4b26]">4:5 Format</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -47,7 +47,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, onNavigat
                 onClick={() => onNavigate('prev')}
                 data-hover="true"
                 className="w-8 h-8 flex items-center justify-center border border-white/10 hover:border-white/30 text-white transition-colors"
-                title="Projet précédent"
+                title="Previous project"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
@@ -55,7 +55,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, onNavigat
                 onClick={() => onNavigate('next')}
                 data-hover="true"
                 className="w-8 h-8 flex items-center justify-center border border-white/10 hover:border-white/30 text-white transition-colors"
-                title="Projet suivant"
+                title="Next project"
               >
                 <ArrowRight className="w-4 h-4" />
               </button>
@@ -63,7 +63,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, onNavigat
                 onClick={onClose}
                 data-hover="true"
                 className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white text-white hover:text-black transition-colors ml-2"
-                title="Fermer"
+                title="Close"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -100,7 +100,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, onNavigat
                 />
 
                 <div className="relative z-10 flex items-center justify-between text-[10px] font-mono text-white/70">
-                  <span className="bg-black/60 backdrop-blur-md px-2 py-0.5 border border-white/10">POST INSTAGRAM 4:5</span>
+                  <span className="bg-black/60 backdrop-blur-md px-2 py-0.5 border border-white/10">4:5 INSTAGRAM POST</span>
                   {project.award && (
                     <span className="flex items-center gap-1 text-[10px] text-white bg-black/70 backdrop-blur-md px-2 py-0.5 border border-white/15">
                       <Award className="w-3 h-3 text-[#ff4b26]" />
@@ -122,7 +122,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, onNavigat
                         {project.client.toUpperCase()}
                       </text>
                       <text x="160" y="165" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="9" fontFamily="monospace" letterSpacing="0.15em">
-                        ARCHIVE · FORMAT 4:5
+                        ARCHIVE · 4:5 FORMAT
                       </text>
                     </svg>
                   )}
@@ -164,7 +164,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, onNavigat
                   </div>
                   <div>
                     <span className="block text-[11px] uppercase tracking-wider text-neutral-500 mb-1">
-                      Livrables
+                      Deliverables
                     </span>
                     <div className="text-xs text-neutral-300">
                       {project.deliverables.join(' · ')}
@@ -176,7 +176,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, onNavigat
                   <div className="space-y-4 pt-2">
                     <div>
                       <h4 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-1">
-                        Défi & Contexte Stratégique
+                        Challenge & Strategic Context
                       </h4>
                       <p className="text-xs text-neutral-300 leading-relaxed">
                         {project.detailedContext.challenge}
@@ -185,7 +185,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, onNavigat
 
                     <div>
                       <h4 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-1">
-                        Direction Artistique
+                        Art Direction
                       </h4>
                       <p className="text-xs text-neutral-300 leading-relaxed">
                         {project.detailedContext.artDirection}
@@ -217,7 +217,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, onNavigat
                 className="px-6 py-3 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white text-xs font-bold uppercase tracking-widest transition-colors"
                 data-hover="true"
               >
-                Initier un projet similaire
+                Inquire About a Similar Project
               </a>
               <span className="text-xs text-neutral-500 font-mono">
                 Medar Studio Archive · #{project.id}

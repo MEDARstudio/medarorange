@@ -77,7 +77,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, index, onSelect }) =
         {/* Deliverables */}
         <div className="pt-4 border-t border-white/[0.08] group-hover:border-white/15 mb-8 space-y-2 transition-colors">
           <span className="block text-[11px] font-mono uppercase tracking-wider text-neutral-500 group-hover:text-neutral-400 mb-2 transition-colors">
-            Livrables inclus
+            Key Deliverables
           </span>
           <ul className="space-y-1.5">
             {service.deliverables.map((d, i) => (
@@ -95,7 +95,7 @@ const ServiceCard: React.FC<ServiceCardProps> = ({ service, index, onSelect }) =
         onClick={() => onSelect(service.title)}
         className="relative z-10 w-full py-3 px-4 bg-white/5 hover:bg-[#ff4b26] text-white font-mono text-xs uppercase tracking-wider transition-all duration-200 border border-white/10 hover:border-[#ff4b26] flex items-center justify-between cursor-pointer"
       >
-        <span className="font-semibold">Commander ce service</span>
+        <span className="font-semibold">Commission this Service</span>
         <ArrowUpRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
       </button>
     </motion.div>

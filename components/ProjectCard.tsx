@@ -96,13 +96,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onSelect }) =
                 {project.client.toUpperCase()}
               </text>
               <text x="160" y="165" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="8" fontFamily="monospace" letterSpacing="0.15em">
-                MEDAR ATELIER · 4:5 FORMAT
+                MEDAR STUDIO · 4:5 FORMAT
               </text>
             </svg>
           ) : (
             <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <span className="text-[11px] font-mono tracking-widest uppercase bg-black/75 px-3 py-1 text-white border border-white/20">
-                Explorer le Poste
+                View Case Study
               </span>
             </div>
           )}
@@ -112,7 +112,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onSelect }) =
         <div className="relative z-10 flex items-end justify-between border-t border-white/10 pt-3">
           <div>
             <span className="block text-[9px] font-mono text-neutral-400 uppercase tracking-widest">
-              Direction Artistique
+              Art Direction
             </span>
             <span className="block text-xs font-bold text-white tracking-wide truncate max-w-[170px]">
               {project.title}
@@ -156,7 +156,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onSelect }) =
         </div>
 
         <span className="text-xs text-neutral-400 font-medium group-hover:text-white transition-colors flex items-center gap-1">
-          Détails <ArrowUpRight className="w-3.5 h-3.5" />
+          Details <ArrowUpRight className="w-3.5 h-3.5" />
         </span>
       </div>
     </motion.article>

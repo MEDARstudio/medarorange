@@ -436,11 +436,11 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                 MEDAR STUDIO CMS
               </span>
               <span className="text-[10px] font-mono px-2 py-0.5 bg-[#ff4b26]/15 text-[#ff4b26] border border-[#ff4b26]/30 uppercase tracking-widest font-semibold">
-                Gestion Live
+                Live Studio
               </span>
             </div>
             <span className="text-xs font-mono text-neutral-400 hidden sm:block">
-              Gestion intégrale des postes, textes officiels, visuels et images sans code
+              Full control of case studies, official statements, and media assets without code
             </span>
           </div>
         </div>
@@ -452,7 +452,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
             className="px-4 py-2 bg-[#ff4b26] hover:bg-white text-white hover:text-black font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 flex items-center gap-2 cursor-pointer shadow-[0_4px_16px_rgba(255,75,38,0.3)]"
           >
             <Save className="w-4 h-4" />
-            <span className="hidden sm:inline">Enregistrer le Site</span>
+            <span className="hidden sm:inline">Save Live Changes</span>
           </button>
 
           <button
@@ -460,12 +460,12 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
             className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-mono text-xs font-medium uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer border border-white/15"
           >
             <ExternalLink className="w-4 h-4" />
-            <span className="hidden sm:inline">Voir le Site</span>
+            <span className="hidden sm:inline">View Site</span>
           </button>
 
           <button
             onClick={onLogout}
-            title="Déconnexion"
+            title="Log out"
             className="p-2 text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
           >
             <LogOut className="w-5 h-5" />
@@ -503,7 +503,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               }`}
             >
               <FolderKanban className="w-4 h-4" />
-              <span>Gérer les Postes ({localProjects.length})</span>
+              <span>Manage Posts ({localProjects.length})</span>
             </button>
 
             {/* Tab: Ajouter Nouveau Poste */}
@@ -516,7 +516,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               }`}
             >
               <Plus className="w-4 h-4 text-emerald-400" />
-              <span className="text-white font-semibold">+ Nouveau Poste</span>
+              <span className="text-white font-semibold">+ New Case Study</span>
             </button>
 
             {/* Tab: Médiathèque & Upload Images */}
@@ -529,7 +529,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               }`}
             >
               <ImageIcon className="w-4 h-4" />
-              <span>Médiathèque & Images ({mediaLibrary.length})</span>
+              <span>Media Library ({mediaLibrary.length})</span>
             </button>
 
             {/* Tab: Services */}
@@ -542,7 +542,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               }`}
             >
               <Sparkles className="w-4 h-4" />
-              <span>Services & Prestations</span>
+              <span>Services & Offerings</span>
             </button>
 
             {/* Tab: Qui Sommes-Nous */}
@@ -555,7 +555,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               }`}
             >
               <Info className="w-4 h-4" />
-              <span>Qui Sommes-Nous & Studio</span>
+              <span>About & Studio Profile</span>
             </button>
 
             {/* Tab: Sauvegarde */}
@@ -568,15 +568,15 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               }`}
             >
               <RotateCcw className="w-4 h-4" />
-              <span>Sauvegarde & Export</span>
+              <span>Backup & Export</span>
             </button>
           </nav>
 
           {/* Bottom Quick Help Card */}
           <div className="p-3 bg-[#111119] border border-white/5 rounded-lg text-[11px] font-mono text-neutral-400 space-y-1.5">
-            <span className="text-[#ff4b26] font-bold block">Astuce Rapide</span>
+            <span className="text-[#ff4b26] font-bold block">Quick Tip</span>
             <p className="leading-relaxed">
-              Vous pouvez téléverser directement des images depuis votre téléphone ou ordinateur sans passer par un hébergeur web.
+              Upload visuals directly from your computer or phone without requiring an external hosting provider.
             </p>
           </div>
         </aside>

@@ -14,7 +14,7 @@ const AIChat: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { 
       role: 'model', 
-      text: 'Bienvenue à l’Atelier Medar. Je suis votre conseiller en direction artistique et stratégie digitale. Parlez-moi de votre vision ou interrogez-moi sur nos expertises.' 
+      text: 'Welcome to Medar Studio. I am your creative director & strategy advisor. Tell me about your project, or ask about our capabilities and workflows.' 
     }
   ]);
   const [input, setInput] = useState('');
@@ -69,10 +69,10 @@ const AIChat: React.FC = () => {
                 <div className="w-2.5 h-2.5 rounded-full bg-[#ff4b26] animate-pulse" />
                 <div>
                   <h3 className="font-heading text-sm font-bold text-white tracking-wide">
-                    Atelier Medar · Conseil Créatif
+                    Medar Studio · Creative Advisory
                   </h3>
                   <p className="text-[10px] text-neutral-400 font-mono">
-                    Directeur Artistique Virtuel
+                    Virtual Creative Director
                   </p>
                 </div>
               </div>
@@ -112,7 +112,7 @@ const AIChat: React.FC = () => {
                     <span className="w-1.5 h-1.5 bg-[#ff4b26] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="w-1.5 h-1.5 bg-[#ff4b26] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                     <span className="w-1.5 h-1.5 bg-[#ff4b26] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                    <span className="text-[10px] ml-1 font-mono">Réflexion artistique...</span>
+                    <span className="text-[10px] ml-1 font-mono">Artistic reasoning...</span>
                   </div>
                 </div>
               )}
@@ -122,9 +122,9 @@ const AIChat: React.FC = () => {
             {messages.length <= 2 && (
               <div className="px-4 py-2 bg-black/40 border-t border-white/[0.06] flex flex-wrap gap-1.5">
                 {[
-                  'Palette pour marque de luxe',
-                  'Faisabilité WebGL 3D',
-                  'Budget & Délais types'
+                  'Luxury brand color palette',
+                  'WebGL 3D feasibility',
+                  'Typical timeline & budget'
                 ].map((promptText, i) => (
                   <button
                     key={i}
@@ -150,7 +150,7 @@ const AIChat: React.FC = () => {
                       handleSend();
                     }
                   }}
-                  placeholder="Posez une question sur votre projet..."
+                  placeholder="Ask a question about your project..."
                   className="flex-1 bg-white/5 border border-white/10 px-3 py-2 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-[#ff4b26]"
                 />
                 <button
@@ -179,12 +179,12 @@ const AIChat: React.FC = () => {
         {isOpen ? (
           <>
             <X className="w-3.5 h-3.5 text-white" />
-            <span>Fermer</span>
+            <span>Close</span>
           </>
         ) : (
           <>
             <Sparkles className="w-3.5 h-3.5 text-[#ff4b26]" />
-            <span>Conseiller Artistique</span>
+            <span>Creative Advisor</span>
           </>
         )}
       </motion.button>
