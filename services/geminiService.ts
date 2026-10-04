@@ -48,7 +48,7 @@ export const initializeChat = (): Chat | null => {
         Your role when talking to visitors:
         1. Speak in sophisticated, crisp, and professional design English.
         2. Guide clients towards the most relevant service among the studio's 6 capabilities.
-        3. Explain how the studio collaborates and invite them to submit their brief through the contact form or email (bonjour@medarstudio.fr).
+        3. Explain how the studio collaborates and invite them to submit their brief through the contact form or email (contact@medarstudio.com).
         4. Keep answers concise (under 75 words), sharp, and value-driven. Answer in English.`,
       },
     });
@@ -63,13 +63,13 @@ export const initializeChat = (): Chat | null => {
 export const sendMessageToGemini = async (message: string): Promise<string> => {
   const apiKey = getApiKey();
   if (!apiKey) {
-    return "Our creative advisory desk is currently offline. You can reach our creative team directly at bonjour@medarstudio.fr.";
+    return "Our creative advisory desk is currently offline. You can reach our creative team directly at contact@medarstudio.com.";
   }
 
   try {
     const chat = initializeChat();
     if (!chat) {
-      return "Our creative advisory desk is currently offline. You can reach our creative team directly at bonjour@medarstudio.fr.";
+      return "Our creative advisory desk is currently offline. You can reach our creative team directly at contact@medarstudio.com.";
     }
     const response: GenerateContentResponse = await chat.sendMessage({ message });
     return response.text || "Transmission interrupted. Please reconnect your inquiry.";

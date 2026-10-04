@@ -38,43 +38,43 @@ interface AdminCMSModalProps {
   onResetDefaults: () => void;
 }
 
-type CMSTab = 'postes' | 'nouveau-poste' | 'mediatheque' | 'services' | 'studio' | 'sauvegarde';
+type CMSTab = 'posts' | 'new-post' | 'media-library' | 'services' | 'studio' | 'backup';
 
 // Initial HD Studio Presets
 const DEFAULT_PRESET_IMAGES = [
   {
     id: 'preset-1',
-    name: 'Haute Horlogerie & Titane 3D',
+    name: 'High Horology & Titanium 3D',
     category: '3D & WebGL',
     url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1200&auto=format&fit=crop'
   },
   {
     id: 'preset-2',
-    name: 'Football Matchday & Affiche Sportive',
+    name: 'Football Matchday & Sports Poster',
     category: 'Sports Design',
     url: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200&auto=format&fit=crop'
   },
   {
     id: 'preset-3',
-    name: 'Branding Épuré & Packaging Luxe',
-    category: 'Identité Visuelle',
+    name: 'Minimalist Branding & Luxury Packaging',
+    category: 'Brand Identity',
     url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop'
   },
   {
     id: 'preset-4',
-    name: 'Art Sculptural & Orfèvrerie 3D',
+    name: 'Sculptural Art & 3D Goldsmithing',
     category: '3D & Creative',
     url: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=1200&auto=format&fit=crop'
   },
   {
     id: 'preset-5',
-    name: 'Typographie d’Édition & Livret d’Art',
-    category: 'Print & PAO',
+    name: 'Editorial Typography & Art Book',
+    category: 'Print & Prepress',
     url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=1200&auto=format&fit=crop'
   },
   {
     id: 'preset-6',
-    name: 'Campagne Digitale Haute Couture',
+    name: 'Haute Couture Digital Campaign',
     category: 'Digital Design',
     url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop'
   }
@@ -92,8 +92,9 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
   onUpdateStudioInfo,
   onResetDefaults
 }) => {
-  const [activeTab, setActiveTab] = useState<CMSTab>('postes');
+  const [activeTab, setActiveTab] = useState<CMSTab>('posts');
   const [saveNotification, setSaveNotification] = useState<string | null>(null);
+  const [confirmReset, setConfirmReset] = useState(false);
 
   // Local working copy of state
   const [localProjects, setLocalProjects] = useState<CaseStudy[]>(projects);
@@ -112,7 +113,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       id: p.id,
       name: p.name,
       url: p.url,
-      date: 'Preset Studio'
+      date: 'Studio Preset'
     }));
   });
 
@@ -122,12 +123,12 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     client: '',
     year: '2026',
     category: 'brand-identity',
-    categoryLabel: 'Identité Visuelle & Direction Artistique',
+    categoryLabel: 'Visual Identity & Art Direction',
     tagline: '',
     description: '',
     imagePromptFallback: DEFAULT_PRESET_IMAGES[0].url,
-    metrics: { stat: '+150%', label: 'Impact Visuel' },
-    deliverables: ['Identité de Marque', 'Direction Artistique', 'Déploiement'],
+    metrics: { stat: '+150%', label: 'Visual Lift' },
+    deliverables: ['Brand Identity', 'Art Direction', 'Rollout'],
     award: ''
   });
 
@@ -168,7 +169,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     } catch (e) {
       console.warn("Storage quota exceeded or unavailable:", e);
     }
-    triggerSaveNotification('Toutes les modifications et postes ont été enregistrés avec succès !');
+    triggerSaveNotification('All changes and posts have been saved successfully!');
   };
 
   // Convert File to Base64 Data URL
@@ -192,11 +193,11 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       // If uploading for a specific post in the list
       if (postId) {
         handleUpdateProjectField(postId, 'imagePromptFallback', base64);
-        triggerSaveNotification(`Image chargée avec succès pour le poste !`);
+        triggerSaveNotification(`Image uploaded successfully for this post!`);
       } else {
         // For new post form
         setNewPost((prev) => ({ ...prev, imagePromptFallback: base64 }));
-        triggerSaveNotification(`Image locale appliquée au nouveau poste !`);
+        triggerSaveNotification(`Image applied to new case study!`);
       }
 
       // Automatically add to Studio Media Library as well!
@@ -204,17 +205,17 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         id: `upload-${Date.now()}`,
         name: file.name.replace(/\.[^/.]+$/, ''),
         url: base64,
-        date: new Date().toLocaleDateString('fr-FR')
+        date: new Date().toLocaleDateString('en-US')
       };
       const updatedLib = [newMediaItem, ...mediaLibrary];
       setMediaLibrary(updatedLib);
       try {
         localStorage.setItem('medar_studio_media_library', JSON.stringify(updatedLib));
       } catch (err) {
-        console.warn("Image stockée en session mais dépasse le quota localStorage");
+        console.warn("Image stored in memory but exceeded localStorage quota");
       }
     } catch (err) {
-      triggerSaveNotification("Impossible de lire ce fichier image.");
+      triggerSaveNotification("Unable to read this image file.");
     }
   };
 
@@ -229,18 +230,18 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         id: `lib-${Date.now()}`,
         name: file.name.replace(/\.[^/.]+$/, ''),
         url: base64,
-        date: new Date().toLocaleDateString('fr-FR')
+        date: new Date().toLocaleDateString('en-US')
       };
       const updatedLib = [newMediaItem, ...mediaLibrary];
       setMediaLibrary(updatedLib);
       try {
         localStorage.setItem('medar_studio_media_library', JSON.stringify(updatedLib));
       } catch (err) {
-        console.warn("Image stockée en mémoire mais dépasse le quota localStorage");
+        console.warn("Image stored in memory but exceeded localStorage quota");
       }
-      triggerSaveNotification(`Image "${newMediaItem.name}" ajoutée à votre médiathèque !`);
+      triggerSaveNotification(`Image "${newMediaItem.name}" added to media library!`);
     } catch (err) {
-      triggerSaveNotification("Erreur lors de l'import de l'image.");
+      triggerSaveNotification("Error while uploading image.");
     }
   };
 
@@ -253,7 +254,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       id: `url-${Date.now()}`,
       name: newImageName.trim() || `Image ${mediaLibrary.length + 1}`,
       url: newImageUrl.trim(),
-      date: new Date().toLocaleDateString('fr-FR')
+      date: new Date().toLocaleDateString('en-US')
     };
 
     const updatedLib = [newMediaItem, ...mediaLibrary];
@@ -265,7 +266,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     }
     setNewImageUrl('');
     setNewImageName('');
-    triggerSaveNotification('Image enregistrée dans la médiathèque !');
+    triggerSaveNotification('Image saved to media library!');
   };
 
   // Delete image from media library
@@ -277,14 +278,14 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     } catch (e) {
       console.warn("Storage quota exceeded:", e);
     }
-    triggerSaveNotification('Image retirée de la médiathèque');
+    triggerSaveNotification('Image removed from media library');
   };
 
   // Create & Publish New Post
   const handleCreateNewPost = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPost.title || !newPost.client) {
-      triggerSaveNotification('Veuillez renseigner au minimum le titre et le nom du client.');
+      triggerSaveNotification('Please enter at least a project title and client name.');
       return;
     }
 
@@ -294,13 +295,13 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       client: newPost.client,
       year: newPost.year || '2026',
       category: (newPost.category as ProjectCategory) || 'brand-identity',
-      categoryLabel: newPost.categoryLabel || 'Direction Artistique',
-      tagline: newPost.tagline || 'Création visuelle sur mesure',
-      description: newPost.description || 'Description complète du projet conçu par Medar Studio.',
+      categoryLabel: newPost.categoryLabel || 'Art Direction',
+      tagline: newPost.tagline || 'Bespoke visual solution',
+      description: newPost.description || 'Comprehensive project scope crafted by Medar Studio.',
       metrics: newPost.metrics || { stat: '+100%', label: 'Impact' },
       deliverables: typeof newPost.deliverables === 'string'
         ? (newPost.deliverables as string).split(',').map((s) => s.trim())
-        : (newPost.deliverables || ['Identité de Marque']),
+        : (newPost.deliverables || ['Brand Identity']),
       gradientTheme: 'from-[#ff4b26]/30 to-black',
       accentColor: '#ff4b26',
       imagePromptFallback: newPost.imagePromptFallback || DEFAULT_PRESET_IMAGES[0].url,
@@ -317,27 +318,25 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       client: '',
       year: '2026',
       category: 'brand-identity',
-      categoryLabel: 'Identité Visuelle & Direction Artistique',
+      categoryLabel: 'Visual Identity & Art Direction',
       tagline: '',
       description: '',
       imagePromptFallback: DEFAULT_PRESET_IMAGES[0].url,
-      metrics: { stat: '+150%', label: 'Impact Visuel' },
-      deliverables: ['Identité de Marque', 'Direction Artistique', 'Déploiement'],
+      metrics: { stat: '+150%', label: 'Visual Lift' },
+      deliverables: ['Brand Identity', 'Art Direction', 'Rollout'],
       award: ''
     });
 
-    setActiveTab('postes');
-    triggerSaveNotification(`Le poste "${createdPost.title}" a été créé et publié avec succès !`);
+    setActiveTab('posts');
+    triggerSaveNotification(`Case study "${createdPost.title}" was published successfully!`);
   };
 
   // Delete project
   const handleDeleteProject = (id: string) => {
-    if (window.confirm('Voulez-vous vraiment supprimer ce poste / projet ?')) {
-      const filtered = localProjects.filter((p) => p.id !== id);
-      setLocalProjects(filtered);
-      onUpdateProjects(filtered);
-      triggerSaveNotification('Poste supprimé');
-    }
+    const filtered = localProjects.filter((p) => p.id !== id);
+    setLocalProjects(filtered);
+    onUpdateProjects(filtered);
+    triggerSaveNotification('Post removed successfully');
   };
 
   // Quick field updates
@@ -363,7 +362,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
   const handleAssignImageToPost = (postId: string, imageUrl: string) => {
     handleUpdateProjectField(postId, 'imagePromptFallback', imageUrl);
     setSelectedImageToAssign(null);
-    triggerSaveNotification('Image appliquée au poste sélectionné !');
+    triggerSaveNotification('Image applied to selected post!');
   };
 
   // Export JSON
@@ -396,9 +395,9 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         if (parsed.services) setLocalServices(parsed.services);
         if (parsed.studioInfo) setLocalStudioInfo(parsed.studioInfo);
         if (parsed.mediaLibrary) setMediaLibrary(parsed.mediaLibrary);
-        triggerSaveNotification('Données importées avec succès ! Cliquez sur "Enregistrer" pour valider.');
+        triggerSaveNotification('Data imported successfully! Click "Save Live Changes" to confirm.');
       } catch (err) {
-        triggerSaveNotification('Erreur : le fichier JSON sélectionné est invalide.');
+        triggerSaveNotification('Error: The selected JSON file is invalid.');
       }
     };
     reader.readAsText(file);
@@ -493,11 +492,11 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         {/* Navigation Sidebar */}
         <aside className="w-60 md:w-68 border-r border-white/10 bg-[#0c0c12] p-4 flex flex-col justify-between shrink-0">
           <nav className="space-y-1.5 text-xs font-mono">
-            {/* Tab: Postes & Projets */}
+            {/* Tab: Manage Posts */}
             <button
-              onClick={() => setActiveTab('postes')}
+              onClick={() => setActiveTab('posts')}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
-                activeTab === 'postes'
+                activeTab === 'posts'
                   ? 'bg-[#ff4b26] text-white font-bold'
                   : 'text-neutral-400 hover:bg-white/5 hover:text-white'
               }`}
@@ -506,11 +505,11 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               <span>Manage Posts ({localProjects.length})</span>
             </button>
 
-            {/* Tab: Ajouter Nouveau Poste */}
+            {/* Tab: Add New Case Study */}
             <button
-              onClick={() => setActiveTab('nouveau-poste')}
+              onClick={() => setActiveTab('new-post')}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
-                activeTab === 'nouveau-poste'
+                activeTab === 'new-post'
                   ? 'bg-[#ff4b26] text-white font-bold'
                   : 'text-neutral-400 hover:bg-white/5 hover:text-white'
               }`}
@@ -519,11 +518,11 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               <span className="text-white font-semibold">+ New Case Study</span>
             </button>
 
-            {/* Tab: Médiathèque & Upload Images */}
+            {/* Tab: Media Library & Upload Images */}
             <button
-              onClick={() => setActiveTab('mediatheque')}
+              onClick={() => setActiveTab('media-library')}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
-                activeTab === 'mediatheque'
+                activeTab === 'media-library'
                   ? 'bg-[#ff4b26] text-white font-bold'
                   : 'text-neutral-400 hover:bg-white/5 hover:text-white'
               }`}
@@ -545,7 +544,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               <span>Services & Offerings</span>
             </button>
 
-            {/* Tab: Qui Sommes-Nous */}
+            {/* Tab: Studio Profile */}
             <button
               onClick={() => setActiveTab('studio')}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
@@ -558,11 +557,11 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               <span>About & Studio Profile</span>
             </button>
 
-            {/* Tab: Sauvegarde */}
+            {/* Tab: Backup & Restore */}
             <button
-              onClick={() => setActiveTab('sauvegarde')}
+              onClick={() => setActiveTab('backup')}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
-                activeTab === 'sauvegarde'
+                activeTab === 'backup'
                   ? 'bg-[#ff4b26] text-white font-bold'
                   : 'text-neutral-400 hover:bg-white/5 hover:text-white'
               }`}
@@ -584,25 +583,25 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         {/* Content Area */}
         <main className="flex-1 overflow-y-auto p-6 md:p-10 bg-[#09090d]">
           {/* ================================================================= */}
-          {/* TAB 1: GÉRER LES POSTES EXISTANTS (TEXTES + IMAGES)               */}
+          {/* TAB 1: MANAGE EXISTING POSTS (COPY + ASSETS)                      */}
           {/* ================================================================= */}
-          {activeTab === 'postes' && (
+          {activeTab === 'posts' && (
             <div className="max-w-5xl mx-auto space-y-8">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
                 <div>
                   <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                    Gestion des Postes & Textes
+                    Manage Case Studies & Copy
                   </h2>
                   <p className="text-xs text-neutral-400 font-mono mt-1">
-                    Modifiez tous les textes, images, métriques et livrables de vos {localProjects.length} postes publiés.
+                    Edit copy, visuals, metrics, and deliverables across your {localProjects.length} live case studies.
                   </p>
                 </div>
                 <button
-                  onClick={() => setActiveTab('nouveau-poste')}
+                  onClick={() => setActiveTab('new-post')}
                   className="px-4 py-2.5 bg-[#ff4b26] hover:bg-white text-white hover:text-black text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-colors shrink-0 shadow-[0_4px_14px_rgba(255,75,38,0.35)]"
                 >
                   <Plus className="w-4 h-4" />
-                  <span>Ajouter un Nouveau Poste</span>
+                  <span>Add New Case Study</span>
                 </button>
               </div>
 
@@ -638,10 +637,10 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                               postFileInputRef.current?.click();
                             }}
                             className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition-opacity cursor-pointer p-1 text-[9px] font-mono text-center"
-                            title="Changer l'image"
+                            title="Change image"
                           >
                             <Camera className="w-4 h-4 mb-1 text-[#ff4b26]" />
-                            <span>Changer</span>
+                            <span>Change</span>
                           </button>
                         </div>
 
@@ -658,7 +657,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                             {project.title}
                           </h3>
                           <span className="text-xs font-mono text-neutral-400">
-                            Client : {project.client} · Année : {project.year}
+                            Client: {project.client} · Year: {project.year}
                           </span>
                         </div>
                       </div>
@@ -673,13 +672,13 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                           className="px-3 py-1.5 bg-white/10 hover:bg-white text-white hover:text-black text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
                         >
                           <Camera className="w-3.5 h-3.5" />
-                          <span>Téléverser Image</span>
+                          <span>Upload Visual</span>
                         </button>
 
                         <button
                           onClick={() => handleDeleteProject(project.id)}
                           className="p-2 text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
-                          title="Supprimer le poste"
+                          title="Delete case study"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -689,7 +688,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                     {/* Inputs Grid for Post Content */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-mono">
                       <div>
-                        <label className="text-neutral-400 block mb-1">Titre du Poste *</label>
+                        <label className="text-neutral-400 block mb-1">Project Title *</label>
                         <input
                           type="text"
                           value={project.title}
@@ -699,7 +698,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       </div>
 
                       <div>
-                        <label className="text-neutral-400 block mb-1">Client / Marque *</label>
+                        <label className="text-neutral-400 block mb-1">Client / Brand *</label>
                         <input
                           type="text"
                           value={project.client}
@@ -709,7 +708,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       </div>
 
                       <div>
-                        <label className="text-neutral-400 block mb-1">Année de Réalisation</label>
+                        <label className="text-neutral-400 block mb-1">Release Year</label>
                         <input
                           type="text"
                           value={project.year}
@@ -719,21 +718,21 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       </div>
 
                       <div>
-                        <label className="text-neutral-400 block mb-1">Catégorie Filtre</label>
+                        <label className="text-neutral-400 block mb-1">Filter Category</label>
                         <select
                           value={project.category}
                           onChange={(e) => handleUpdateProjectField(project.id, 'category', e.target.value as ProjectCategory)}
                           className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
                         >
                           <option value="3d-webgl">3D & WebGL</option>
-                          <option value="brand-identity">Identité Visuelle</option>
-                          <option value="ecommerce-luxe">E-Commerce & Luxe</option>
-                          <option value="generative-art">Art Génératif</option>
+                          <option value="brand-identity">Brand Identity</option>
+                          <option value="ecommerce-luxe">Luxury E-Commerce</option>
+                          <option value="generative-art">Generative Art</option>
                         </select>
                       </div>
 
                       <div>
-                        <label className="text-neutral-400 block mb-1">Libellé Catégorie Affiché</label>
+                        <label className="text-neutral-400 block mb-1">Displayed Category Label</label>
                         <input
                           type="text"
                           value={project.categoryLabel}
@@ -743,7 +742,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       </div>
 
                       <div>
-                        <label className="text-neutral-400 block mb-1">Métrique Chiffrée & Libellé</label>
+                        <label className="text-neutral-400 block mb-1">Key Metric & Label</label>
                         <div className="flex gap-2">
                           <input
                             type="text"
@@ -765,7 +764,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       {/* Image Field with Preview & Paste */}
                       <div className="md:col-span-2">
                         <div className="flex items-center justify-between mb-1">
-                          <label className="text-neutral-400 block">URL de l'Image ou Donnée Image</label>
+                          <label className="text-neutral-400 block">Image URL or Base64 Asset</label>
                           <button
                             type="button"
                             onClick={() => {
@@ -775,7 +774,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                             className="text-[#ff4b26] hover:underline flex items-center gap-1 text-[11px] cursor-pointer"
                           >
                             <Upload className="w-3 h-3" />
-                            <span>Téléverser depuis l'ordinateur</span>
+                            <span>Upload from device</span>
                           </button>
                         </div>
                         <input
@@ -783,12 +782,12 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                           value={project.imagePromptFallback}
                           onChange={(e) => handleUpdateProjectField(project.id, 'imagePromptFallback', e.target.value)}
                           className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white text-[11px] focus:outline-none focus:border-[#ff4b26]"
-                          placeholder="https://... ou téléversez un fichier"
+                          placeholder="https://... or upload local file"
                         />
                       </div>
 
                       <div>
-                        <label className="text-neutral-400 block mb-1">Distinction / Award (Optionnel)</label>
+                        <label className="text-neutral-400 block mb-1">Award / Honor (Optional)</label>
                         <input
                           type="text"
                           value={project.award || ''}
@@ -799,7 +798,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       </div>
 
                       <div className="md:col-span-3">
-                        <label className="text-neutral-400 block mb-1">Slogan / Tagline *</label>
+                        <label className="text-neutral-400 block mb-1">Tagline / Hook *</label>
                         <input
                           type="text"
                           value={project.tagline}
@@ -809,7 +808,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       </div>
 
                       <div className="md:col-span-3">
-                        <label className="text-neutral-400 block mb-1">Description Stratégique du Projet *</label>
+                        <label className="text-neutral-400 block mb-1">Strategic Description *</label>
                         <textarea
                           rows={3}
                           value={project.description}
@@ -819,7 +818,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       </div>
 
                       <div className="md:col-span-3">
-                        <label className="text-neutral-400 block mb-1">Livrables Conçus (séparés par des virgules)</label>
+                        <label className="text-neutral-400 block mb-1">Deliverables (comma separated)</label>
                         <input
                           type="text"
                           value={project.deliverables.join(', ')}
@@ -831,7 +830,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                             )
                           }
                           className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                          placeholder="Identité de Marque, Affiches Matchday, Rendu 3D"
+                          placeholder="Brand Identity, Matchday Graphics, 3D Render"
                         />
                       </div>
                     </div>
@@ -842,24 +841,24 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
           )}
 
           {/* ================================================================= */}
-          {/* TAB 2: CRÉATEUR DE NOUVEAU POSTE (WIZARD DÉDIÉ AVEC LIVE PREVIEW) */}
+          {/* TAB 2: CREATE NEW CASE STUDY (WIZARD WITH LIVE 4:5 PREVIEW)       */}
           {/* ================================================================= */}
-          {activeTab === 'nouveau-poste' && (
+          {activeTab === 'new-post' && (
             <div className="max-w-4xl mx-auto space-y-8 font-mono text-xs">
               <div className="pb-6 border-b border-white/10 flex items-center justify-between">
                 <div>
                   <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                    Créer & Publier un Nouveau Poste
+                    Create & Publish New Case Study
                   </h2>
                   <p className="text-xs text-neutral-400 mt-1">
-                    Ajoutez une nouvelle publication ou pièce de design à votre portfolio Medar Studio.
+                    Add a new piece of design or creative production to your live Medar Studio showcase.
                   </p>
                 </div>
                 <button
-                  onClick={() => setActiveTab('postes')}
+                  onClick={() => setActiveTab('posts')}
                   className="px-3 py-1.5 border border-white/15 text-neutral-400 hover:text-white transition-colors"
                 >
-                  Retour aux postes
+                  Back to Posts
                 </button>
               </div>
 
@@ -868,36 +867,36 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   {/* Left Form Column */}
                   <div className="md:col-span-8 bg-[#12121b] border border-white/10 p-6 md:p-8 rounded-xl space-y-5">
                     <h3 className="font-heading text-base font-bold text-white">
-                      Détails & Contenu du Poste
+                      Case Study Details & Content
                     </h3>
 
                     <div>
-                      <label className="text-neutral-400 block mb-1">Titre du Projet / Poste *</label>
+                      <label className="text-neutral-400 block mb-1">Project / Post Title *</label>
                       <input
                         type="text"
                         required
                         value={newPost.title || ''}
                         onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-                        placeholder="e.g. Chronographe Astral"
+                        placeholder="e.g. Astral Chronograph"
                         className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff4b26]"
                       />
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-neutral-400 block mb-1">Client ou Projet *</label>
+                        <label className="text-neutral-400 block mb-1">Client or Brand *</label>
                         <input
                           type="text"
                           required
                           value={newPost.client || ''}
                           onChange={(e) => setNewPost({ ...newPost, client: e.target.value })}
-                          placeholder="e.g. Club Sportif / Maison Luxe"
+                          placeholder="e.g. Athletic Club / Luxury House"
                           className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
                         />
                       </div>
 
                       <div>
-                        <label className="text-neutral-400 block mb-1">Année</label>
+                        <label className="text-neutral-400 block mb-1">Year</label>
                         <input
                           type="text"
                           value={newPost.year || '2026'}
@@ -909,7 +908,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-neutral-400 block mb-1">Catégorie</label>
+                        <label className="text-neutral-400 block mb-1">Category</label>
                         <select
                           value={newPost.category}
                           onChange={(e) =>
@@ -918,25 +917,25 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                               category: e.target.value as ProjectCategory,
                               categoryLabel:
                                 e.target.value === '3d-webgl'
-                                  ? '3D & Rendu Immersif'
+                                  ? '3D & Immersive Rendering'
                                   : e.target.value === 'brand-identity'
-                                  ? 'Identité Visuelle & Typographie'
+                                  ? 'Visual Identity & Typography'
                                   : e.target.value === 'ecommerce-luxe'
-                                  ? 'E-Commerce Luxe'
-                                  : 'Art Génératif & Sports'
+                                  ? 'Luxury E-Commerce'
+                                  : 'Generative Art & Sports'
                             })
                           }
                           className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
                         >
-                          <option value="brand-identity">Identité Visuelle</option>
+                          <option value="brand-identity">Brand Identity</option>
                           <option value="3d-webgl">3D & WebGL</option>
-                          <option value="ecommerce-luxe">E-Commerce & Luxe</option>
-                          <option value="generative-art">Art Génératif & Sports</option>
+                          <option value="ecommerce-luxe">Luxury E-Commerce</option>
+                          <option value="generative-art">Generative Art & Sports</option>
                         </select>
                       </div>
 
                       <div>
-                        <label className="text-neutral-400 block mb-1">Libellé Affiché</label>
+                        <label className="text-neutral-400 block mb-1">Displayed Label</label>
                         <input
                           type="text"
                           value={newPost.categoryLabel || ''}
@@ -947,23 +946,23 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                     </div>
 
                     <div>
-                      <label className="text-neutral-400 block mb-1">Slogan / Tagline *</label>
+                      <label className="text-neutral-400 block mb-1">Tagline / Hook *</label>
                       <input
                         type="text"
                         value={newPost.tagline || ''}
                         onChange={(e) => setNewPost({ ...newPost, tagline: e.target.value })}
-                        placeholder="Une ligne forte qui résume l'essence visuelle"
+                        placeholder="A striking one-liner encapsulating the visual concept"
                         className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
                       />
                     </div>
 
                     <div>
-                      <label className="text-neutral-400 block mb-1">Description Complète *</label>
+                      <label className="text-neutral-400 block mb-1">Full Description *</label>
                       <textarea
                         rows={3}
                         value={newPost.description || ''}
                         onChange={(e) => setNewPost({ ...newPost, description: e.target.value })}
-                        placeholder="Expliquez la vision plastique, le problème résolu et le résultat..."
+                        placeholder="Explain the artistic vision, creative challenge, and client result..."
                         className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26] leading-relaxed"
                       />
                     </div>
@@ -972,7 +971,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                     <div className="p-4 bg-[#181824] border border-white/10 rounded-lg space-y-3">
                       <div className="flex items-center justify-between">
                         <label className="text-white font-bold block">
-                          Image de Couverture du Poste
+                          Cover Artwork / Image
                         </label>
                         <button
                           type="button"
@@ -983,7 +982,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                           className="px-3 py-1 bg-[#ff4b26] hover:bg-white text-white hover:text-black transition-colors rounded text-[11px] font-bold flex items-center gap-1 cursor-pointer"
                         >
                           <Upload className="w-3 h-3" />
-                          <span>Téléverser depuis cet appareil</span>
+                          <span>Upload from this device</span>
                         </button>
                       </div>
 
@@ -991,12 +990,12 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                         type="text"
                         value={newPost.imagePromptFallback || ''}
                         onChange={(e) => setNewPost({ ...newPost, imagePromptFallback: e.target.value })}
-                        placeholder="Collez une URL d'image ou cliquez sur Téléverser..."
+                        placeholder="Paste an image URL or click Upload..."
                         className="w-full bg-[#101019] border border-white/15 px-3 py-2 text-white text-[11px] focus:outline-none focus:border-[#ff4b26]"
                       />
 
                       <div className="flex items-center gap-2 pt-1 text-[10px] text-neutral-400">
-                        <span>Ou choisissez parmi les presets :</span>
+                        <span>Or select from studio presets:</span>
                         <div className="flex flex-wrap gap-1.5">
                           {DEFAULT_PRESET_IMAGES.slice(0, 3).map((p) => (
                             <button
@@ -1014,7 +1013,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-neutral-400 block mb-1">Métrique Clé (Stat)</label>
+                        <label className="text-neutral-400 block mb-1">Key Metric (Stat)</label>
                         <input
                           type="text"
                           value={newPost.metrics?.stat || ''}
@@ -1030,7 +1029,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       </div>
 
                       <div>
-                        <label className="text-neutral-400 block mb-1">Libellé Métrique</label>
+                        <label className="text-neutral-400 block mb-1">Metric Label</label>
                         <input
                           type="text"
                           value={newPost.metrics?.label || ''}
@@ -1040,14 +1039,14 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                               metrics: { stat: newPost.metrics?.stat || '+100%', label: e.target.value }
                             })
                           }
-                          placeholder="Croissance conversion"
+                          placeholder="Conversion lift"
                           className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
                         />
                       </div>
                     </div>
 
                     <div>
-                      <label className="text-neutral-400 block mb-1">Livrables (séparés par des virgules)</label>
+                      <label className="text-neutral-400 block mb-1">Deliverables (comma separated)</label>
                       <input
                         type="text"
                         value={Array.isArray(newPost.deliverables) ? newPost.deliverables.join(', ') : ''}
@@ -1057,7 +1056,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                             deliverables: e.target.value.split(',').map((s) => s.trim())
                           })
                         }
-                        placeholder="Identité de Marque, 3D CGI, Affiches Matchday"
+                        placeholder="Brand Identity, 3D CGI, Matchday Posters"
                         className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
                       />
                     </div>
@@ -1067,14 +1066,14 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       className="w-full py-4 bg-[#ff4b26] hover:bg-white text-white hover:text-black font-bold uppercase tracking-wider text-xs transition-colors cursor-pointer shadow-[0_4px_16px_rgba(255,75,38,0.35)] flex items-center justify-center gap-2"
                     >
                       <Check className="w-4 h-4" />
-                      <span>Publier Immédiatement ce Poste</span>
+                      <span>Publish This Case Study Now</span>
                     </button>
                   </div>
 
                   {/* Right Live Preview Column */}
                   <div className="md:col-span-4 space-y-4">
                     <span className="text-[11px] font-mono text-neutral-400 uppercase tracking-widest block">
-                      Aperçu de la Carte 4:5
+                      4:5 Card Live Preview
                     </span>
                     <div className="w-full aspect-[4/5] bg-[#12121b] border border-white/15 overflow-hidden relative flex flex-col justify-between p-4 shadow-xl">
                       {newPost.imagePromptFallback && (
@@ -1096,17 +1095,17 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                           {newPost.client || 'Client'}
                         </span>
                         <h4 className="font-heading font-bold text-sm text-white truncate">
-                          {newPost.title || 'Titre du Projet'}
+                          {newPost.title || 'Project Title'}
                         </h4>
                         <span className="text-[10px] text-[#ff4b26] block truncate">
-                          {newPost.tagline || 'Tagline du poste'}
+                          {newPost.tagline || 'Post tagline'}
                         </span>
                       </div>
                     </div>
 
                     <div className="p-3 bg-white/5 border border-white/10 text-[11px] text-neutral-400 space-y-1">
-                      <span className="text-white font-bold block">Publication Directe</span>
-                      <p>Ce poste sera immédiatement inséré en première position de la grille de votre site.</p>
+                      <span className="text-white font-bold block">Instant Live Publishing</span>
+                      <p>This case study will be instantly rendered at the very front of your portfolio grid.</p>
                     </div>
                   </div>
                 </div>
@@ -1115,17 +1114,17 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
           )}
 
           {/* ================================================================= */}
-          {/* TAB 3: MÉDIATHÈQUE D'IMAGES DU STUDIO (UPLOAD LOCAL + GALERIE)   */}
+          {/* TAB 3: STUDIO MEDIA LIBRARY (LOCAL UPLOAD + GALLERY)              */}
           {/* ================================================================= */}
-          {activeTab === 'mediatheque' && (
+          {activeTab === 'media-library' && (
             <div className="max-w-5xl mx-auto space-y-8 font-mono text-xs">
               <div className="pb-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                    Médiathèque & Gestionnaire d'Images
+                    Media Library & Asset Manager
                   </h2>
                   <p className="text-xs text-neutral-400 mt-1">
-                    Téléversez vos photos, affiches et visuels 3D directement depuis votre appareil.
+                    Upload photos, posters, and 3D artwork directly from your device or via external links.
                   </p>
                 </div>
 
@@ -1135,21 +1134,21 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   className="px-4 py-2.5 bg-[#ff4b26] hover:bg-white text-white hover:text-black font-bold uppercase tracking-wider text-xs transition-colors flex items-center gap-2 cursor-pointer shadow-[0_4px_14px_rgba(255,75,38,0.3)] shrink-0"
                 >
                   <Upload className="w-4 h-4" />
-                  <span>Téléverser une Image Locale</span>
+                  <span>Upload Local Image</span>
                 </button>
               </div>
 
               {/* Add by URL input */}
               <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
                 <h3 className="font-heading text-base font-bold text-white">
-                  Ajouter une Image par Lien Externe (URL)
+                  Add Image via External URL
                 </h3>
                 <form onSubmit={handleAddImageUrlToLibrary} className="flex flex-col sm:flex-row gap-3">
                   <input
                     type="text"
                     value={newImageName}
                     onChange={(e) => setNewImageName(e.target.value)}
-                    placeholder="Nom du visuel (e.g. Affiche Matchday 2026)"
+                    placeholder="Artwork name (e.g. Matchday Poster 2026)"
                     className="sm:w-64 bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
                   />
                   <input
@@ -1164,7 +1163,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                     type="submit"
                     className="px-5 py-2 bg-white/10 hover:bg-white text-white hover:text-black font-bold uppercase tracking-wider text-xs transition-colors cursor-pointer shrink-0"
                   >
-                    Ajouter à la Médiathèque
+                    Add to Media Library
                   </button>
                 </form>
               </div>
@@ -1173,10 +1172,10 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-heading text-base font-bold text-white">
-                    Images Disponibles ({mediaLibrary.length})
+                    Available Assets ({mediaLibrary.length})
                   </h3>
                   <span className="text-neutral-400 text-[11px]">
-                    Cliquez sur "Appliquer à un poste" pour changer le visuel d'un projet
+                    Select "Assign to post..." below any image to instantly update a project thumbnail
                   </span>
                 </div>
 
@@ -1197,10 +1196,10 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                             type="button"
                             onClick={() => {
                               navigator.clipboard.writeText(item.url);
-                              triggerSaveNotification('Lien copié dans le presse-papiers !');
+                              triggerSaveNotification('Link copied to clipboard!');
                             }}
                             className="p-1.5 bg-black/70 hover:bg-[#ff4b26] text-white rounded transition-colors cursor-pointer"
-                            title="Copier le lien"
+                            title="Copy link"
                           >
                             <Copy className="w-3.5 h-3.5" />
                           </button>
@@ -1208,7 +1207,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                             type="button"
                             onClick={() => handleDeleteMediaItem(item.id)}
                             className="p-1.5 bg-black/70 hover:bg-red-500 text-white rounded transition-colors cursor-pointer"
-                            title="Supprimer de la médiathèque"
+                            title="Delete from media library"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -1221,7 +1220,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                             {item.name}
                           </span>
                           <span className="text-[10px] text-neutral-400 block mt-0.5">
-                            Ajouté le {item.date}
+                            Added on {item.date}
                           </span>
                         </div>
 
@@ -1238,7 +1237,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                             className="w-full bg-[#181824] border border-white/15 px-2.5 py-1.5 text-[11px] text-neutral-200 focus:outline-none focus:border-[#ff4b26]"
                           >
                             <option value="" disabled>
-                              Appliquer à un poste...
+                              Assign to a post...
                             </option>
                             {localProjects.map((p) => (
                               <option key={p.id} value={p.id}>
@@ -1262,10 +1261,10 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
             <div className="max-w-5xl mx-auto space-y-8">
               <div className="pb-6 border-b border-white/10">
                 <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                  Gestion des 6 Services du Studio
+                  Manage Studio Services & Disciplines
                 </h2>
                 <p className="text-xs text-neutral-400 font-mono mt-1">
-                  Modifiez les intitulés, descriptions et livrables de chaque discipline.
+                  Modify titles, disciplines, and strategic descriptions for each studio offering.
                 </p>
               </div>
 
@@ -1284,7 +1283,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <label className="text-neutral-400 block mb-1">Titre de la Prestation</label>
+                        <label className="text-neutral-400 block mb-1">Service Title</label>
                         <input
                           type="text"
                           value={service.title}
@@ -1294,7 +1293,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       </div>
 
                       <div>
-                        <label className="text-neutral-400 block mb-1">Tag / Spécialité</label>
+                        <label className="text-neutral-400 block mb-1">Discipline / Tag</label>
                         <input
                           type="text"
                           value={service.tag}
@@ -1304,7 +1303,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       </div>
 
                       <div className="md:col-span-2">
-                        <label className="text-neutral-400 block mb-1">Description Stratégique</label>
+                        <label className="text-neutral-400 block mb-1">Strategic Description</label>
                         <textarea
                           rows={2}
                           value={service.description}
@@ -1320,26 +1319,26 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
           )}
 
           {/* ================================================================= */}
-          {/* TAB 5: QUI SOMMES-NOUS & STUDIO                                   */}
+          {/* TAB 5: ABOUT & STUDIO PROFILE                                     */}
           {/* ================================================================= */}
           {activeTab === 'studio' && (
             <div className="max-w-4xl mx-auto space-y-8 font-mono text-xs">
               <div className="pb-6 border-b border-white/10">
                 <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                  Informations Générales & Qui Sommes-Nous
+                  Studio Profile & General Info
                 </h2>
                 <p className="text-xs text-neutral-400 mt-1">
-                  Mettez à jour le manifeste officiel, les coordonnées et les informations du fondateur.
+                  Update the official manifesto, contact details, and founder information.
                 </p>
               </div>
 
               {/* Manifesto & Official Text */}
               <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
                 <h3 className="font-heading text-base font-bold text-white text-sm">
-                  Texte Officiel du Manifeste
+                  Official Manifesto Statement
                 </h3>
                 <div>
-                  <label className="text-neutral-400 block mb-1">Citation Mise en Avant</label>
+                  <label className="text-neutral-400 block mb-1">Featured Pull Quote</label>
                   <input
                     type="text"
                     value={localStudioInfo.officialQuote}
@@ -1351,7 +1350,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-neutral-400 block mb-1">Paragraphe Complet du Studio</label>
+                  <label className="text-neutral-400 block mb-1">Complete Studio Paragraph</label>
                   <textarea
                     rows={4}
                     value={localStudioInfo.officialParagraph}
@@ -1366,11 +1365,11 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               {/* Founder Information */}
               <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
                 <h3 className="font-heading text-base font-bold text-white text-sm">
-                  Identité du Fondateur & Direction
+                  Founder Profile & Studio Direction
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-neutral-400 block mb-1">Nom du Fondateur</label>
+                    <label className="text-neutral-400 block mb-1">Founder Name</label>
                     <input
                       type="text"
                       value={localStudioInfo.founderName}
@@ -1382,7 +1381,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-neutral-400 block mb-1">Rôle Officiel</label>
+                    <label className="text-neutral-400 block mb-1">Official Role</label>
                     <input
                       type="text"
                       value={localStudioInfo.founderRole}
@@ -1394,7 +1393,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="text-neutral-400 block mb-1">Domaines d'Expertise (Focus)</label>
+                    <label className="text-neutral-400 block mb-1">Vision Focus / Areas of Direction</label>
                     <input
                       type="text"
                       value={localStudioInfo.founderFocus}
@@ -1406,7 +1405,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="text-neutral-400 block mb-1">Biographie du Fondateur</label>
+                    <label className="text-neutral-400 block mb-1">Founder Biography</label>
                     <textarea
                       rows={3}
                       value={localStudioInfo.founderBio}
@@ -1422,11 +1421,11 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               {/* Coordinates */}
               <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
                 <h3 className="font-heading text-base font-bold text-white text-sm">
-                  Coordonnées & Localisation
+                  Coordinates & Studio Location
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-neutral-400 block mb-1">Email de Contact</label>
+                    <label className="text-neutral-400 block mb-1">Contact Email</label>
                     <input
                       type="email"
                       value={localStudioInfo.email}
@@ -1438,7 +1437,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-neutral-400 block mb-1">Téléphone</label>
+                    <label className="text-neutral-400 block mb-1">Phone Number</label>
                     <input
                       type="text"
                       value={localStudioInfo.phone}
@@ -1450,7 +1449,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-neutral-400 block mb-1">Ville & Arrondissement</label>
+                    <label className="text-neutral-400 block mb-1">City & District</label>
                     <input
                       type="text"
                       value={localStudioInfo.city}
@@ -1462,7 +1461,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   </div>
 
                   <div>
-                    <label className="text-neutral-400 block mb-1">Adresse Complète</label>
+                    <label className="text-neutral-400 block mb-1">Full Studio Address</label>
                     <input
                       type="text"
                       value={localStudioInfo.address}
@@ -1478,16 +1477,16 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
           )}
 
           {/* ================================================================= */}
-          {/* TAB 6: SAUVEGARDE & EXPORT                                        */}
+          {/* TAB 6: BACKUP & EXPORT                                            */}
           {/* ================================================================= */}
-          {activeTab === 'sauvegarde' && (
+          {activeTab === 'backup' && (
             <div className="max-w-4xl mx-auto space-y-8 font-mono text-xs">
               <div className="pb-6 border-b border-white/10">
                 <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                  Sauvegarde, Export & Restauration
+                  Backup, Export & Restore
                 </h2>
                 <p className="text-xs text-neutral-400 mt-1">
-                  Gérez la persistance de vos données dans le navigateur ou téléchargez une sauvegarde JSON.
+                  Manage data persistence in your browser or download a portable JSON backup.
                 </p>
               </div>
 
@@ -1497,18 +1496,18 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   <div className="flex items-center gap-3">
                     <Download className="w-5 h-5 text-[#ff4b26]" />
                     <h3 className="font-heading text-base font-bold text-white">
-                      Exporter la Configuration
+                      Export Studio Configuration
                     </h3>
                   </div>
                   <p className="text-neutral-400 text-xs leading-relaxed">
-                    Téléchargez l'intégralité de vos postes, images téléversées, services et textes au format JSON pour conserver une copie de secours.
+                    Download all case studies, uploaded visuals, services, and profile texts in JSON format as a secure backup.
                   </p>
                   <button
                     onClick={handleExportJSON}
                     className="w-full py-3 bg-white/10 hover:bg-white text-white hover:text-black font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2"
                   >
                     <Download className="w-4 h-4" />
-                    <span>Télécharger la Sauvegarde JSON</span>
+                    <span>Download JSON Backup</span>
                   </button>
                 </div>
 
@@ -1517,15 +1516,15 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   <div className="flex items-center gap-3">
                     <Upload className="w-5 h-5 text-[#ff4b26]" />
                     <h3 className="font-heading text-base font-bold text-white">
-                      Importer une Sauvegarde
+                      Import Studio Backup
                     </h3>
                   </div>
                   <p className="text-neutral-400 text-xs leading-relaxed">
-                    Restaurez une configuration préalablement exportée pour charger vos projets et textes en un instant.
+                    Restore a previously exported backup file to reload all your projects and copy in one click.
                   </p>
                   <label className="w-full py-3 bg-white/10 hover:bg-[#ff4b26] text-white font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 text-center block">
                     <Upload className="w-4 h-4" />
-                    <span>Choisir un fichier JSON</span>
+                    <span>Choose JSON Backup File</span>
                     <input
                       type="file"
                       accept=".json"
@@ -1541,23 +1540,39 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                 <div className="flex items-center gap-3">
                   <RotateCcw className="w-5 h-5 text-red-400" />
                   <h3 className="font-heading text-base font-bold text-white">
-                    Réinitialisation d'Atelier
+                    Reset to Studio Defaults
                   </h3>
                 </div>
                 <p className="text-neutral-400 text-xs leading-relaxed">
-                  Cette action réinitialise tous les projets, textes officiels et services aux paramètres d'origine de Medar Studio.
+                  This action resets all case studies, manifesto texts, and services back to original Medar Studio defaults.
                 </p>
-                <button
-                  onClick={() => {
-                    if (window.confirm('Voulez-vous vraiment réinitialiser toutes les données aux valeurs par défaut ?')) {
-                      onResetDefaults();
-                      onClose();
-                    }
-                  }}
-                  className="px-5 py-3 bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                >
-                  Réinitialiser aux Valeurs par Défaut
-                </button>
+
+                {confirmReset ? (
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => {
+                        onResetDefaults();
+                        onClose();
+                      }}
+                      className="px-5 py-3 bg-red-600 hover:bg-red-500 text-white font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                    >
+                      Confirm Factory Reset Now
+                    </button>
+                    <button
+                      onClick={() => setConfirmReset(false)}
+                      className="px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-mono uppercase tracking-wider transition-colors cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmReset(true)}
+                    className="px-5 py-3 bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white font-bold uppercase tracking-wider transition-colors cursor-pointer"
+                  >
+                    Reset to Factory Defaults
+                  </button>
+                )}
               </div>
             </div>
           )}

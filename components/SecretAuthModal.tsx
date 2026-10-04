@@ -54,7 +54,7 @@ const SecretAuthModal: React.FC<SecretAuthModalProps> = ({ isOpen, onClose, onSu
           <button
             onClick={onClose}
             className="absolute top-6 right-6 text-neutral-400 hover:text-white transition-colors cursor-pointer p-1"
-            aria-label="Fermer"
+            aria-label="Close"
           >
             <X className="w-5 h-5" />
           </button>

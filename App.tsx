@@ -42,7 +42,7 @@ const PORTFOLIO_PROJECTS: CaseStudy[] = [
   {
     id: 'aura-monolith',
     title: 'Aura Monolith',
-    client: 'Manufacture V. Genève',
+    client: 'Manufacture V. Geneva',
     year: '2025',
     category: '3d-webgl',
     categoryLabel: 'Haute Horlogerie 3D & WebGL',
@@ -90,8 +90,8 @@ const PORTFOLIO_PROJECTS: CaseStudy[] = [
     }
   },
   {
-    id: 'elysium-atelier',
-    title: 'Elysium Atelier',
+    id: 'elysium-studio',
+    title: 'Elysium Studio',
     client: 'Maison Elysium Paris',
     year: '2024',
     category: 'ecommerce-luxe',
@@ -106,7 +106,7 @@ const PORTFOLIO_PROJECTS: CaseStudy[] = [
     gradientTheme: 'from-[#e0a96d]/40 via-[#5b3b19]/60 to-[#0c0c10]',
     accentColor: '#e0a96d',
     imagePromptFallback: 'Haute couture editorial silk drapery and Parisian typography',
-    award: 'Club des Directeurs Artistiques',
+    award: 'Art Directors Club Selection',
     detailedContext: {
       challenge: 'Retaining the contemplative nobility of a runway show while maintaining sub-0.8s page load speeds worldwide.',
       artDirection: 'Deconstructed broadsheet compositions, velvety photographic grain, and neoclassical typography.',
@@ -165,13 +165,13 @@ const PORTFOLIO_PROJECTS: CaseStudy[] = [
   },
   {
     id: 'valence-editions',
-    title: 'Valence Éditions',
+    title: 'Valence Editions',
     client: 'Valence Publishing New York',
     year: '2024',
     category: 'brand-identity',
     categoryLabel: 'Editorial Platform & Typography',
     tagline: 'The craft of rare books reincarnated in a sculptural digital library.',
-    description: 'Design of a digital reading sanctuary and catalog raisonné for numbered art publications.',
+    description: 'Design of a digital reading sanctuary and comprehensive catalog for numbered art publications.',
     metrics: {
       stat: '100%',
       label: 'Limited editions sold out in 12h'
@@ -321,10 +321,10 @@ const DEFAULT_STUDIO_INFO: StudioGeneralInfo = {
   tagline: 'Creative Design & Visual Communications Studio',
   officialQuote: 'Medar Studio is a multidisciplinary creative design studio founded by Mohamed Amine Amarir, dedicated to graphic design and visual communications.',
   officialParagraph: 'Our studio engineers bespoke visual solutions for brands, businesses, sports organizations, and creators — spanning digital experiences to print production, sports design, and 3D. Our approach combines creative ingenuity, mathematical precision, and obsessive attention to detail to transform each idea into an enduring, modern, and memorable visual universe.',
-  city: 'Paris 10e',
-  address: "28 Rue d'Hauteville, 75010 Paris",
+  city: 'Paris 10th District',
+  address: "28 Hauteville Street, 75010 Paris",
   foundedYear: '2021',
-  email: 'bonjour@medarstudio.fr',
+  email: 'contact@medarstudio.com',
   phone: '+33 1 89 71 34 20',
   founderName: 'Mohamed Amine Amarir',
   founderRole: 'Studio Founder',
@@ -534,7 +534,7 @@ const App: React.FC = () => {
           {/* Zone 2: Clean text links */}
           <nav className="hidden md:flex items-center gap-5 lg:gap-8 xl:gap-10 text-xs font-semibold uppercase tracking-wider text-neutral-300">
             <button 
-              onClick={() => scrollToSection('projets')}
+              onClick={() => scrollToSection('works')}
               className="hover:text-white transition-colors bg-transparent border-none cursor-pointer whitespace-nowrap"
             >
               Works
@@ -546,7 +546,7 @@ const App: React.FC = () => {
               Services
             </button>
             <button 
-              onClick={() => scrollToSection('qui-sommes-nous')}
+              onClick={() => scrollToSection('about')}
               className="hover:text-white transition-colors bg-transparent border-none cursor-pointer whitespace-nowrap"
             >
               About
@@ -591,9 +591,9 @@ const App: React.FC = () => {
           >
             <div className="flex flex-col gap-6 text-2xl font-heading font-bold text-white mb-10">
               {[
-                { label: 'Works', id: 'projets' },
+                { label: 'Works', id: 'works' },
                 { label: 'Services', id: 'services' },
-                { label: 'About', id: 'qui-sommes-nous' },
+                { label: 'About', id: 'about' },
                 { label: 'Contact', id: 'contact' }
               ].map((item) => (
                 <button
@@ -614,8 +614,8 @@ const App: React.FC = () => {
             </button>
 
             <div className="mt-8 pt-8 border-t border-white/10 text-xs font-mono text-neutral-400 space-y-1">
-              <p>Medar Studio Paris · 28 Rue d'Hauteville</p>
-              <p>bonjour@medarstudio.fr</p>
+              <p>Medar Studio Paris · 28 Hauteville Street</p>
+              <p>contact@medarstudio.com</p>
             </div>
           </motion.div>
         )}
@@ -654,7 +654,7 @@ const App: React.FC = () => {
           {/* Hero Actions */}
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <button
-              onClick={() => scrollToSection('projets')}
+              onClick={() => scrollToSection('works')}
               data-hover="true"
               className="px-8 py-4 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white text-xs font-bold uppercase tracking-widest transition-all duration-200 flex items-center gap-3"
             >
@@ -699,7 +699,7 @@ const App: React.FC = () => {
         PORTFOLIO / SHOWCASE SECTION
         =======================================================================
       */}
-      <section id="projets" className="py-24 md:py-32 px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
+      <section id="works" className="py-24 md:py-32 px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div>
@@ -795,7 +795,7 @@ const App: React.FC = () => {
         Founded by Mohamed Amine Amarir · Studio leadership and creative team
         =======================================================================
       */}
-      <section id="qui-sommes-nous" className="py-24 md:py-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08] w-full box-border overflow-hidden">
+      <section id="about" className="py-24 md:py-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08] w-full box-border overflow-hidden">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-14 md:mb-16 gap-6 w-full">
           <div className="max-w-2xl">
@@ -940,7 +940,7 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Atelier Direct Contact Banner */}
+        {/* Studio Direct Contact Banner */}
         <div className="p-6 sm:p-8 md:p-12 bg-gradient-to-r from-[#14141d] to-[#0c0c10] border border-white/[0.1] flex flex-col md:flex-row items-start md:items-center justify-between gap-6 md:gap-8 w-full box-border">
           <div className="max-w-xl">
             <span className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest block mb-2">
@@ -988,12 +988,12 @@ const App: React.FC = () => {
             <div className="space-y-4 pt-4 border-t border-white/[0.08] font-mono text-xs">
               <div className="flex items-center gap-3 text-neutral-300">
                 <MapPin className="w-4 h-4 text-[#ff4b26]" />
-                <span>Paris Studio: 28 Rue d'Hauteville, 75010 Paris</span>
+                <span>Paris Studio: 28 Hauteville Street, 75010 Paris</span>
               </div>
               <div className="flex items-center gap-3 text-neutral-300">
                 <Mail className="w-4 h-4 text-[#ff4b26]" />
-                <a href="mailto:bonjour@medarstudio.fr" className="hover:text-white underline underline-offset-4">
-                  bonjour@medarstudio.fr
+                <a href="mailto:contact@medarstudio.com" className="hover:text-white underline underline-offset-4">
+                  contact@medarstudio.com
                 </a>
               </div>
               <div className="flex items-center gap-3 text-neutral-300">
@@ -1189,9 +1189,9 @@ const App: React.FC = () => {
 
           {/* Navigation Links with Back to Top grouped cleanly in center */}
           <div className="flex flex-wrap items-center gap-6">
-            <a href="#projets" className="hover:text-white transition-colors">Works</a>
+            <a href="#works" className="hover:text-white transition-colors">Works</a>
             <a href="#services" className="hover:text-white transition-colors">Services</a>
-            <a href="#qui-sommes-nous" className="hover:text-white transition-colors">About</a>
+            <a href="#about" className="hover:text-white transition-colors">About</a>
             <a href="#contact" className="hover:text-white transition-colors">Contact</a>
             <span aria-hidden="true" className="text-neutral-700 hidden sm:inline">·</span>
             <button
@@ -1217,7 +1217,7 @@ const App: React.FC = () => {
       {/* Medar Studio AI Advisor Widget */}
       <AIChat />
 
-      {/* Secret Authentification Modal (Code 010904 masqué) */}
+      {/* Secret Authentication Modal (Masked PIN 010904) */}
       <SecretAuthModal
         isOpen={isSecretAuthOpen}
         onClose={() => setIsSecretAuthOpen(false)}
