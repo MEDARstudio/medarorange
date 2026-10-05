@@ -26,7 +26,12 @@ import {
   Film,
   Video,
   Play,
-  PlusCircle
+  PlusCircle,
+  Instagram,
+  RefreshCw,
+  Link as LinkIcon,
+  AlertCircle,
+  Compass
 } from 'lucide-react';
 import { CaseStudy, AgencyService, StudioGeneralInfo, ProjectCategory, ProjectMediaItem } from '../types';
 
@@ -45,7 +50,7 @@ interface AdminCMSModalProps {
   onResetDefaults: () => void;
 }
 
-type CMSTab = 'posts' | 'new-post' | 'media-library' | 'services' | 'pricing' | 'studio' | 'backup';
+type CMSTab = 'posts' | 'new-post' | 'instagram' | 'media-library' | 'services' | 'pricing' | 'studio' | 'backup';
 
 // HD Studio Presets (Clean, ready for device upload)
 const DEFAULT_PRESET_IMAGES: { id: string; name: string; category: string; url: string }[] = [];
@@ -137,6 +142,16 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
   const [activePostIdForMultiMedia, setActivePostIdForMultiMedia] = useState<string | null>(null);
   const [existingVideoUrlInput, setExistingVideoUrlInput] = useState('');
   const [isDraggingMedia, setIsDraggingMedia] = useState(false);
+
+  // Instagram Integration & Importer States
+  const [instagramFeed, setInstagramFeed] = useState<any[]>([]);
+  const [isFetchingInstagram, setIsFetchingInstagram] = useState(false);
+  const [instagramFetchError, setInstagramFetchError] = useState<string | null>(null);
+  const [directIgPostUrl, setDirectIgPostUrl] = useState('');
+  const [directIgMediaUrl, setDirectIgMediaUrl] = useState('');
+  const [directIgTitle, setDirectIgTitle] = useState('');
+  const [directIgCaption, setDirectIgCaption] = useState('');
+  const [directIgCategory, setDirectIgCategory] = useState<ProjectCategory>('visual-design');
 
   // Synchronize with props
   React.useEffect(() => {
@@ -606,6 +621,155 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     triggerSaveNotification(`Project "${createdPost.title}" published with ${mediaList.length} media file(s)!`);
   };
 
+  // Fetch Instagram feed from Meta Graph API using user's access token
+  const handleFetchInstagramFeed = async () => {
+    const token = localStudioInfo.instagramToken?.trim();
+    if (!token) {
+      setInstagramFetchError("Veuillez renseigner votre jeton d'accès Instagram (Access Token) ci-dessous.");
+      return;
+    }
+    setIsFetchingInstagram(true);
+    setInstagramFetchError(null);
+    try {
+      const url = `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,children{id,media_type,media_url}&access_token=${token}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `Erreur Instagram API HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      if (data && data.data && data.data.length > 0) {
+        setInstagramFeed(data.data);
+        triggerSaveNotification(`${data.data.length} publication(s) Instagram récupérée(s) !`);
+      } else {
+        setInstagramFeed([]);
+        triggerSaveNotification("Aucune publication trouvée sur ce compte Instagram.");
+      }
+    } catch (err: any) {
+      console.error("Instagram fetch error:", err);
+      setInstagramFetchError(err.message || "Impossible de contacter l'API Instagram. Vérifiez votre jeton.");
+    } finally {
+      setIsFetchingInstagram(false);
+    }
+  };
+
+  // 1-Click Import of an Instagram post (photo, carousel album, or reel video) into Portfolio
+  const handleImportInstagramPost = (igPost: any) => {
+    const mediaItems: ProjectMediaItem[] = [];
+
+    if (igPost.children && igPost.children.data && igPost.children.data.length > 0) {
+      igPost.children.data.forEach((c: any, idx: number) => {
+        mediaItems.push({
+          id: `ig-child-${c.id || Date.now()}-${idx}`,
+          type: c.media_type === 'VIDEO' ? 'video' : 'image',
+          url: c.media_url,
+          title: `Instagram Media #${idx + 1}`
+        });
+      });
+    } else if (igPost.media_url) {
+      mediaItems.push({
+        id: `ig-${igPost.id || Date.now()}`,
+        type: igPost.media_type === 'VIDEO' ? 'video' : 'image',
+        url: igPost.media_url,
+        title: 'Instagram Post'
+      });
+    }
+
+    if (mediaItems.length === 0) {
+      triggerSaveNotification("Aucune image ou vidéo exploitable trouvée pour ce post.");
+      return;
+    }
+
+    const caption = igPost.caption || 'Publication Instagram';
+    const firstLine = caption.split('\n')[0].replace(/[#@][\w]+/g, '').trim() || 'Instagram Artwork';
+    const postTitle = firstLine.length > 40 ? firstLine.substring(0, 40) + '...' : firstLine;
+    const postYear = igPost.timestamp ? new Date(igPost.timestamp).getFullYear().toString() : '2025';
+    const firstImage = mediaItems.find((m) => m.type === 'image')?.url || mediaItems[0]?.url;
+    const firstVideo = mediaItems.find((m) => m.type === 'video')?.url;
+
+    const newPostItem: CaseStudy = {
+      id: `post-ig-${igPost.id || Date.now()}`,
+      title: postTitle,
+      client: localStudioInfo.instagramHandle || 'Instagram',
+      year: postYear,
+      category: 'visual-design',
+      categoryLabel: 'Visual Design',
+      description: caption,
+      media: mediaItems,
+      imagePromptFallback: firstImage,
+      videoUrl: firstVideo,
+      accentColor: '#ff4b26',
+      gradientTheme: 'from-[#ff4b26]/30 to-[#0c0c10]'
+    };
+
+    const updated = [newPostItem, ...localProjects];
+    setLocalProjects(updated);
+    onUpdateProjects(updated);
+    try {
+      localStorage.setItem('medar_studio_projects_v2', JSON.stringify(updated));
+    } catch (e) {
+      console.warn("Storage quota exceeded", e);
+    }
+
+    triggerSaveNotification(`Publication "${postTitle}" importée avec succès dans le portfolio !`);
+  };
+
+  // Direct manual Instagram Post URL import
+  const handleDirectInstagramImport = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!directIgMediaUrl.trim() && !directIgPostUrl.trim()) {
+      triggerSaveNotification("Veuillez renseigner le lien média ou l'URL du post Instagram.");
+      return;
+    }
+
+    const mediaUrl = directIgMediaUrl.trim() || directIgPostUrl.trim();
+    const isVideo = mediaUrl.includes('.mp4') || directIgPostUrl.includes('/reel/');
+
+    const newPostItem: CaseStudy = {
+      id: `post-ig-${Date.now()}`,
+      title: directIgTitle.trim() || 'Instagram Visual Artwork',
+      client: localStudioInfo.instagramHandle || 'Instagram Project',
+      year: new Date().getFullYear().toString(),
+      category: directIgCategory,
+      categoryLabel:
+        directIgCategory === 'brand-identity'
+          ? 'Brand Identity'
+          : directIgCategory === 'sports-design'
+          ? 'Sports Design'
+          : directIgCategory === '3d-webgl'
+          ? '3D Design'
+          : 'Visual Design',
+      description: directIgCaption.trim() || `Design importé depuis Instagram (${directIgPostUrl.trim()})`,
+      media: [
+        {
+          id: `media-ig-${Date.now()}`,
+          type: isVideo ? 'video' : 'image',
+          url: mediaUrl,
+          title: 'Instagram Visual'
+        }
+      ],
+      imagePromptFallback: isVideo ? '' : mediaUrl,
+      videoUrl: isVideo ? mediaUrl : undefined,
+      accentColor: '#ff4b26',
+      gradientTheme: 'from-[#ff4b26]/30 to-[#0c0c10]'
+    };
+
+    const updated = [newPostItem, ...localProjects];
+    setLocalProjects(updated);
+    onUpdateProjects(updated);
+    try {
+      localStorage.setItem('medar_studio_projects_v2', JSON.stringify(updated));
+    } catch (e) {
+      console.warn("Storage quota exceeded", e);
+    }
+
+    setDirectIgPostUrl('');
+    setDirectIgMediaUrl('');
+    setDirectIgTitle('');
+    setDirectIgCaption('');
+    triggerSaveNotification('Post Instagram importé avec succès dans le portfolio !');
+  };
+
   // Delete project
   const handleDeleteProject = (id: string) => {
     const filtered = localProjects.filter((p) => p.id !== id);
@@ -825,6 +989,22 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               <div className="flex flex-col">
                 <span className="text-white font-semibold">+ Nouveau Post</span>
                 <span className="text-[10px] text-neutral-400 font-mono">Upload Photos & Vidéos</span>
+              </div>
+            </button>
+
+            {/* Tab: Instagram Sync & Import */}
+            <button
+              onClick={() => setActiveTab('instagram')}
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
+                activeTab === 'instagram'
+                  ? 'bg-gradient-to-r from-[#E1306C] via-[#FD1D1D] to-[#F56040] text-white font-bold shadow-md'
+                  : 'text-neutral-400 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <Instagram className="w-4 h-4 text-pink-400 shrink-0" />
+              <div className="flex flex-col">
+                <span className="text-white font-semibold">Instagram Import</span>
+                <span className="text-[10px] text-neutral-400 font-mono">Sync & Importer Posts</span>
               </div>
             </button>
 
@@ -1512,6 +1692,345 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   </div>
                 </div>
               </form>
+            </div>
+          )}
+
+          {/* ================================================================= */}
+          {/* TAB: INSTAGRAM SYNC & POST IMPORTER                               */}
+          {/* ================================================================= */}
+          {activeTab === 'instagram' && (
+            <div className="max-w-5xl mx-auto space-y-8 font-mono text-xs">
+              {/* Header */}
+              <div className="pb-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="p-1.5 rounded-lg bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white">
+                      <Instagram className="w-5 h-5" />
+                    </span>
+                    <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
+                      Instagram Sync & Post Importer
+                    </h2>
+                  </div>
+                  <p className="text-xs text-neutral-400 mt-1">
+                    Liez votre compte Instagram officiel et importez vos publications, photos et Reels directement dans votre portfolio Medar Studio.
+                  </p>
+                </div>
+
+                {localStudioInfo.instagramUrl && (
+                  <a
+                    href={localStudioInfo.instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2 bg-gradient-to-r from-[#E1306C] via-[#FD1D1D] to-[#F56040] hover:opacity-90 text-white font-bold rounded-lg transition-opacity flex items-center gap-2 self-start sm:self-center cursor-pointer shadow-md"
+                  >
+                    <Instagram className="w-4 h-4" />
+                    <span>Voir mon Instagram</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                )}
+              </div>
+
+              {/* SECTION 1: Profil Instagram Studio (Affichage sur le site) */}
+              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <Instagram className="w-4 h-4 text-[#ff4b26]" />
+                    <h3 className="font-heading text-base font-bold text-white">
+                      1. Profil Instagram Officiel du Studio
+                    </h3>
+                  </div>
+                  <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                    Connecté au Header & Footer
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-neutral-300 block mb-1 font-bold">Identifiant / Handle Instagram</label>
+                    <input
+                      type="text"
+                      value={localStudioInfo.instagramHandle || ''}
+                      onChange={(e) =>
+                        setLocalStudioInfo({ ...localStudioInfo, instagramHandle: e.target.value })
+                      }
+                      placeholder="@medarstudio"
+                      className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-neutral-300 block mb-1 font-bold">URL complète du compte Instagram</label>
+                    <input
+                      type="url"
+                      value={localStudioInfo.instagramUrl || ''}
+                      onChange={(e) =>
+                        setLocalStudioInfo({ ...localStudioInfo, instagramUrl: e.target.value })
+                      }
+                      placeholder="https://instagram.com/medarstudio"
+                      className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-2 text-[11px] text-neutral-400">
+                  <p>
+                    Le lien vers votre profil Instagram s'affiche automatiquement dans le menu de navigation et dans le pied de page du site.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onUpdateStudioInfo(localStudioInfo);
+                      try {
+                        localStorage.setItem('medar_studio_general', JSON.stringify(localStudioInfo));
+                      } catch (e) {
+                        console.warn(e);
+                      }
+                      triggerSaveNotification('Lien Instagram enregistré avec succès !');
+                    }}
+                    className="px-3.5 py-1.5 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white font-bold rounded transition-colors cursor-pointer shrink-0 ml-4"
+                  >
+                    Enregistrer le lien
+                  </button>
+                </div>
+              </div>
+
+              {/* SECTION 2: Import Rapide par Lien de Post / Reel Instagram */}
+              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-5">
+                <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <LinkIcon className="w-4 h-4 text-[#ff4b26]" />
+                    <h3 className="font-heading text-base font-bold text-white">
+                      2. Importer un Post / Reel par Lien ou URL Média
+                    </h3>
+                  </div>
+                  <span className="text-[10px] text-neutral-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded">
+                    Sans configuration API
+                  </span>
+                </div>
+
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  Collez le lien de votre publication Instagram ou le lien de l'image/vidéo pour l'ajouter instantanément en tant que projet dans votre portfolio.
+                </p>
+
+                <form onSubmit={handleDirectInstagramImport} className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-neutral-300 block mb-1">URL de la publication Instagram (Post ou Reel)</label>
+                      <input
+                        type="url"
+                        value={directIgPostUrl}
+                        onChange={(e) => setDirectIgPostUrl(e.target.value)}
+                        placeholder="https://www.instagram.com/p/DFxyz.../ ou /reel/..."
+                        className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-neutral-300 block mb-1">URL directe de l'image / vidéo (ou CDN) *</label>
+                      <input
+                        type="url"
+                        required
+                        value={directIgMediaUrl}
+                        onChange={(e) => setDirectIgMediaUrl(e.target.value)}
+                        placeholder="https://scontent... ou lien image haute résolution"
+                        className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-neutral-300 block mb-1">Titre du Projet (Optionnel)</label>
+                      <input
+                        type="text"
+                        value={directIgTitle}
+                        onChange={(e) => setDirectIgTitle(e.target.value)}
+                        placeholder="ex. Brand Design 2025"
+                        className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-neutral-300 block mb-1">Catégorie du Portfolio</label>
+                      <select
+                        value={directIgCategory}
+                        onChange={(e) => setDirectIgCategory(e.target.value as ProjectCategory)}
+                        className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
+                      >
+                        <option value="brand-identity">Brand Identity</option>
+                        <option value="sports-design">Sports Design</option>
+                        <option value="3d-webgl">3D Design</option>
+                        <option value="visual-design">Visual Design</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-neutral-300 block mb-1">Légende Instagram / Description</label>
+                      <input
+                        type="text"
+                        value={directIgCaption}
+                        onChange={(e) => setDirectIgCaption(e.target.value)}
+                        placeholder="Texte du post Instagram..."
+                        className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="px-5 py-2.5 bg-[#ff4b26] hover:bg-white text-white hover:text-black font-bold uppercase tracking-wider rounded transition-colors flex items-center gap-2 cursor-pointer shadow-md"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Importer ce Post Instagram dans le Portfolio</span>
+                  </button>
+                </form>
+              </div>
+
+              {/* SECTION 3: Connexion Directe Meta Graph API */}
+              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <Compass className="w-4 h-4 text-[#ff4b26]" />
+                    <h3 className="font-heading text-base font-bold text-white">
+                      3. Synchronisation Live via Instagram Graph API (Meta)
+                    </h3>
+                  </div>
+                  <span className="text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+                    Meta for Developers
+                  </span>
+                </div>
+
+                <p className="text-xs text-neutral-400 leading-relaxed">
+                  Connectez votre jeton utilisateur Instagram Basic Display / Graph API. Vous pourrez charger toutes vos publications récentes et les importer en 1 clic (photos simples, carrousels multi-photos, et Reels vidéo).
+                </p>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-neutral-300 block mb-1 font-bold">
+                      Jeton d'accès Instagram (User Access Token)
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="password"
+                        value={localStudioInfo.instagramToken || ''}
+                        onChange={(e) =>
+                          setLocalStudioInfo({ ...localStudioInfo, instagramToken: e.target.value })
+                        }
+                        placeholder="Collez votre jeton Instagram (commence souvent par IGA... ou EA...)"
+                        className="flex-1 bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26] font-mono text-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleFetchInstagramFeed}
+                        disabled={isFetchingInstagram}
+                        className="px-4 py-2 bg-[#ff4b26] hover:bg-[#ff5f3c] disabled:opacity-50 text-white font-bold rounded transition-colors flex items-center gap-2 cursor-pointer shrink-0"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isFetchingInstagram ? 'animate-spin' : ''}`} />
+                        <span>{isFetchingInstagram ? 'Chargement...' : 'Charger mes Posts'}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {instagramFetchError && (
+                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded text-red-300 text-xs flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>{instagramFetchError}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Live Instagram Publications Grid */}
+                {instagramFeed.length > 0 && (
+                  <div className="space-y-4 pt-4 border-t border-white/10">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-heading font-bold text-white text-sm">
+                        Publications Instagram Trouvées ({instagramFeed.length})
+                      </h4>
+                      <span className="text-[10px] text-neutral-400">
+                        Cliquez sur "Importer" pour ajouter instantanément un post à votre portfolio
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                      {instagramFeed.map((item: any) => {
+                        const isCarousel = item.media_type === 'CAROUSEL_ALBUM';
+                        const isVideo = item.media_type === 'VIDEO';
+                        const previewImg = item.thumbnail_url || item.media_url;
+
+                        return (
+                          <div
+                            key={item.id}
+                            className="bg-[#181824] border border-white/10 rounded-xl overflow-hidden flex flex-col justify-between hover:border-[#ff4b26]/50 transition-colors p-3"
+                          >
+                            <div className="relative aspect-[4/5] bg-black rounded-lg overflow-hidden mb-3">
+                              {isVideo ? (
+                                <video
+                                  src={item.media_url}
+                                  className="w-full h-full object-cover"
+                                  muted
+                                />
+                              ) : (
+                                <img
+                                  src={previewImg}
+                                  alt=""
+                                  className="w-full h-full object-cover"
+                                />
+                              )}
+
+                              <div className="absolute top-2 left-2 flex items-center gap-1">
+                                {isCarousel && (
+                                  <span className="text-[9px] bg-black/80 text-white px-2 py-0.5 rounded font-mono">
+                                    CARROUSEL ({item.children?.data?.length || 2}+)
+                                  </span>
+                                )}
+                                {isVideo && (
+                                  <span className="text-[9px] bg-black/80 text-cyan-400 px-2 py-0.5 rounded font-mono font-bold flex items-center gap-1">
+                                    <Film className="w-3 h-3" />
+                                    REEL
+                                  </span>
+                                )}
+                                {!isCarousel && !isVideo && (
+                                  <span className="text-[9px] bg-black/80 text-white px-2 py-0.5 rounded font-mono">
+                                    PHOTO
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            <p className="text-[11px] text-neutral-300 line-clamp-2 leading-relaxed mb-3">
+                              {item.caption || 'Sans légende'}
+                            </p>
+
+                            <button
+                              type="button"
+                              onClick={() => handleImportInstagramPost(item)}
+                              className="w-full py-2 bg-gradient-to-r from-[#E1306C] to-[#C13584] hover:opacity-90 text-white font-bold text-xs rounded transition-opacity flex items-center justify-center gap-1.5 cursor-pointer shadow"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>✦ Importer dans le Portfolio</span>
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Step-by-Step Meta Guide Accordion */}
+                <div className="p-4 bg-black/40 border border-white/10 rounded-lg text-neutral-300 space-y-2">
+                  <span className="text-white font-bold block text-xs flex items-center gap-2">
+                    <Info className="w-3.5 h-3.5 text-[#ff4b26]" />
+                    <span>Comment obtenir votre jeton d'accès Instagram (gratuit sur Meta) ?</span>
+                  </span>
+                  <ol className="list-decimal list-inside space-y-1.5 text-[11px] text-neutral-400 leading-relaxed">
+                    <li>Rendez-vous sur <a href="https://developers.facebook.com" target="_blank" rel="noopener noreferrer" className="text-[#ff4b26] underline">developers.facebook.com</a> et connectez-vous avec votre compte Facebook/Instagram.</li>
+                    <li>Cliquez sur <strong>Mes applications</strong> &gt; <strong>Créer une application</strong> &gt; Choisissez le cas d'usage « Autre » ou « Consommateur ».</li>
+                    <li>Ajoutez le produit <strong>Instagram Basic Display</strong> à votre application.</li>
+                    <li>Dans la section <em>User Token Generator</em>, ajoutez votre compte Instagram comme testeur, acceptez l'invitation sur Instagram, et générez votre jeton d'accès utilisateur.</li>
+                    <li>Collez votre jeton dans le champ ci-dessus pour charger directement toutes vos créations Instagram en 1 clic !</li>
+                  </ol>
+                </div>
+              </div>
             </div>
           )}
 

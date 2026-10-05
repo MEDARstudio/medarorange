@@ -112,6 +112,9 @@ export interface StudioGeneralInfo {
   founderFocus: string;
   founderBio: string;
   founderImage?: string;
+  instagramHandle?: string;
+  instagramUrl?: string;
+  instagramToken?: string;
 }
 
 export type PaletteMood = 'vermilion' | 'obsidian' | 'solaris' | 'kinetic-mint';

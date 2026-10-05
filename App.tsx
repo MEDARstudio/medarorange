@@ -26,7 +26,8 @@ import {
   Check,
   ChevronDown,
   ShieldCheck,
-  Users
+  Users,
+  Instagram
 } from 'lucide-react';
 
 import FluidBackground from './components/FluidBackground';
@@ -233,7 +234,10 @@ const DEFAULT_STUDIO_INFO: StudioGeneralInfo = {
   founderRole: 'Studio Founder',
   founderFocus: 'Creative Direction, Studio Leadership, Brand Architecture & 3D Vision',
   founderBio: 'Founder of Medar Studio, Mohamed Amine Amarir guides the studio’s strategic vision and curatorial standard. He established Medar Studio to unite an elite collective of specialized designers, 3D artists, typographers, and creative engineers. Under his leadership, the studio’s multidisciplinary team crafts bespoke visual solutions for brands, corporations, sports organizations, and creators worldwide.',
-  founderImage: ''
+  founderImage: '',
+  instagramHandle: '@medarstudio',
+  instagramUrl: 'https://instagram.com/medarstudio',
+  instagramToken: ''
 };
 
 // Default Target Budgets (Ultra Accessible for Beginners, Creators, Startups)
@@ -540,8 +544,19 @@ const App: React.FC = () => {
             </button>
           </nav>
 
-          {/* Zone 3: Primary action */}
-          <div className="hidden md:flex items-center shrink-0">
+          {/* Zone 3: Primary action & Instagram */}
+          <div className="hidden md:flex items-center gap-3 shrink-0">
+            {studioInfo.instagramUrl && (
+              <a
+                href={studioInfo.instagramUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 text-neutral-400 hover:text-white transition-colors"
+                title={`Follow ${studioInfo.instagramHandle || 'Instagram'}`}
+              >
+                <Instagram className="w-4 h-4" />
+              </a>
+            )}
             <button
               onClick={() => scrollToSection('contact')}
               className="px-4 lg:px-5 py-2.5 bg-white text-black hover:bg-[#ff4b26] hover:text-white text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer whitespace-nowrap"
@@ -1229,10 +1244,23 @@ const App: React.FC = () => {
 
             {/* Center: In-frame Navigation Links */}
             <nav className="flex flex-wrap items-center justify-center gap-6 text-neutral-400">
-              <a href="#works" className="hover:text-white transition-colors">Works</a>
+              {publishedProjects.length > 0 && (
+                <a href="#works" className="hover:text-white transition-colors">Works</a>
+              )}
               <a href="#services" className="hover:text-white transition-colors">Services</a>
               <a href="#about" className="hover:text-white transition-colors">About</a>
               <a href="#contact" className="hover:text-white transition-colors">Contact</a>
+              {studioInfo.instagramUrl && (
+                <a
+                  href={studioInfo.instagramUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#ff4b26] transition-colors flex items-center gap-1.5 text-white/80"
+                >
+                  <Instagram className="w-3.5 h-3.5 text-[#ff4b26]" />
+                  <span>Instagram</span>
+                </a>
+              )}
             </nav>
 
             {/* Right: Back to Top */}
