@@ -5,8 +5,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Film, Image as ImageIcon, Layers } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Film, Image as ImageIcon, Layers, Instagram, ExternalLink } from 'lucide-react';
 import { CaseStudy, ProjectMediaItem } from '../types';
+import { isInstagramUrl, getInstagramShortcode, getInstagramEmbedUrl } from '../utils/mediaHelper';
 
 interface ProjectModalProps {
   project: CaseStudy | null;
@@ -20,6 +21,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
   onNavigate
 }) => {
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const [imgError, setImgError] = useState(false);
 
   // Extract all media items for the active project
   const mediaItems: ProjectMediaItem[] = React.useMemo(() => {
@@ -40,23 +42,29 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
   // Reset media index when project changes
   useEffect(() => {
     setActiveMediaIndex(0);
+    setImgError(false);
   }, [project?.id]);
 
   if (!project) return null;
 
   const currentMedia = mediaItems[activeMediaIndex] || mediaItems[0];
-  const isVideo = currentMedia?.type === 'video' || (currentMedia?.url && currentMedia.url.startsWith('data:video/'));
+  const currentUrl = currentMedia?.url || project.imagePromptFallback || '';
+  const isInsta = isInstagramUrl(currentUrl);
+  const instaShortcode = isInsta ? getInstagramShortcode(currentUrl) : null;
+  const isVideo = currentMedia?.type === 'video' || (currentUrl && (currentUrl.startsWith('data:video/') || currentUrl.endsWith('.mp4')));
 
   const handleNextMedia = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (mediaItems.length <= 1) return;
     setActiveMediaIndex((prev) => (prev + 1) % mediaItems.length);
+    setImgError(false);
   };
 
   const handlePrevMedia = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (mediaItems.length <= 1) return;
     setActiveMediaIndex((prev) => (prev - 1 + mediaItems.length) % mediaItems.length);
+    setImgError(false);
   };
 
   return (
@@ -125,7 +133,18 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
               <div className="md:col-span-7 flex flex-col gap-3">
                 <div className="relative w-full aspect-[4/5] bg-[#08080c] border border-white/15 overflow-hidden flex flex-col justify-between p-4 shadow-xl group">
                   {/* Media Content */}
-                  {currentMedia && (
+                  {isInsta && instaShortcode ? (
+                    <div className="absolute inset-0 w-full h-full bg-[#0a0a10] flex flex-col">
+                      <iframe
+                        src={getInstagramEmbedUrl(instaShortcode, true) || undefined}
+                        title={project.title}
+                        className="w-full h-full border-0"
+                        scrolling="yes"
+                        loading="lazy"
+                        allowTransparency
+                      />
+                    </div>
+                  ) : currentMedia && (
                     isVideo ? (
                       <video
                         key={currentMedia.url}
@@ -135,21 +154,37 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
                         autoPlay
                         className="absolute inset-0 w-full h-full object-cover"
                       />
-                    ) : (
+                    ) : !imgError ? (
                       <img
                         key={currentMedia.url}
                         src={currentMedia.url}
                         alt={project.title}
+                        referrerPolicy="no-referrer"
+                        onError={() => setImgError(true)}
                         className="absolute inset-0 w-full h-full object-cover"
                         style={{ imageRendering: 'auto' }}
                       />
+                    ) : (
+                      <div className="absolute inset-0 w-full h-full bg-[#12121b] flex flex-col items-center justify-center p-6 text-center">
+                        <Instagram className="w-10 h-10 text-pink-500 mb-2" />
+                        <span className="text-sm font-bold text-white mb-1">Visual Media</span>
+                        <a
+                          href={currentMedia.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3 py-1.5 bg-white/10 hover:bg-white text-white hover:text-black text-xs font-mono rounded mt-2 flex items-center gap-1.5"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Ouvrir le lien média</span>
+                        </a>
+                      </div>
                     )
                   )}
 
                   {/* Top Overlay Badge */}
                   <div className="relative z-10 flex items-center justify-between text-[10px] font-mono text-white/90">
                     <span className="bg-black/80 px-2 py-0.5 border border-white/15">
-                      {isVideo ? 'VIDEO ASSET' : '4:5 POST'}
+                      {isInsta ? 'POST INSTAGRAM' : isVideo ? 'VIDEO ASSET' : '4:5 POST'}
                     </span>
                     {mediaItems.length > 1 && (
                       <span className="bg-black/80 px-2 py-0.5 border border-white/15 text-white flex items-center gap-1 font-mono">
@@ -188,7 +223,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
                       <span className="block text-xs font-bold text-white truncate max-w-[200px]">{project.title}</span>
                     </div>
                     <span className="text-[10px] font-mono text-neutral-400">
-                      {isVideo ? 'Dynamic Motion' : 'High Resolution'}
+                      {isInsta ? 'Instagram Embed' : isVideo ? 'Dynamic Motion' : 'High Resolution'}
                     </span>
                   </div>
                 </div>
@@ -200,7 +235,10 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
                       <button
                         key={item.id || idx}
                         type="button"
-                        onClick={() => setActiveMediaIndex(idx)}
+                        onClick={() => {
+                          setActiveMediaIndex(idx);
+                          setImgError(false);
+                        }}
                         className={`relative w-16 h-20 rounded-md overflow-hidden border-2 shrink-0 transition-all cursor-pointer ${
                           activeMediaIndex === idx
                             ? 'border-[#ff4b26] ring-2 ring-[#ff4b26]/40 scale-105'
@@ -211,10 +249,15 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
                           <div className="w-full h-full bg-black flex items-center justify-center text-cyan-400">
                             <Film className="w-5 h-5" />
                           </div>
+                        ) : isInstagramUrl(item.url) ? (
+                          <div className="w-full h-full bg-gradient-to-tr from-[#833ab4] via-[#fd1d1d] to-[#fcb045] flex items-center justify-center text-white">
+                            <Instagram className="w-5 h-5" />
+                          </div>
                         ) : (
                           <img
                             src={item.url}
                             alt=""
+                            referrerPolicy="no-referrer"
                             className="w-full h-full object-cover"
                           />
                         )}
@@ -241,6 +284,21 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
                     <span>·</span>
                     <span>Year: <strong className="text-white">{project.year}</strong></span>
                   </div>
+
+                  {isInsta && (
+                    <div className="mt-4">
+                      <a
+                        href={currentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white text-xs font-bold font-mono rounded hover:opacity-95 transition-opacity shadow-md"
+                      >
+                        <Instagram className="w-4 h-4" />
+                        <span>Voir la publication sur Instagram</span>
+                        <ExternalLink className="w-3 h-3 ml-0.5" />
+                      </a>
+                    </div>
+                  )}
                 </div>
 
                 <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded">

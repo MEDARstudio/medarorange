@@ -5,8 +5,9 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Layers, Film } from 'lucide-react';
+import { ArrowUpRight, Layers, Film, Instagram } from 'lucide-react';
 import { CaseStudy, ProjectMediaItem } from '../types';
+import { isInstagramUrl, getInstagramShortcode, getInstagramEmbedUrl } from '../utils/mediaHelper';
 
 interface ProjectCardProps {
   project: CaseStudy;
@@ -15,6 +16,8 @@ interface ProjectCardProps {
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onSelect }) => {
+  const [imageError, setImageError] = React.useState(false);
+
   // Extract all media items
   const mediaItems: ProjectMediaItem[] = React.useMemo(() => {
     if (project.media && project.media.length > 0) {
@@ -31,7 +34,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onSelect }) =
   }, [project]);
 
   const coverItem = mediaItems[0];
-  const isVideo = coverItem?.type === 'video' || (coverItem?.url && coverItem.url.startsWith('data:video/'));
+  const targetUrl = coverItem?.url || project.imagePromptFallback || '';
+  const isInsta = isInstagramUrl(targetUrl);
+  const instaShortcode = isInsta ? getInstagramShortcode(targetUrl) : null;
+  const isVideo = coverItem?.type === 'video' || (targetUrl && (targetUrl.startsWith('data:video/') || targetUrl.endsWith('.mp4')));
 
   return (
     <motion.article
@@ -50,24 +56,50 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onSelect }) =
       */}
       <div className="relative w-full aspect-[4/5] overflow-hidden mb-5 bg-[#0a0a0f] border border-white/[0.08] shadow-lg flex flex-col justify-between p-4">
         {/* Render Cover Media */}
-        {coverItem && (
-          isVideo ? (
-            <video
-              src={coverItem.url}
-              muted
-              autoPlay
-              loop
-              playsInline
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+        {isInsta && instaShortcode ? (
+          <div className="absolute inset-0 w-full h-full bg-[#0d0d14] flex flex-col items-center justify-center overflow-hidden">
+            <iframe
+              src={getInstagramEmbedUrl(instaShortcode) || undefined}
+              title={project.title}
+              className="w-full h-full border-0 pointer-events-none scale-[1.02] group-hover:scale-105 transition-transform duration-500"
+              scrolling="no"
+              loading="lazy"
             />
-          ) : (
-            <img
-              src={coverItem.url}
-              alt={project.title}
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
-              style={{ imageRendering: 'auto' }}
-            />
-          )
+          </div>
+        ) : isVideo ? (
+          <video
+            src={targetUrl}
+            muted
+            autoPlay
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+          />
+        ) : targetUrl && !imageError ? (
+          <img
+            src={targetUrl}
+            alt={project.title}
+            referrerPolicy="no-referrer"
+            onError={() => setImageError(true)}
+            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
+            style={{ imageRendering: 'auto' }}
+          />
+        ) : (
+          <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-[#1c1c28] via-[#12121b] to-[#0a0a0f] flex flex-col items-center justify-center p-6 text-center">
+            <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
+              {isInsta ? (
+                <Instagram className="w-7 h-7 text-pink-500" />
+              ) : (
+                <Layers className="w-7 h-7 text-[#ff4b26]" />
+              )}
+            </div>
+            <span className="text-xs font-heading font-bold text-white mb-1 line-clamp-1">
+              {project.title}
+            </span>
+            <span className="text-[10px] font-mono text-neutral-400">
+              {isInsta ? 'Post Instagram' : 'Artwork Design'}
+            </span>
+          </div>
         )}
 
         {/* Contrast vignette */}
@@ -81,12 +113,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onSelect }) =
           </span>
 
           <div className="flex items-center gap-1.5">
-            {mediaItems.length > 1 && (
+            {isInsta ? (
+              <span className="flex items-center gap-1 bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] px-2 py-0.5 text-white text-[9px] font-bold rounded">
+                <Instagram className="w-3 h-3" />
+                <span>INSTAGRAM</span>
+              </span>
+            ) : mediaItems.length > 1 ? (
               <span className="flex items-center gap-1 bg-black/80 px-2 py-0.5 border border-white/15 text-white text-[9px]">
                 <Layers className="w-3 h-3 text-[#ff4b26]" />
                 <span>{mediaItems.length} MEDIA</span>
               </span>
-            )}
+            ) : null}
 
             {isVideo && (
               <span className="flex items-center gap-1 bg-black/80 px-2 py-0.5 border border-white/15 text-white text-[9px]">

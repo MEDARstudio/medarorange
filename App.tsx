@@ -844,6 +844,7 @@ const App: React.FC = () => {
                   <img
                     src={studioInfo.founderImage}
                     alt={studioInfo.founderName}
+                    referrerPolicy="no-referrer"
                     className="w-full h-full object-cover object-center"
                     style={{ filter: 'none', backdropFilter: 'none', imageRendering: 'auto' }}
                   />
@@ -907,6 +908,7 @@ const App: React.FC = () => {
                       <img
                         src={studioInfo.founderImage}
                         alt={studioInfo.founderName}
+                        referrerPolicy="no-referrer"
                         className="w-full h-full object-cover object-center"
                         style={{ filter: 'none', backdropFilter: 'none', imageRendering: 'auto' }}
                       />
