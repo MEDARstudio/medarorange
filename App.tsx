@@ -20,6 +20,8 @@ import {
   Mail, 
   MapPin, 
   Clock,
+  Phone,
+  Globe,
   Send,
   Check,
   ChevronDown,
@@ -321,16 +323,19 @@ const DEFAULT_STUDIO_INFO: StudioGeneralInfo = {
   tagline: 'Creative Design & Visual Communications Studio',
   officialQuote: 'Medar Studio is a multidisciplinary creative design studio founded by Mohamed Amine Amarir, dedicated to graphic design and visual communications.',
   officialParagraph: 'Our studio engineers bespoke visual solutions for brands, businesses, sports organizations, and creators — spanning digital experiences to print production, sports design, and 3D. Our approach combines creative ingenuity, mathematical precision, and obsessive attention to detail to transform each idea into an enduring, modern, and memorable visual universe.',
-  city: 'Paris 10th District',
-  address: "28 Hauteville Street, 75010 Paris",
+  city: 'Worldwide',
+  address: "",
   foundedYear: '2021',
-  email: 'contact@medarstudio.com',
-  phone: '+33 1 89 71 34 20',
+  email: 'medarstudio@gmail.com',
+  phone: '+212 698-048499',
   founderName: 'Mohamed Amine Amarir',
   founderRole: 'Studio Founder',
   founderFocus: 'Creative Direction, Studio Leadership, Brand Architecture & 3D Vision',
   founderBio: 'Founder of Medar Studio, Mohamed Amine Amarir guides the studio’s strategic vision and curatorial standard. He established Medar Studio to unite an elite collective of specialized designers, 3D artists, typographers, and creative engineers. Under his leadership, the studio’s multidisciplinary team crafts bespoke visual solutions for brands, corporations, sports organizations, and creators worldwide.'
 };
+
+// Default Target Budgets (Ultra Accessible for Beginners, Creators, Startups)
+const DEFAULT_BUDGET_TIERS: string[] = ['< €100', '€100 - €300', '€300 - €750', '€750+'];
 
 const App: React.FC = () => {
   const { scrollYProgress } = useScroll();
@@ -361,11 +366,35 @@ const App: React.FC = () => {
   const [studioInfo, setStudioInfo] = useState<StudioGeneralInfo>(() => {
     try {
       const saved = localStorage.getItem('medar_studio_general');
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.email === 'bonjour@medarstudio.fr' || parsed.email === 'contact@medarstudio.com') {
+          parsed.email = 'medarstudio@gmail.com';
+        }
+        if (parsed.phone === '+33 1 89 71 34 20') {
+          parsed.phone = '+212 698-048499';
+        }
+        if (parsed.address && parsed.address.includes('Hauteville')) {
+          parsed.address = '';
+          parsed.city = 'Worldwide';
+        }
+        return parsed;
+      }
     } catch (e) {
       console.error(e);
     }
     return DEFAULT_STUDIO_INFO;
+  });
+
+  // Dynamic Budget Tiers Managed via Admin Panel
+  const [budgetTiers, setBudgetTiers] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('medar_studio_budget_tiers');
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error(e);
+    }
+    return DEFAULT_BUDGET_TIERS;
   });
 
   // Secret Admin Portal States
@@ -417,17 +446,35 @@ const App: React.FC = () => {
     }
   };
 
+  const handleUpdateBudgetTiers = (newTiers: string[]) => {
+    setBudgetTiers(newTiers);
+    try {
+      localStorage.setItem('medar_studio_budget_tiers', JSON.stringify(newTiers));
+    } catch (e) {
+      console.warn("Storage quota exceeded or unavailable:", e);
+    }
+    // Update active form budget if current selection is no longer present
+    setFormData((prev) => {
+      if (!newTiers.includes(prev.budget) && newTiers.length > 0) {
+        return { ...prev, budget: newTiers[Math.min(1, newTiers.length - 1)] };
+      }
+      return prev;
+    });
+  };
+
   const handleResetDefaults = () => {
     try {
       localStorage.removeItem('medar_studio_projects');
       localStorage.removeItem('medar_studio_services');
       localStorage.removeItem('medar_studio_general');
+      localStorage.removeItem('medar_studio_budget_tiers');
     } catch (e) {
       console.warn("Storage unavailable:", e);
     }
     setProjectsList(PORTFOLIO_PROJECTS);
     setServicesList(AGENCY_SERVICES);
     setStudioInfo(DEFAULT_STUDIO_INFO);
+    setBudgetTiers(DEFAULT_BUDGET_TIERS);
   };
 
   // States
@@ -442,7 +489,7 @@ const App: React.FC = () => {
     email: '',
     company: '',
     projectType: 'Visual Identity',
-    budget: '50k€ - 100k€',
+    budget: DEFAULT_BUDGET_TIERS[1],
     message: ''
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
@@ -614,8 +661,9 @@ const App: React.FC = () => {
             </button>
 
             <div className="mt-8 pt-8 border-t border-white/10 text-xs font-mono text-neutral-400 space-y-1">
-              <p>Medar Studio Paris · 28 Hauteville Street</p>
-              <p>contact@medarstudio.com</p>
+              <p className="text-white font-semibold">Medar Studio · Worldwide Creative Studio</p>
+              <p>medarstudio@gmail.com</p>
+              <p>+212 698-048499</p>
             </div>
           </motion.div>
         )}
@@ -632,7 +680,7 @@ const App: React.FC = () => {
           <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-neutral-400 mb-6 tracking-widest uppercase">
             <span className="text-[#ff4b26] font-semibold">Art Direction & Creative Tech</span>
             <span aria-hidden="true" className="text-neutral-600">·</span>
-            <span>Studio Founded in Paris</span>
+            <span>Worldwide Creative Studio</span>
             <span aria-hidden="true" className="text-neutral-600">·</span>
             <span className="tabular-nums">Booking Q2 2026</span>
           </div>
@@ -684,8 +732,8 @@ const App: React.FC = () => {
             <span className="text-[11px] text-neutral-500">Average client lift</span>
           </div>
           <div>
-            <span className="block text-white font-bold tabular-nums text-sm">PARIS & GLOBAL</span>
-            <span className="text-[11px] text-neutral-500">International reach</span>
+            <span className="block text-white font-bold tabular-nums text-sm">WORLDWIDE & REMOTE</span>
+            <span className="text-[11px] text-neutral-500">Global creative reach</span>
           </div>
           <div>
             <span className="block text-white font-bold tabular-nums text-sm">BESPOKE CODE</span>
@@ -987,18 +1035,24 @@ const App: React.FC = () => {
 
             <div className="space-y-4 pt-4 border-t border-white/[0.08] font-mono text-xs">
               <div className="flex items-center gap-3 text-neutral-300">
-                <MapPin className="w-4 h-4 text-[#ff4b26]" />
-                <span>Paris Studio: 28 Hauteville Street, 75010 Paris</span>
+                <Globe className="w-4 h-4 text-[#ff4b26]" />
+                <span>Digital Creative Studio · Serving Clients Worldwide</span>
               </div>
               <div className="flex items-center gap-3 text-neutral-300">
                 <Mail className="w-4 h-4 text-[#ff4b26]" />
-                <a href="mailto:contact@medarstudio.com" className="hover:text-white underline underline-offset-4">
-                  contact@medarstudio.com
+                <a href="mailto:medarstudio@gmail.com" className="hover:text-white underline underline-offset-4">
+                  medarstudio@gmail.com
+                </a>
+              </div>
+              <div className="flex items-center gap-3 text-neutral-300">
+                <Phone className="w-4 h-4 text-[#ff4b26]" />
+                <a href="tel:+212698048499" className="hover:text-white underline underline-offset-4">
+                  +212 698-048499
                 </a>
               </div>
               <div className="flex items-center gap-3 text-neutral-300">
                 <Clock className="w-4 h-4 text-[#ff4b26]" />
-                <span>Average response time: Within 24 hours</span>
+                <span>Average response time: Within 12 hours</span>
               </div>
             </div>
 
@@ -1023,7 +1077,7 @@ const App: React.FC = () => {
                   Brief Received by Studio.
                 </h3>
                 <p className="text-sm text-neutral-300 max-w-md mx-auto leading-relaxed">
-                  Thank you {formData.name}. Our studio creative team is reviewing your brief and will respond within 24 hours with a strategic orientation.
+                  Thank you {formData.name}. Our studio creative team is reviewing your brief and will respond within 12 hours with a strategic orientation.
                 </p>
                 <button
                   onClick={() => setFormSubmitted(false)}
@@ -1066,18 +1120,23 @@ const App: React.FC = () => {
 
                 {/* 2. Budget Selector */}
                 <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-2">
-                    Target Budget
-                  </label>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400">
+                      Target Budget
+                    </label>
+                    <span className="text-[10px] font-mono text-emerald-400">
+                      Beginner-friendly & scalable pricing
+                    </span>
+                  </div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {['25k€ - 50k€', '50k€ - 100k€', '100k€ - 200k€', '> 200k€'].map((range) => (
+                    {budgetTiers.map((range) => (
                       <button
                         type="button"
                         key={range}
                         onClick={() => setFormData({ ...formData, budget: range })}
-                        className={`p-2.5 text-center text-xs font-mono border transition-colors ${
+                        className={`p-2.5 text-center text-xs font-mono border transition-colors cursor-pointer ${
                           formData.budget === range
-                            ? 'bg-[#ff4b26] text-white border-[#ff4b26]'
+                            ? 'bg-[#ff4b26] text-white border-[#ff4b26] font-bold shadow-[0_2px_10px_rgba(255,75,38,0.4)]'
                             : 'bg-black/30 border-white/[0.08] text-neutral-400 hover:text-white hover:border-white/20'
                         }`}
                       >
@@ -1241,6 +1300,8 @@ const App: React.FC = () => {
         onUpdateServices={handleUpdateServices}
         studioInfo={studioInfo}
         onUpdateStudioInfo={handleUpdateStudioInfo}
+        budgetTiers={budgetTiers}
+        onUpdateBudgetTiers={handleUpdateBudgetTiers}
         onResetDefaults={handleResetDefaults}
       />
     </div>

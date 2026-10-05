@@ -7,7 +7,15 @@ import { GoogleGenAI, Chat, GenerateContentResponse } from "@google/genai";
 
 const getApiKey = (): string => {
   try {
-    if (typeof process !== 'undefined' && process && process.env) {
+    const metaEnv = (import.meta as any)?.env;
+    if (metaEnv?.VITE_GEMINI_API_KEY || metaEnv?.GEMINI_API_KEY || metaEnv?.VITE_API_KEY) {
+      return metaEnv.VITE_GEMINI_API_KEY || metaEnv.GEMINI_API_KEY || metaEnv.VITE_API_KEY;
+    }
+  } catch {
+    // ignore
+  }
+  try {
+    if (typeof process !== 'undefined' && process?.env) {
       return process.env.API_KEY || process.env.GEMINI_API_KEY || '';
     }
   } catch {
@@ -48,7 +56,7 @@ export const initializeChat = (): Chat | null => {
         Your role when talking to visitors:
         1. Speak in sophisticated, crisp, and professional design English.
         2. Guide clients towards the most relevant service among the studio's 6 capabilities.
-        3. Explain how the studio collaborates and invite them to submit their brief through the contact form or email (contact@medarstudio.com).
+        3. Explain how the studio collaborates and invite them to submit their brief through the contact form or email (medarstudio@gmail.com) or phone (+212 698-048499).
         4. Keep answers concise (under 75 words), sharp, and value-driven. Answer in English.`,
       },
     });
@@ -63,13 +71,13 @@ export const initializeChat = (): Chat | null => {
 export const sendMessageToGemini = async (message: string): Promise<string> => {
   const apiKey = getApiKey();
   if (!apiKey) {
-    return "Our creative advisory desk is currently offline. You can reach our creative team directly at contact@medarstudio.com.";
+    return "Our creative advisory desk is currently offline. You can reach our creative team directly at medarstudio@gmail.com or +212 698-048499.";
   }
 
   try {
     const chat = initializeChat();
     if (!chat) {
-      return "Our creative advisory desk is currently offline. You can reach our creative team directly at contact@medarstudio.com.";
+      return "Our creative advisory desk is currently offline. You can reach our creative team directly at medarstudio@gmail.com or +212 698-048499.";
     }
     const response: GenerateContentResponse = await chat.sendMessage({ message });
     return response.text || "Transmission interrupted. Please reconnect your inquiry.";

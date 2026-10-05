@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@theme {
+  --font-heading: 'Syne', sans-serif;
+  --font-sans: 'Plus Jakarta Sans', sans-serif;
+  --font-serif-accent: 'Cinzel', serif;
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: 'Syne', sans-serif;
+  }
+  .font-serif-accent {
+    font-family: 'Cinzel', serif;
+  }
+}

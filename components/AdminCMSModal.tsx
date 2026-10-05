@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -21,7 +21,8 @@ import {
   Eye,
   Camera,
   CheckCircle2,
-  FileImage
+  FileImage,
+  DollarSign
 } from 'lucide-react';
 import { CaseStudy, AgencyService, StudioGeneralInfo, ProjectCategory } from '../types';
 
@@ -35,10 +36,12 @@ interface AdminCMSModalProps {
   onUpdateServices: (services: AgencyService[]) => void;
   studioInfo: StudioGeneralInfo;
   onUpdateStudioInfo: (info: StudioGeneralInfo) => void;
+  budgetTiers?: string[];
+  onUpdateBudgetTiers?: (tiers: string[]) => void;
   onResetDefaults: () => void;
 }
 
-type CMSTab = 'posts' | 'new-post' | 'media-library' | 'services' | 'studio' | 'backup';
+type CMSTab = 'posts' | 'new-post' | 'media-library' | 'services' | 'pricing' | 'studio' | 'backup';
 
 // Initial HD Studio Presets
 const DEFAULT_PRESET_IMAGES = [
@@ -90,6 +93,8 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
   onUpdateServices,
   studioInfo,
   onUpdateStudioInfo,
+  budgetTiers = ['< €100', '€100 - €300', '€300 - €750', '€750+'],
+  onUpdateBudgetTiers,
   onResetDefaults
 }) => {
   const [activeTab, setActiveTab] = useState<CMSTab>('posts');
@@ -100,6 +105,26 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
   const [localProjects, setLocalProjects] = useState<CaseStudy[]>(projects);
   const [localServices, setLocalServices] = useState<AgencyService[]>(services);
   const [localStudioInfo, setLocalStudioInfo] = useState<StudioGeneralInfo>(studioInfo);
+  const [localBudgetTiers, setLocalBudgetTiers] = useState<string[]>(budgetTiers);
+  const [newBudgetTierInput, setNewBudgetTierInput] = useState('');
+
+  // Synchronize state if external props change
+  useEffect(() => {
+    if (budgetTiers) {
+      setLocalBudgetTiers(budgetTiers);
+    }
+  }, [budgetTiers]);
+
+  const handleSaveBudgetTiers = (tiersToSave?: string[]) => {
+    const list = tiersToSave || localBudgetTiers;
+    if (list.length === 0) return;
+    setLocalBudgetTiers(list);
+    if (onUpdateBudgetTiers) {
+      onUpdateBudgetTiers(list);
+    }
+    setSaveNotification('Pricing and target budget tiers updated successfully!');
+    setTimeout(() => setSaveNotification(null), 3000);
+  };
 
   // Studio Media Library (stored in localStorage)
   const [mediaLibrary, setMediaLibrary] = useState<{ id: string; name: string; url: string; date: string }[]>(() => {
@@ -371,6 +396,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       projects: localProjects,
       services: localServices,
       studioInfo: localStudioInfo,
+      budgetTiers: localBudgetTiers,
       mediaLibrary: mediaLibrary,
       exportedAt: new Date().toISOString()
     };
@@ -394,6 +420,10 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         if (parsed.projects) setLocalProjects(parsed.projects);
         if (parsed.services) setLocalServices(parsed.services);
         if (parsed.studioInfo) setLocalStudioInfo(parsed.studioInfo);
+        if (parsed.budgetTiers && Array.isArray(parsed.budgetTiers)) {
+          setLocalBudgetTiers(parsed.budgetTiers);
+          if (onUpdateBudgetTiers) onUpdateBudgetTiers(parsed.budgetTiers);
+        }
         if (parsed.mediaLibrary) setMediaLibrary(parsed.mediaLibrary);
         triggerSaveNotification('Data imported successfully! Click "Save Live Changes" to confirm.');
       } catch (err) {
@@ -542,6 +572,19 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
             >
               <Sparkles className="w-4 h-4" />
               <span>Services & Offerings</span>
+            </button>
+
+            {/* Tab: Pricing & Target Budgets */}
+            <button
+              onClick={() => setActiveTab('pricing')}
+              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
+                activeTab === 'pricing'
+                  ? 'bg-[#ff4b26] text-white font-bold'
+                  : 'text-neutral-400 hover:bg-white/5 hover:text-white'
+              }`}
+            >
+              <DollarSign className="w-4 h-4 text-amber-400" />
+              <span>Pricing & Budgets ({localBudgetTiers.length})</span>
             </button>
 
             {/* Tab: Studio Profile */}
@@ -1472,6 +1515,232 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                     />
                   </div>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ================================================================= */}
+          {/* TAB: PRICING & TARGET BUDGETS                                     */}
+          {/* ================================================================= */}
+          {activeTab === 'pricing' && (
+            <div className="max-w-4xl mx-auto space-y-8 font-mono text-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
+                <div>
+                  <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
+                    Pricing & Target Budgets
+                  </h2>
+                  <p className="text-xs text-neutral-400 mt-1">
+                    Manage the budget range options displayed in the contact form for prospective clients.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => handleSaveBudgetTiers()}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer shadow-[0_4px_15px_rgba(255,75,38,0.3)]"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span>Save Pricing</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick One-Click Presets */}
+              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-heading text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span>Quick Budget Presets (1-Click Apply)</span>
+                  </h3>
+                  <span className="text-[10px] text-neutral-400">Click any preset to apply instantly</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                  {[
+                    {
+                      name: 'Ultra Low / Micro',
+                      tag: 'Beginners & Students',
+                      tiers: ['< €50', '€50 - €150', '€150 - €400', '€400+']
+                    },
+                    {
+                      name: 'Starter / Creator',
+                      tag: 'Recommended Default',
+                      tiers: ['< €100', '€100 - €300', '€300 - €750', '€750+']
+                    },
+                    {
+                      name: 'Accessible Studio',
+                      tag: 'Standard SMB',
+                      tiers: ['< €150', '€150 - €500', '€500 - €1,200', '€1,200+']
+                    },
+                    {
+                      name: 'Growth & Scale',
+                      tag: 'Established Brands',
+                      tiers: ['< €300', '€300 - €800', '€800 - €2,000', '€2,000+']
+                    }
+                  ].map((preset, idx) => (
+                    <div
+                      key={idx}
+                      onClick={() => handleSaveBudgetTiers(preset.tiers)}
+                      className="p-4 bg-black/40 hover:bg-[#ff4b26]/10 border border-white/10 hover:border-[#ff4b26] rounded-lg transition-all cursor-pointer group flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-bold text-white text-xs group-hover:text-[#ff4b26] transition-colors">
+                            {preset.name}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-neutral-400 block mb-3">{preset.tag}</span>
+                        <div className="space-y-1 text-[11px] text-neutral-300">
+                          {preset.tiers.map((t, i) => (
+                            <div key={i} className="flex items-center gap-1.5 truncate">
+                              <span className="w-1 h-1 rounded-full bg-[#ff4b26]" />
+                              <span>{t}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      <span className="mt-3 text-[10px] text-[#ff4b26] font-semibold uppercase group-hover:underline">
+                        Apply Preset →
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Active Tiers Editor */}
+              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-6">
+                <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                  <div>
+                    <h3 className="font-heading text-sm font-bold text-white uppercase tracking-wider">
+                      Active Budget Options ({localBudgetTiers.length})
+                    </h3>
+                    <p className="text-[11px] text-neutral-400 mt-0.5">
+                      Edit names directly, add new ranges, or remove tiers.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {localBudgetTiers.map((tier, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-3 bg-black/40 border border-white/10 rounded-lg"
+                    >
+                      <span className="text-neutral-500 font-bold text-xs w-6 shrink-0">
+                        0{index + 1}
+                      </span>
+                      <input
+                        type="text"
+                        value={tier}
+                        onChange={(e) => {
+                          const updated = [...localBudgetTiers];
+                          updated[index] = e.target.value;
+                          setLocalBudgetTiers(updated);
+                        }}
+                        className="flex-1 bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26] rounded text-xs font-mono"
+                        placeholder="e.g. < €100 or €100 - €300"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (localBudgetTiers.length <= 2) {
+                            triggerSaveNotification('Minimum 2 budget options required for client selection.');
+                            return;
+                          }
+                          const updated = localBudgetTiers.filter((_, i) => i !== index);
+                          setLocalBudgetTiers(updated);
+                        }}
+                        className="p-2 text-neutral-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
+                        title="Delete tier"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Add New Tier */}
+                <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    value={newBudgetTierInput}
+                    onChange={(e) => setNewBudgetTierInput(e.target.value)}
+                    placeholder="Enter new budget range (e.g. €750 - €1,500 or < 500 MAD)..."
+                    className="flex-1 bg-[#181824] border border-white/10 px-4 py-2.5 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-[#ff4b26] rounded font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!newBudgetTierInput.trim()) return;
+                      const updated = [...localBudgetTiers, newBudgetTierInput.trim()];
+                      setLocalBudgetTiers(updated);
+                      setNewBudgetTierInput('');
+                    }}
+                    className="px-4 py-2.5 bg-white/10 hover:bg-[#ff4b26] text-white text-xs font-bold uppercase tracking-wider rounded transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Tier</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Live Preview Card */}
+              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-heading text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <Eye className="w-4 h-4 text-[#ff4b26]" />
+                    <span>Live Public Form Preview</span>
+                  </h3>
+                  <span className="text-[10px] text-emerald-400">Updated in real-time</span>
+                </div>
+
+                <div className="p-5 bg-black/60 border border-white/10 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400">
+                      Target Budget
+                    </label>
+                    <span className="text-[10px] font-mono text-emerald-400">
+                      Accessible beginner & starter pricing
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    {localBudgetTiers.map((range, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-2.5 text-center text-xs font-mono border transition-colors ${
+                          idx === 1
+                            ? 'bg-[#ff4b26] text-white border-[#ff4b26] font-bold shadow-[0_2px_10px_rgba(255,75,38,0.4)]'
+                            : 'bg-black/30 border-white/[0.08] text-neutral-400'
+                        }`}
+                      >
+                        {range}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions Footer inside Pricing Tab */}
+              <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const beginnerDefault = ['< €100', '€100 - €300', '€300 - €750', '€750+'];
+                    handleSaveBudgetTiers(beginnerDefault);
+                  }}
+                  className="px-4 py-2 text-neutral-400 hover:text-white transition-colors"
+                >
+                  Reset to Beginner Defaults
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleSaveBudgetTiers()}
+                  className="flex items-center gap-2 px-6 py-3 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer shadow-[0_4px_15px_rgba(255,75,38,0.3)]"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Save Changes</span>
+                </button>
               </div>
             </div>
           )}

@@ -46,10 +46,14 @@ const AIChat: React.FC = () => {
 
     setTimeout(scrollToBottom, 80);
 
-    const responseText = await sendMessageToGemini(textToSend);
-    
-    setMessages(prev => [...prev, { role: 'model', text: responseText }]);
-    setIsLoading(false);
+    try {
+      const responseText = await sendMessageToGemini(textToSend);
+      setMessages(prev => [...prev, { role: 'model', text: responseText }]);
+    } catch {
+      setMessages(prev => [...prev, { role: 'model', text: 'Our creative advisory desk is currently offline. You can reach our creative team directly at medarstudio@gmail.com or +212 698-048499.' }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
