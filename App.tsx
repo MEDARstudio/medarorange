@@ -626,7 +626,7 @@ const App: React.FC = () => {
         HERO SECTION: High-impact editorial agency manifesto
         =======================================================================
       */}
-      <section className="relative min-h-[92svh] flex flex-col justify-center pt-32 pb-20 px-6 md:px-12 max-w-7xl mx-auto">
+      <section className="relative min-h-[92svh] flex flex-col justify-center pt-32 pb-20 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto">
         <motion.div style={{ y, opacity }} className="w-full">
           {/* Studio Trust Marker / Editorial Tag */}
           <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-neutral-400 mb-6 tracking-widest uppercase">
@@ -699,7 +699,7 @@ const App: React.FC = () => {
         PORTFOLIO / SHOWCASE SECTION
         =======================================================================
       */}
-      <section id="works" className="py-24 md:py-32 px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
+      <section id="works" className="py-24 md:py-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
           <div>
@@ -759,7 +759,7 @@ const App: React.FC = () => {
         SERVICES SECTION — CORE CAPABILITIES (Card Grid)
         =======================================================================
       */}
-      <section id="services" className="py-24 md:py-32 px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
+      <section id="services" className="py-24 md:py-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
         {/* Section Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
           <div>
@@ -969,7 +969,7 @@ const App: React.FC = () => {
         INTERACTIVE BRIEF & CONTACT SECTION
         =======================================================================
       */}
-      <section id="contact" className="py-24 md:py-32 px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
+      <section id="contact" className="py-24 md:py-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           {/* Left Info Column */}
           <div className="lg:col-span-5 space-y-8">
@@ -1170,40 +1170,43 @@ const App: React.FC = () => {
         Wordmark, coordinates, legal and back to top
         =======================================================================
       */}
-      <footer className="border-t border-white/[0.08] pt-12 pb-28 md:pb-20 px-6 md:px-12 bg-[#09090d]">
-        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 text-xs font-mono text-neutral-500">
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Secret 5-Clicks Admin Trigger: Completely discreet, no counter display */}
-            <span
-              onClick={handleSecretFooterClick}
-              className="text-white font-bold tracking-tight cursor-default select-none"
-              title=""
-            >
-              {studioInfo.studioName.toUpperCase()}
-            </span>
-            <span aria-hidden="true">·</span>
-            <span>{studioInfo.city}</span>
-            <span aria-hidden="true">·</span>
-            <span>All rights reserved © 2026</span>
-          </div>
+      <footer className="w-full bg-[#09090d]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 border-t border-white/[0.08] pt-12 pb-28 md:pb-20">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 text-xs font-mono text-neutral-500 text-center md:text-left">
+            {/* Left: Brand & Legal */}
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-3">
+              {/* Secret 5-Clicks Admin Trigger: Completely discreet, no counter display */}
+              <span
+                onClick={handleSecretFooterClick}
+                className="text-white font-bold tracking-tight cursor-default select-none hover:text-[#ff4b26] transition-colors"
+                title=""
+              >
+                {studioInfo.studioName.toUpperCase()}
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>{studioInfo.city}</span>
+              <span aria-hidden="true">·</span>
+              <span>All rights reserved © 2026</span>
+            </div>
 
-          {/* Navigation Links with Back to Top grouped cleanly in center */}
-          <div className="flex flex-wrap items-center gap-6">
-            <a href="#works" className="hover:text-white transition-colors">Works</a>
-            <a href="#services" className="hover:text-white transition-colors">Services</a>
-            <a href="#about" className="hover:text-white transition-colors">About</a>
-            <a href="#contact" className="hover:text-white transition-colors">Contact</a>
-            <span aria-hidden="true" className="text-neutral-700 hidden sm:inline">·</span>
-            <button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="text-neutral-300 hover:text-[#ff4b26] transition-colors bg-transparent border-none cursor-pointer flex items-center gap-1.5"
-            >
-              <span>↑ Back to Top</span>
-            </button>
-          </div>
+            {/* Center: In-frame Navigation Links */}
+            <nav className="flex flex-wrap items-center justify-center gap-6 text-neutral-400">
+              <a href="#works" className="hover:text-white transition-colors">Works</a>
+              <a href="#services" className="hover:text-white transition-colors">Services</a>
+              <a href="#about" className="hover:text-white transition-colors">About</a>
+              <a href="#contact" className="hover:text-white transition-colors">Contact</a>
+            </nav>
 
-          {/* Reserved clearance zone on the right so the floating AI advisor widget never obscures footer items */}
-          <div className="hidden lg:block w-48 pointer-events-none" />
+            {/* Right: Back to Top */}
+            <div className="flex items-center justify-center md:justify-end">
+              <button
+                onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                className="text-neutral-400 hover:text-[#ff4b26] transition-colors bg-transparent border-none cursor-pointer flex items-center gap-1.5"
+              >
+                <span>↑ Back to Top</span>
+              </button>
+            </div>
+          </div>
         </div>
       </footer>
 
