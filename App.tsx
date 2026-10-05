@@ -331,7 +331,8 @@ const DEFAULT_STUDIO_INFO: StudioGeneralInfo = {
   founderName: 'Mohamed Amine Amarir',
   founderRole: 'Studio Founder',
   founderFocus: 'Creative Direction, Studio Leadership, Brand Architecture & 3D Vision',
-  founderBio: 'Founder of Medar Studio, Mohamed Amine Amarir guides the studio’s strategic vision and curatorial standard. He established Medar Studio to unite an elite collective of specialized designers, 3D artists, typographers, and creative engineers. Under his leadership, the studio’s multidisciplinary team crafts bespoke visual solutions for brands, corporations, sports organizations, and creators worldwide.'
+  founderBio: 'Founder of Medar Studio, Mohamed Amine Amarir guides the studio’s strategic vision and curatorial standard. He established Medar Studio to unite an elite collective of specialized designers, 3D artists, typographers, and creative engineers. Under his leadership, the studio’s multidisciplinary team crafts bespoke visual solutions for brands, corporations, sports organizations, and creators worldwide.',
+  founderImage: ''
 };
 
 // Default Target Budgets (Ultra Accessible for Beginners, Creators, Startups)
@@ -878,10 +879,21 @@ const App: React.FC = () => {
 
           {/* Key Facts Ribbon */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 pt-8 mt-8 border-t border-white/[0.08] text-xs font-mono w-full">
-            <div className="min-w-0">
-              <span className="text-[10px] sm:text-[11px] text-neutral-500 uppercase tracking-wider block mb-1">Founder</span>
-              <span className="text-white font-bold text-xs sm:text-sm block truncate">{studioInfo.founderName}</span>
-              <span className="text-neutral-400 text-[10px] sm:text-[11px] truncate block">{studioInfo.founderRole}</span>
+            <div className="min-w-0 flex items-center gap-3">
+              {studioInfo.founderImage && (
+                <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/20 shrink-0 bg-neutral-900 shadow-sm">
+                  <img
+                    src={studioInfo.founderImage}
+                    alt={studioInfo.founderName}
+                    className="w-full h-full object-cover object-center"
+                  />
+                </div>
+              )}
+              <div className="min-w-0">
+                <span className="text-[10px] sm:text-[11px] text-neutral-500 uppercase tracking-wider block mb-0.5">Founder</span>
+                <span className="text-white font-bold text-xs sm:text-sm block truncate">{studioInfo.founderName}</span>
+                <span className="text-neutral-400 text-[10px] sm:text-[11px] truncate block">{studioInfo.founderRole}</span>
+              </div>
             </div>
             <div className="min-w-0">
               <span className="text-[10px] sm:text-[11px] text-neutral-500 uppercase tracking-wider block mb-1">Discipline</span>
@@ -927,9 +939,24 @@ const App: React.FC = () => {
             >
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 w-full">
                 <div className="flex items-start sm:items-center gap-5">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#ff4b26] to-[#7f1d07] flex items-center justify-center font-heading font-black text-white text-xl sm:text-2xl shadow-[0_0_24px_rgba(255,75,38,0.35)] shrink-0">
-                    MA
-                  </div>
+                  {studioInfo.founderImage ? (
+                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-white/20 shadow-[0_0_28px_rgba(255,75,38,0.35)] shrink-0 group bg-neutral-900">
+                      <img
+                        src={studioInfo.founderImage}
+                        alt={studioInfo.founderName}
+                        className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#ff4b26] to-[#7f1d07] flex items-center justify-center font-heading font-black text-white text-xl sm:text-2xl shadow-[0_0_24px_rgba(255,75,38,0.35)] shrink-0">
+                      {studioInfo.founderName
+                        .split(' ')
+                        .map((n) => n[0])
+                        .slice(0, 2)
+                        .join('')
+                        .toUpperCase() || 'MA'}
+                    </div>
+                  )}
                   <div>
                     <h4 className="font-heading text-2xl sm:text-3xl font-bold text-white tracking-tight">
                       {studioInfo.founderName}

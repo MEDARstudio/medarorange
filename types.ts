@@ -102,6 +102,7 @@ export interface StudioGeneralInfo {
   founderRole: string;
   founderFocus: string;
   founderBio: string;
+  founderImage?: string;
 }
 
 export type PaletteMood = 'vermilion' | 'obsidian' | 'solaris' | 'kinetic-mint';

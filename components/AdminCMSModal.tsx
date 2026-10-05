@@ -163,10 +163,12 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
 
   // Project selector for quick image assignment modal
   const [selectedImageToAssign, setSelectedImageToAssign] = useState<string | null>(null);
+  const [isSelectingFounderImage, setIsSelectingFounderImage] = useState(false);
 
   // Hidden file inputs refs
   const postFileInputRef = useRef<HTMLInputElement>(null);
   const libraryFileInputRef = useRef<HTMLInputElement>(null);
+  const founderFileInputRef = useRef<HTMLInputElement>(null);
   const [activePostIdForUpload, setActivePostIdForUpload] = useState<string | null>(null);
 
   // Synchronize with props
@@ -267,6 +269,35 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       triggerSaveNotification(`Image "${newMediaItem.name}" added to media library!`);
     } catch (err) {
       triggerSaveNotification("Error while uploading image.");
+    }
+  };
+
+  // Upload Founder Profile Photo directly
+  const handleUploadFounderImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const base64 = await convertFileToBase64(file);
+      setLocalStudioInfo((prev) => ({ ...prev, founderImage: base64 }));
+      triggerSaveNotification('Founder profile photo updated successfully!');
+
+      // Add to Studio Media Library as well
+      const newMediaItem = {
+        id: `founder-${Date.now()}`,
+        name: `Founder - ${file.name.replace(/\.[^/.]+$/, '')}`,
+        url: base64,
+        date: new Date().toLocaleDateString('en-US')
+      };
+      const updatedLib = [newMediaItem, ...mediaLibrary];
+      setMediaLibrary(updatedLib);
+      try {
+        localStorage.setItem('medar_studio_media_library', JSON.stringify(updatedLib));
+      } catch (err) {
+        console.warn("Storage quota exceeded", err);
+      }
+    } catch {
+      triggerSaveNotification('Unable to process the selected image.');
     }
   };
 
@@ -450,6 +481,13 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         ref={libraryFileInputRef}
         accept="image/*"
         onChange={handleUploadImageToLibrary}
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={founderFileInputRef}
+        accept="image/*"
+        onChange={handleUploadFounderImage}
         className="hidden"
       />
 
@@ -1289,6 +1327,19 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                             ))}
                           </select>
                         </div>
+
+                        {/* Set as Founder Profile Photo */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setLocalStudioInfo((prev) => ({ ...prev, founderImage: item.url }));
+                            triggerSaveNotification('Image set as Founder Profile Photo!');
+                          }}
+                          className="w-full py-1.5 px-2 bg-white/5 hover:bg-[#ff4b26]/20 hover:border-[#ff4b26] border border-white/10 text-[10px] text-neutral-300 hover:text-white rounded transition-colors flex items-center justify-center gap-1.5 cursor-pointer font-mono"
+                        >
+                          <Camera className="w-3 h-3 text-[#ff4b26]" />
+                          <span>Set as Founder Photo</span>
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -1406,10 +1457,105 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               </div>
 
               {/* Founder Information */}
-              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
-                <h3 className="font-heading text-base font-bold text-white text-sm">
-                  Founder Profile & Studio Direction
-                </h3>
+              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-6">
+                <div className="pb-3 border-b border-white/10">
+                  <h3 className="font-heading text-base font-bold text-white text-sm">
+                    Founder Profile & Studio Direction
+                  </h3>
+                  <p className="text-[11px] text-neutral-400 mt-0.5">
+                    Manage founder identity, executive profile photo, and studio manifesto role.
+                  </p>
+                </div>
+
+                {/* Founder Photo Management */}
+                <div className="p-4 bg-black/40 border border-white/10 rounded-xl space-y-3">
+                  <label className="text-neutral-300 font-bold block text-xs flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-[#ff4b26]" />
+                    <span>Founder Profile Photo</span>
+                  </label>
+
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                    {/* Visual Preview */}
+                    <div className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-white/20 shadow-[0_0_20px_rgba(255,75,38,0.25)] shrink-0 bg-neutral-900 group">
+                      {localStudioInfo.founderImage ? (
+                        <img
+                          src={localStudioInfo.founderImage}
+                          alt={localStudioInfo.founderName}
+                          className="w-full h-full object-cover object-center"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-[#ff4b26] to-[#7f1d07] flex items-center justify-center font-heading font-black text-white text-2xl">
+                          {localStudioInfo.founderName
+                            .split(' ')
+                            .map((n) => n[0])
+                            .slice(0, 2)
+                            .join('')
+                            .toUpperCase() || 'MA'}
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => founderFileInputRef.current?.click()}
+                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold transition-opacity cursor-pointer"
+                        title="Click to upload new photo"
+                      >
+                        <Camera className="w-4 h-4 mb-1 text-[#ff4b26]" />
+                        <span>Change</span>
+                      </button>
+                    </div>
+
+                    {/* Actions & URL Input */}
+                    <div className="flex-1 space-y-3 w-full">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => founderFileInputRef.current?.click()}
+                          className="px-3.5 py-2 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2 cursor-pointer shadow-md"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>Upload Photo</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => setIsSelectingFounderImage(true)}
+                          className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 cursor-pointer border border-white/10"
+                        >
+                          <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Pick from Media Library</span>
+                        </button>
+
+                        {localStudioInfo.founderImage && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setLocalStudioInfo({ ...localStudioInfo, founderImage: '' });
+                              triggerSaveNotification('Founder photo removed (reset to monogram).');
+                            }}
+                            className="px-3 py-2 text-neutral-400 hover:text-red-400 hover:bg-red-500/10 text-xs rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Remove</span>
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Direct URL input */}
+                      <div>
+                        <input
+                          type="url"
+                          value={localStudioInfo.founderImage || ''}
+                          onChange={(e) =>
+                            setLocalStudioInfo({ ...localStudioInfo, founderImage: e.target.value })
+                          }
+                          placeholder="Or paste image URL (https://...)"
+                          className="w-full bg-[#181824] border border-white/10 px-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#ff4b26] rounded font-mono"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-neutral-400 block mb-1">Founder Name</label>
@@ -1847,6 +1993,77 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
           )}
         </main>
       </div>
+
+      {/* Pick Founder Image from Media Library Modal */}
+      {isSelectingFounderImage && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-[#12121b] border border-white/20 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
+            <div className="p-4 border-b border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Camera className="w-4 h-4 text-[#ff4b26]" />
+                <h3 className="font-heading font-bold text-white text-sm">
+                  Select Founder Profile Photo from Library
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSelectingFounderImage(false)}
+                className="p-1 text-neutral-400 hover:text-white rounded cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {mediaLibrary.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => {
+                    setLocalStudioInfo((prev) => ({ ...prev, founderImage: item.url }));
+                    setIsSelectingFounderImage(false);
+                    triggerSaveNotification('Founder photo updated from Media Library!');
+                  }}
+                  className="group relative aspect-square rounded-xl overflow-hidden border border-white/10 hover:border-[#ff4b26] cursor-pointer bg-neutral-900 transition-all"
+                >
+                  <img
+                    src={item.url}
+                    alt={item.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                  />
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-2 text-center transition-opacity">
+                    <Check className="w-5 h-5 text-[#ff4b26] mb-1" />
+                    <span className="text-[11px] text-white font-bold truncate w-full">
+                      {item.name}
+                    </span>
+                    <span className="text-[9px] text-[#ff4b26] font-semibold mt-0.5">Use as Profile Photo</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="p-4 border-t border-white/10 flex items-center justify-between bg-black/40">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSelectingFounderImage(false);
+                  founderFileInputRef.current?.click();
+                }}
+                className="text-xs text-[#ff4b26] hover:underline flex items-center gap-1.5 cursor-pointer"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>Upload new photo from device instead</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsSelectingFounderImage(false)}
+                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs rounded transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
