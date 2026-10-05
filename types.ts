@@ -3,7 +3,14 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
-export type ProjectCategory = 'all' | '3d-webgl' | 'brand-identity' | 'ecommerce-luxe' | 'generative-art';
+export type ProjectCategory = 'all' | 'brand-identity' | 'sports-design' | '3d-webgl' | 'visual-design';
+
+export interface ProjectMediaItem {
+  id: string;
+  type: 'image' | 'video';
+  url: string;
+  title?: string;
+}
 
 export interface CaseStudy {
   id: string;
@@ -12,22 +19,24 @@ export interface CaseStudy {
   year: string;
   category: ProjectCategory;
   categoryLabel: string;
-  tagline: string;
   description: string;
-  metrics: {
+  media?: ProjectMediaItem[];
+  imagePromptFallback?: string;
+  videoUrl?: string;
+  accentColor?: string;
+  gradientTheme?: string;
+  tagline?: string;
+  metrics?: {
     stat: string;
     label: string;
   };
-  deliverables: string[];
-  gradientTheme: string;
-  accentColor: string;
-  imagePromptFallback?: string;
+  deliverables?: string[];
   award?: string;
   detailedContext?: {
-    challenge: string;
-    artDirection: string;
-    stack: string[];
-    result: string;
+    challenge?: string;
+    artDirection?: string;
+    stack?: string[];
+    result?: string;
   };
 }
 

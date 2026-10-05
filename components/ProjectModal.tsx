@@ -3,10 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowLeft, ArrowRight, Award } from 'lucide-react';
-import { CaseStudy } from '../types';
+import { X, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Film, Image as ImageIcon, Layers } from 'lucide-react';
+import { CaseStudy, ProjectMediaItem } from '../types';
 
 interface ProjectModalProps {
   project: CaseStudy | null;
@@ -14,39 +14,87 @@ interface ProjectModalProps {
   onNavigate: (direction: 'next' | 'prev') => void;
 }
 
-const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, onNavigate }) => {
+const ProjectModal: React.FC<ProjectModalProps> = ({
+  project,
+  onClose,
+  onNavigate
+}) => {
+  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+
+  // Extract all media items for the active project
+  const mediaItems: ProjectMediaItem[] = React.useMemo(() => {
+    if (!project) return [];
+    if (project.media && project.media.length > 0) {
+      return project.media;
+    }
+    const items: ProjectMediaItem[] = [];
+    if (project.videoUrl) {
+      items.push({ id: 'video-1', type: 'video', url: project.videoUrl, title: 'Video' });
+    }
+    if (project.imagePromptFallback) {
+      items.push({ id: 'img-1', type: 'image', url: project.imagePromptFallback, title: 'Cover Image' });
+    }
+    return items;
+  }, [project]);
+
+  // Reset media index when project changes
+  useEffect(() => {
+    setActiveMediaIndex(0);
+  }, [project?.id]);
+
   if (!project) return null;
+
+  const currentMedia = mediaItems[activeMediaIndex] || mediaItems[0];
+  const isVideo = currentMedia?.type === 'video' || (currentMedia?.url && currentMedia.url.startsWith('data:video/'));
+
+  const handleNextMedia = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (mediaItems.length <= 1) return;
+    setActiveMediaIndex((prev) => (prev + 1) % mediaItems.length);
+  };
+
+  const handlePrevMedia = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (mediaItems.length <= 1) return;
+    setActiveMediaIndex((prev) => (prev - 1 + mediaItems.length) % mediaItems.length);
+  };
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/85 backdrop-blur-xl overflow-y-auto">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/90 overflow-y-auto">
         {/* Backdrop dismiss */}
         <div className="fixed inset-0" onClick={onClose} />
 
         <motion.div
-          initial={{ opacity: 0, scale: 0.96, y: 20 }}
+          initial={{ opacity: 0, scale: 0.97, y: 15 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.96, y: 20 }}
-          transition={{ duration: 0.3 }}
-          className="relative z-10 w-full max-w-5xl bg-[#101017] border border-white/10 shadow-2xl overflow-hidden my-auto max-h-[94vh] flex flex-col"
+          exit={{ opacity: 0, scale: 0.97, y: 15 }}
+          transition={{ duration: 0.25 }}
+          className="relative z-10 w-full max-w-5xl bg-[#101017] border border-white/15 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col"
         >
           {/* Top Bar inside modal */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-[#0c0c12]">
             <div className="flex items-center gap-3 text-xs font-mono text-neutral-400">
               <span className="text-white font-semibold">{project.client}</span>
-              <span aria-hidden="true">/</span>
-              <span>{project.categoryLabel}</span>
-              <span aria-hidden="true">/</span>
+              <span aria-hidden="true">·</span>
+              <span className="text-[#ff4b26]">{project.categoryLabel}</span>
+              <span aria-hidden="true">·</span>
               <span className="tabular-nums">{project.year}</span>
-              <span aria-hidden="true">/</span>
-              <span className="text-[#ff4b26]">4:5 Format</span>
+              {mediaItems.length > 1 && (
+                <>
+                  <span aria-hidden="true">·</span>
+                  <span className="text-white/80 font-mono bg-white/10 px-2 py-0.5 rounded">
+                    {activeMediaIndex + 1} / {mediaItems.length}
+                  </span>
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={() => onNavigate('prev')}
                 data-hover="true"
-                className="w-8 h-8 flex items-center justify-center border border-white/10 hover:border-white/30 text-white transition-colors"
+                className="w-8 h-8 flex items-center justify-center border border-white/10 hover:border-white/30 text-white transition-colors cursor-pointer"
                 title="Previous project"
               >
                 <ArrowLeft className="w-4 h-4" />
@@ -54,7 +102,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, onNavigat
               <button
                 onClick={() => onNavigate('next')}
                 data-hover="true"
-                className="w-8 h-8 flex items-center justify-center border border-white/10 hover:border-white/30 text-white transition-colors"
+                className="w-8 h-8 flex items-center justify-center border border-white/10 hover:border-white/30 text-white transition-colors cursor-pointer"
                 title="Next project"
               >
                 <ArrowRight className="w-4 h-4" />
@@ -62,7 +110,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, onNavigat
               <button
                 onClick={onClose}
                 data-hover="true"
-                className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white text-white hover:text-black transition-colors ml-2"
+                className="w-8 h-8 flex items-center justify-center bg-white/10 hover:bg-white text-white hover:text-black transition-colors ml-2 cursor-pointer"
                 title="Close"
               >
                 <X className="w-4 h-4" />
@@ -71,157 +119,158 @@ const ProjectModal: React.FC<ProjectModalProps> = ({ project, onClose, onNavigat
           </div>
 
           {/* Modal Body */}
-          <div className="overflow-y-auto p-6 md:p-10 space-y-8">
-            {/* Visual & Overview Section */}
+          <div className="overflow-y-auto p-6 md:p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-              {/* Instagram 4:5 Poster Artwork Display */}
-              <div className="md:col-span-5 relative w-full aspect-[4/5] bg-[#08080c] border border-white/15 overflow-hidden flex flex-col justify-between p-5 shadow-2xl">
-                {/* Real Post Artwork */}
-                {project.imagePromptFallback && (
-                  <img
-                    src={project.imagePromptFallback}
-                    alt={project.title}
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                )}
+              {/* Visual Display (4:5 Artwork Carousel) */}
+              <div className="md:col-span-7 flex flex-col gap-3">
+                <div className="relative w-full aspect-[4/5] bg-[#08080c] border border-white/15 overflow-hidden flex flex-col justify-between p-4 shadow-xl group">
+                  {/* Media Content */}
+                  {currentMedia && (
+                    isVideo ? (
+                      <video
+                        key={currentMedia.url}
+                        src={currentMedia.url}
+                        controls
+                        playsInline
+                        autoPlay
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      <img
+                        key={currentMedia.url}
+                        src={currentMedia.url}
+                        alt={project.title}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        style={{ imageRendering: 'auto' }}
+                      />
+                    )
+                  )}
 
-                <div className={`absolute inset-0 bg-gradient-to-b ${project.gradientTheme} ${
-                  project.imagePromptFallback ? 'opacity-30' : 'opacity-50'
-                }`} />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/35 to-black/60 pointer-events-none" />
-                
-                {/* Subtle grid */}
-                <div 
-                  className="absolute inset-0 opacity-[0.06] pointer-events-none"
-                  style={{
-                    backgroundImage: `linear-gradient(to right, #ffffff 1px, transparent 1px), linear-gradient(to bottom, #ffffff 1px, transparent 1px)`,
-                    backgroundSize: '24px 24px'
-                  }}
-                />
-
-                <div className="relative z-10 flex items-center justify-between text-[10px] font-mono text-white/70">
-                  <span className="bg-black/60 backdrop-blur-md px-2 py-0.5 border border-white/10">4:5 INSTAGRAM POST</span>
-                  {project.award && (
-                    <span className="flex items-center gap-1 text-[10px] text-white bg-black/70 backdrop-blur-md px-2 py-0.5 border border-white/15">
-                      <Award className="w-3 h-3 text-[#ff4b26]" />
-                      <span>{project.award}</span>
+                  {/* Top Overlay Badge */}
+                  <div className="relative z-10 flex items-center justify-between text-[10px] font-mono text-white/90">
+                    <span className="bg-black/80 px-2 py-0.5 border border-white/15">
+                      {isVideo ? 'VIDEO ASSET' : '4:5 POST'}
                     </span>
-                  )}
-                </div>
-
-                {/* Center Vector Graphics (when no image is set) */}
-                <div className="relative z-10 my-auto flex items-center justify-center pointer-events-none">
-                  {!project.imagePromptFallback && (
-                    <svg className="w-full h-auto max-h-[220px] opacity-80" viewBox="0 0 320 280" fill="none">
-                      <circle cx="160" cy="140" r="100" stroke="rgba(255,255,255,0.15)" strokeWidth="1" strokeDasharray="4 4" />
-                      <circle cx="160" cy="140" r="75" stroke={project.accentColor} strokeWidth="1.5" strokeOpacity="0.7" />
-                      <line x1="40" y1="140" x2="280" y2="140" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-                      <line x1="160" y1="20" x2="160" y2="260" stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-                      <rect x="95" y="85" width="130" height="110" stroke="rgba(255,255,255,0.25)" strokeWidth="1" />
-                      <text x="160" y="145" textAnchor="middle" fill="#ffffff" fontSize="14" fontFamily="Syne" fontWeight="bold" letterSpacing="0.25em">
-                        {project.client.toUpperCase()}
-                      </text>
-                      <text x="160" y="165" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="9" fontFamily="monospace" letterSpacing="0.15em">
-                        ARCHIVE · 4:5 FORMAT
-                      </text>
-                    </svg>
-                  )}
-                </div>
-
-                <div className="relative z-10 flex items-end justify-between border-t border-white/10 pt-3">
-                  <div>
-                    <span className="block text-[9px] font-mono text-neutral-400 uppercase">Medar Studio</span>
-                    <span className="block text-xs font-bold text-white">{project.title}</span>
+                    {mediaItems.length > 1 && (
+                      <span className="bg-black/80 px-2 py-0.5 border border-white/15 text-white flex items-center gap-1 font-mono">
+                        <Layers className="w-3 h-3 text-[#ff4b26]" />
+                        <span>{activeMediaIndex + 1} of {mediaItems.length}</span>
+                      </span>
+                    )}
                   </div>
-                  <span className="text-[10px] font-mono text-neutral-400">1080 × 1350 px</span>
+
+                  {/* Carousel Previous / Next Arrows (if multiple media) */}
+                  {mediaItems.length > 1 && (
+                    <div className="relative z-20 flex items-center justify-between pointer-events-none my-auto">
+                      <button
+                        type="button"
+                        onClick={handlePrevMedia}
+                        className="w-10 h-10 rounded-full bg-black/80 hover:bg-[#ff4b26] text-white flex items-center justify-center pointer-events-auto transition-colors border border-white/20 shadow-lg cursor-pointer"
+                        title="Previous photo/video"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleNextMedia}
+                        className="w-10 h-10 rounded-full bg-black/80 hover:bg-[#ff4b26] text-white flex items-center justify-center pointer-events-auto transition-colors border border-white/20 shadow-lg cursor-pointer"
+                        title="Next photo/video"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Bottom Overlay Label */}
+                  <div className="relative z-10 flex items-end justify-between border-t border-white/10 pt-2.5 bg-black/70 -mx-4 -mb-4 p-3">
+                    <div>
+                      <span className="block text-[9px] font-mono text-neutral-400 uppercase">Medar Studio</span>
+                      <span className="block text-xs font-bold text-white truncate max-w-[200px]">{project.title}</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-neutral-400">
+                      {isVideo ? 'Dynamic Motion' : 'High Resolution'}
+                    </span>
+                  </div>
                 </div>
+
+                {/* Thumbnail Navigation Strip if multiple media */}
+                {mediaItems.length > 1 && (
+                  <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+                    {mediaItems.map((item, idx) => (
+                      <button
+                        key={item.id || idx}
+                        type="button"
+                        onClick={() => setActiveMediaIndex(idx)}
+                        className={`relative w-16 h-20 rounded-md overflow-hidden border-2 shrink-0 transition-all cursor-pointer ${
+                          activeMediaIndex === idx
+                            ? 'border-[#ff4b26] ring-2 ring-[#ff4b26]/40 scale-105'
+                            : 'border-white/15 opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        {item.type === 'video' ? (
+                          <div className="w-full h-full bg-black flex items-center justify-center text-cyan-400">
+                            <Film className="w-5 h-5" />
+                          </div>
+                        ) : (
+                          <img
+                            src={item.url}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                        <span className="absolute bottom-0.5 right-0.5 text-[8px] font-mono bg-black/80 text-white px-1 rounded">
+                          #{idx + 1}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {/* Title & Core Meta Column */}
-              <div className="md:col-span-7 space-y-6">
+              {/* Title & Information Column */}
+              <div className="md:col-span-5 space-y-6">
                 <div>
+                  <span className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest block mb-1">
+                    {project.categoryLabel}
+                  </span>
                   <h2 className="font-heading text-3xl md:text-4xl font-bold text-white tracking-tight mb-2">
                     {project.title}
                   </h2>
-                  <p className="text-base text-[#ff4b26] font-mono">
-                    {project.tagline}
+                  <div className="flex items-center gap-3 text-xs font-mono text-neutral-400 mt-2">
+                    <span>Client: <strong className="text-white">{project.client}</strong></span>
+                    <span>·</span>
+                    <span>Year: <strong className="text-white">{project.year}</strong></span>
+                  </div>
+                </div>
+
+                <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded">
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-neutral-500 block mb-1.5">
+                    Project Overview
+                  </span>
+                  <p className="text-sm text-neutral-300 leading-relaxed whitespace-pre-line">
+                    {project.description || 'Bespoke freelance visual solution crafted by Medar Studio.'}
                   </p>
                 </div>
 
-                <p className="text-sm text-neutral-300 leading-relaxed">
-                  {project.description}
-                </p>
-
-                {/* 3-Column Stats */}
-                <div className="grid grid-cols-2 gap-4 p-5 bg-white/[0.03] border border-white/[0.08]">
-                  <div>
-                    <span className="block text-2xl font-bold font-mono text-white tabular-nums">
-                      {project.metrics.stat}
-                    </span>
-                    <span className="block text-[11px] uppercase tracking-wider text-neutral-400 mt-0.5">
-                      {project.metrics.label}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="block text-[11px] uppercase tracking-wider text-neutral-500 mb-1">
-                      Deliverables
-                    </span>
-                    <div className="text-xs text-neutral-300">
-                      {project.deliverables.join(' · ')}
-                    </div>
-                  </div>
+                {/* Media Counter details */}
+                <div className="p-3 bg-white/[0.02] border border-white/[0.08] rounded flex items-center justify-between text-xs font-mono text-neutral-400">
+                  <span>Gallery Content</span>
+                  <span className="text-white font-bold">
+                    {mediaItems.length} {mediaItems.length === 1 ? 'Asset' : 'Assets'}
+                  </span>
                 </div>
 
-                {project.detailedContext && (
-                  <div className="space-y-4 pt-2">
-                    <div>
-                      <h4 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-1">
-                        Challenge & Strategic Context
-                      </h4>
-                      <p className="text-xs text-neutral-300 leading-relaxed">
-                        {project.detailedContext.challenge}
-                      </p>
-                    </div>
-
-                    <div>
-                      <h4 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-1">
-                        Art Direction
-                      </h4>
-                      <p className="text-xs text-neutral-300 leading-relaxed">
-                        {project.detailedContext.artDirection}
-                      </p>
-                    </div>
-
-                    <div>
-                      <h4 className="text-xs font-mono uppercase tracking-wider text-neutral-400 mb-1.5">
-                        Technologies & Stack
-                      </h4>
-                      <div className="flex flex-wrap gap-1.5">
-                        {project.detailedContext.stack.map((item, idx) => (
-                          <span key={idx} className="text-[11px] font-mono px-2 py-0.5 bg-white/5 border border-white/10 text-neutral-200">
-                            {item}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {/* Contact CTA */}
+                <div className="pt-2">
+                  <a
+                    href="#contact"
+                    onClick={onClose}
+                    className="block text-center w-full py-3.5 px-4 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white text-xs font-bold uppercase tracking-widest rounded transition-colors shadow-lg"
+                  >
+                    Inquire About a Similar Project
+                  </a>
+                </div>
               </div>
-            </div>
-
-            {/* Bottom Actions */}
-            <div className="pt-6 border-t border-white/[0.08] flex items-center justify-between">
-              <a
-                href="#contact"
-                onClick={onClose}
-                className="px-6 py-3 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white text-xs font-bold uppercase tracking-widest transition-colors"
-                data-hover="true"
-              >
-                Inquire About a Similar Project
-              </a>
-              <span className="text-xs text-neutral-500 font-mono">
-                Medar Studio Archive · #{project.id}
-              </span>
             </div>
           </div>
         </motion.div>

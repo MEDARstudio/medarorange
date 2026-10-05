@@ -39,154 +39,55 @@ import SecretAuthModal from './components/SecretAuthModal';
 import AdminCMSModal from './components/AdminCMSModal';
 import { CaseStudy, ProjectCategory, PaletteMood, AgencyService, TeamMember, StudioValue, StudioGeneralInfo } from './types';
 
-// Curated Agency Case Studies
+// Curated Agency Case Studies (Clean Starter Slots for Freelance Portfolio)
 const PORTFOLIO_PROJECTS: CaseStudy[] = [
   {
-    id: 'aura-monolith',
-    title: 'Aura Monolith',
-    client: 'Manufacture V. Geneva',
+    id: 'project-1',
+    title: 'Visual Identity & Branding',
+    client: 'Freelance Client',
     year: '2025',
-    category: '3d-webgl',
-    categoryLabel: 'Haute Horlogerie 3D & WebGL',
-    tagline: 'The anatomy of time reinvented through titanium and sapphire shaders.',
-    description: 'Creation of an immersive digital flagship and real-time 60 FPS 3D configurator for the worldwide launch of a revolutionary timepiece.',
-    metrics: {
-      stat: '+185%',
-      label: 'Pre-order conversion rate'
-    },
-    deliverables: ['Art Direction', '3D WebGL Configurator', 'Design System'],
-    gradientTheme: 'from-[#ff4b26]/50 via-[#7c1e13]/60 to-[#0c0c10]',
+    category: 'brand-identity',
+    categoryLabel: 'Brand Identity',
+    description: 'Bespoke brand architecture, logotype crafting, typography system, and complete visual identity.',
+    imagePromptFallback: '',
     accentColor: '#ff4b26',
-    imagePromptFallback: 'Dark obsidian watch dial exploded in 3D WebGL space',
-    award: 'Awwwards Site of the Month',
-    detailedContext: {
-      challenge: 'Elevating the micromechanical complexity of a complicated watch without adding friction to the purchase journey on mobile and desktop.',
-      artDirection: 'Obsidian and sandblasted bronze tones. Monumental sharp-serif typography paired with a frictionless interface.',
-      stack: ['Three.js / GLSL', 'React 19', 'Web Audio API', 'Headless Shopify'],
-      result: 'Over 420,000 unique visitors during the 48-hour launch and a 42% increase in average order value compared to prior collections.'
-    }
+    gradientTheme: 'from-[#ff4b26]/30 to-[#0c0c10]'
   },
   {
-    id: 'solaris-kinetik',
-    title: 'Solaris Kinetik',
-    client: 'Kinetik Architecture',
+    id: 'project-2',
+    title: 'Sports Graphics & Matchday',
+    client: 'Sports Project',
     year: '2025',
-    category: 'brand-identity',
-    categoryLabel: 'Identity & Spatial Design',
-    tagline: 'Harmonizing zenithal light with living geometric structures.',
-    description: 'Institutional web platform and generative visual identity system for an international bioclimatic engineering practice.',
-    metrics: {
-      stat: '€24M',
-      label: 'Tender proposals secured'
-    },
-    deliverables: ['Brand Identity', 'Digital Platform', 'Cinematic Motion'],
-    gradientTheme: 'from-[#f59e0b]/50 via-[#ea580c]/60 to-[#0c0c10]',
-    accentColor: '#f59e0b',
-    imagePromptFallback: 'Solar warm architectural pavilion dusk photography',
-    award: 'FWA of the Day',
-    detailedContext: {
-      challenge: 'Translating the impermanence of natural daylight into an interactive digital language evolving with the visitor’s latitude.',
-      artDirection: 'Inspired by Atacama twilights: warm amber gradients, radical typographic contrast, and asymmetrical layouts.',
-      stack: ['Next.js', 'Framer Motion', 'Tailwind CSS', 'Sanity CMS'],
-      result: '240% increase in institutional partnership inquiries and recognition at the Venice and Copenhagen architecture biennales.'
-    }
+    category: 'sports-design',
+    categoryLabel: 'Sports Design',
+    description: 'High-impact matchday announcements, athletic typography, player posters, and visual communication.',
+    imagePromptFallback: '',
+    accentColor: '#38bdf8',
+    gradientTheme: 'from-[#38bdf8]/30 to-[#0c0c10]'
   },
   {
-    id: 'elysium-studio',
-    title: 'Elysium Studio',
-    client: 'Maison Elysium Paris',
-    year: '2024',
-    category: 'ecommerce-luxe',
-    categoryLabel: 'Haute Couture E-Commerce',
-    tagline: 'The tactile elegance of haute couture silk translated into pixel flows.',
-    description: 'Complete digital commerce redesign for the Parisian fashion house, uniting swift performance with visual poetry.',
-    metrics: {
-      stat: '+210%',
-      label: 'Average session duration'
-    },
-    deliverables: ['Experience Audit', 'Editorial Direction', 'Headless Development'],
-    gradientTheme: 'from-[#e0a96d]/40 via-[#5b3b19]/60 to-[#0c0c10]',
-    accentColor: '#e0a96d',
-    imagePromptFallback: 'Haute couture editorial silk drapery and Parisian typography',
-    award: 'Art Directors Club Selection',
-    detailedContext: {
-      challenge: 'Retaining the contemplative nobility of a runway show while maintaining sub-0.8s page load speeds worldwide.',
-      artDirection: 'Deconstructed broadsheet compositions, velvety photographic grain, and neoclassical typography.',
-      stack: ['Shopify Plus Headless', 'Vite', 'Turborepo', 'GSAP'],
-      result: '180% surge in international sales and doubling of private bespoke client orders.'
-    }
-  },
-  {
-    id: 'chroma-odyssey',
-    title: 'Chroma Odyssey',
-    client: 'Contemporary Art Foundation',
-    year: '2024',
-    category: 'generative-art',
-    categoryLabel: 'Generative Art & Spatial Installation',
-    tagline: 'An infinite digital canvas sculpted by audience presence and motion.',
-    description: 'Interactive curatorial installation enabling the public to sculpt digital artworks through sound waves and gestural interaction.',
-    metrics: {
-      stat: '180K+',
-      label: 'Generative interactions recorded'
-    },
-    deliverables: ['Shader R&D', 'Web & In-Situ Installation', 'Sound Design'],
-    gradientTheme: 'from-[#2ee9a7]/40 via-[#0f766e]/60 to-[#0c0c10]',
-    accentColor: '#2ee9a7',
-    imagePromptFallback: 'Generative chromatic wave patterns in museum dark room',
-    award: 'Red Dot Best of the Best',
-    detailedContext: {
-      challenge: 'Delivering fluid, captivating generative visuals running effortlessly on 12-meter 8K museum touchscreens as well as mobile devices.',
-      artDirection: 'Exploring non-Newtonian fluid refraction: kinetic mint, deep indigo, and harmonic pulsations.',
-      stack: ['WebGL 2.0', 'Custom Compute Shaders', 'WebSockets', 'Canvas API'],
-      result: 'The installation toured 6 European contemporary art museums and was named Interactive Experience of the Year.'
-    }
-  },
-  {
-    id: 'nexus-system',
-    title: 'Nexus Intelligence',
-    client: 'Nexus Labs Berlin',
+    id: 'project-3',
+    title: '3D Visual & Digital Artwork',
+    client: '3D Studio',
     year: '2025',
     category: '3d-webgl',
-    categoryLabel: 'Spatial UI & AI Visualization',
-    tagline: 'Transforming complex neural model orchestration into a tactile, intuitive interface.',
-    description: 'Real-time control dashboard and visual portal designed for an enterprise decentralized artificial intelligence suite.',
-    metrics: {
-      stat: '-40%',
-      label: 'Analyst decision-making time'
-    },
-    deliverables: ['Systemic UX / UI', 'Data Visualization', 'High-Perf Front-End'],
-    gradientTheme: 'from-[#38bdf8]/40 via-[#1e3a8a]/60 to-[#0c0c10]',
-    accentColor: '#38bdf8',
-    award: 'Awwwards Developer Award',
-    detailedContext: {
-      challenge: 'Representing billions of machine-learning parameters in an intuitive, ergonomic, and sensory visual format.',
-      artDirection: 'Ultra-precise engineering grid, luminescent cyan accents, and monospace typography calibrated to golden ratios.',
-      stack: ['React 19', 'D3.js', 'WebGL', 'Tailwind CSS'],
-      result: 'Adopted by more than 45,000 engineers globally with a €30M Series A round closed.'
-    }
+    categoryLabel: '3D Design',
+    description: 'Hyper-detailed 3D modeling, studio lighting setup, and photorealistic creative artwork.',
+    imagePromptFallback: '',
+    accentColor: '#f59e0b',
+    gradientTheme: 'from-[#f59e0b]/30 to-[#0c0c10]'
   },
   {
-    id: 'valence-editions',
-    title: 'Valence Editions',
-    client: 'Valence Publishing New York',
+    id: 'project-4',
+    title: 'Digital Campaign & Social Posters',
+    client: 'Visual Communications',
     year: '2024',
-    category: 'brand-identity',
-    categoryLabel: 'Editorial Platform & Typography',
-    tagline: 'The craft of rare books reincarnated in a sculptural digital library.',
-    description: 'Design of a digital reading sanctuary and comprehensive catalog for numbered art publications.',
-    metrics: {
-      stat: '100%',
-      label: 'Limited editions sold out in 12h'
-    },
-    deliverables: ['Custom Typography', 'Editorial Direction', 'E-Commerce'],
-    gradientTheme: 'from-[#e2e8f0]/30 via-[#475569]/50 to-[#0c0c10]',
-    accentColor: '#ffffff',
-    detailedContext: {
-      challenge: 'Crafting a virtual browsing sensation that honors the tactile weight of paper and typographic ink textures.',
-      artDirection: 'High-contrast monochrome inspired by 20th-century artisan printing presses.',
-      stack: ['Next.js', 'Canvas Paper Simulator', 'Shopify Plus'],
-      result: 'All numbered artist editions were acquired within 12 hours during the opening preview.'
-    }
+    category: 'visual-design',
+    categoryLabel: 'Visual Design',
+    description: 'Engaging digital promotional assets, layout designs, and social media art direction.',
+    imagePromptFallback: '',
+    accentColor: '#2ee9a7',
+    gradientTheme: 'from-[#2ee9a7]/30 to-[#0c0c10]'
   }
 ];
 
@@ -346,7 +247,7 @@ const App: React.FC = () => {
   // Dynamic Content with LocalStorage Persistence
   const [projectsList, setProjectsList] = useState<CaseStudy[]>(() => {
     try {
-      const saved = localStorage.getItem('medar_studio_projects');
+      const saved = localStorage.getItem('medar_studio_projects_v2');
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.error(e);
@@ -423,9 +324,24 @@ const App: React.FC = () => {
   const handleUpdateProjects = (newProjects: CaseStudy[]) => {
     setProjectsList(newProjects);
     try {
-      localStorage.setItem('medar_studio_projects', JSON.stringify(newProjects));
+      localStorage.setItem('medar_studio_projects_v2', JSON.stringify(newProjects));
     } catch (e) {
       console.warn("Storage quota exceeded or unavailable:", e);
+    }
+  };
+
+  const handleUpdateSingleProjectImage = (projectId: string, imageBase64: string) => {
+    const updated = projectsList.map((p) =>
+      p.id === projectId ? { ...p, imagePromptFallback: imageBase64 } : p
+    );
+    setProjectsList(updated);
+    if (activeProject && activeProject.id === projectId) {
+      setActiveProject({ ...activeProject, imagePromptFallback: imageBase64 });
+    }
+    try {
+      localStorage.setItem('medar_studio_projects_v2', JSON.stringify(updated));
+    } catch (e) {
+      console.warn("Storage quota exceeded:", e);
     }
   };
 
@@ -466,9 +382,12 @@ const App: React.FC = () => {
   const handleResetDefaults = () => {
     try {
       localStorage.removeItem('medar_studio_projects');
+      localStorage.removeItem('medar_studio_projects_v2');
       localStorage.removeItem('medar_studio_services');
       localStorage.removeItem('medar_studio_general');
       localStorage.removeItem('medar_studio_budget_tiers');
+      localStorage.removeItem('medar_studio_media_library');
+      localStorage.removeItem('medar_studio_media_library_v2');
     } catch (e) {
       console.warn("Storage unavailable:", e);
     }
@@ -496,10 +415,21 @@ const App: React.FC = () => {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Helper to determine if a project has real uploaded media (photos or videos)
+  const hasUploadedMedia = (p: CaseStudy) => {
+    if (p.media && p.media.length > 0) return true;
+    if (p.imagePromptFallback && p.imagePromptFallback.trim() !== '') return true;
+    if (p.videoUrl && p.videoUrl.trim() !== '') return true;
+    return false;
+  };
+
+  // Only published projects with actual uploaded media are shown to visitors!
+  const publishedProjects = projectsList.filter(hasUploadedMedia);
+
   // Filter projects dynamically
   const filteredProjects = selectedCategory === 'all'
-    ? projectsList
-    : projectsList.filter(p => p.category === selectedCategory);
+    ? publishedProjects
+    : publishedProjects.filter(p => p.category === selectedCategory);
 
   // Keyboard navigation for project modal
   useEffect(() => {
@@ -511,15 +441,16 @@ const App: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeProject, projectsList]);
+  }, [activeProject, publishedProjects]);
 
   const navigateProject = (direction: 'next' | 'prev') => {
-    if (!activeProject) return;
-    const currentIndex = projectsList.findIndex(p => p.id === activeProject.id);
+    if (!activeProject || publishedProjects.length === 0) return;
+    const currentIndex = publishedProjects.findIndex(p => p.id === activeProject.id);
+    if (currentIndex === -1) return;
     let nextIndex = direction === 'next' 
-      ? (currentIndex + 1) % projectsList.length
-      : (currentIndex - 1 + projectsList.length) % projectsList.length;
-    setActiveProject(projectsList[nextIndex]);
+      ? (currentIndex + 1) % publishedProjects.length
+      : (currentIndex - 1 + publishedProjects.length) % publishedProjects.length;
+    setActiveProject(publishedProjects[nextIndex]);
   };
 
   const scrollToSection = (id: string) => {
@@ -581,12 +512,14 @@ const App: React.FC = () => {
 
           {/* Zone 2: Clean text links */}
           <nav className="hidden md:flex items-center gap-5 lg:gap-8 xl:gap-10 text-xs font-semibold uppercase tracking-wider text-neutral-300">
-            <button 
-              onClick={() => scrollToSection('works')}
-              className="hover:text-white transition-colors bg-transparent border-none cursor-pointer whitespace-nowrap"
-            >
-              Works
-            </button>
+            {publishedProjects.length > 0 && (
+              <button 
+                onClick={() => scrollToSection('works')}
+                className="hover:text-white transition-colors bg-transparent border-none cursor-pointer whitespace-nowrap"
+              >
+                Works
+              </button>
+            )}
             <button 
               onClick={() => scrollToSection('services')}
               className="hover:text-white transition-colors bg-transparent border-none cursor-pointer whitespace-nowrap"
@@ -639,7 +572,7 @@ const App: React.FC = () => {
           >
             <div className="flex flex-col gap-6 text-2xl font-heading font-bold text-white mb-10">
               {[
-                { label: 'Works', id: 'works' },
+                ...(publishedProjects.length > 0 ? [{ label: 'Works', id: 'works' }] : []),
                 { label: 'Services', id: 'services' },
                 { label: 'About', id: 'about' },
                 { label: 'Contact', id: 'contact' }
@@ -745,63 +678,73 @@ const App: React.FC = () => {
 
       {/* 
         =======================================================================
-        PORTFOLIO / SHOWCASE SECTION
+        PORTFOLIO / SHOWCASE SECTION (Only visible to visitors if media exists)
         =======================================================================
       */}
-      <section id="works" className="py-24 md:py-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
-        {/* Section Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-          <div>
-            <div className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest mb-3 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#ff4b26]" />
-              <span>Selected Archives · 4:5 Post Format</span>
+      {publishedProjects.length > 0 && (
+        <section id="works" className="py-24 md:py-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
+          {/* Section Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+            <div>
+              <div className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#ff4b26]" />
+                <span>Selected Archives · 4:5 Post Format</span>
+              </div>
+              <h2 className="font-heading text-3xl md:text-5xl font-bold tracking-tight text-white">
+                Digital Works & Case Studies.
+              </h2>
             </div>
-            <h2 className="font-heading text-3xl md:text-5xl font-bold tracking-tight text-white">
-              Digital Works & Case Studies.
-            </h2>
+
+            <p className="text-sm md:text-base text-neutral-400 max-w-md leading-relaxed">
+              Signature artworks and visual deliverables calibrated to the 4:5 ratio for digital and editorial showcase, uniting artistic distinction and technical precision.
+            </p>
           </div>
 
-          <p className="text-sm md:text-base text-neutral-400 max-w-md leading-relaxed">
-            Signature artworks and visual deliverables calibrated to the 4:5 ratio for digital and editorial showcase, uniting artistic distinction and technical precision.
-          </p>
-        </div>
+          {/* Filter Bar (Interactive Segmented Buttons) */}
+          <div className="flex flex-wrap items-center gap-2 mb-12 p-1.5 bg-[#121218] border border-white/[0.08] w-fit">
+            {[
+              { id: 'all', label: 'All Works' },
+              { id: 'brand-identity', label: 'Brand Identity' },
+              { id: 'sports-design', label: 'Sports Design' },
+              { id: '3d-webgl', label: '3D Design' },
+              { id: 'visual-design', label: 'Visual Design' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setSelectedCategory(tab.id as ProjectCategory)}
+                data-hover="true"
+                className={`px-4 py-2 text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
+                  selectedCategory === tab.id
+                    ? 'bg-white text-black shadow-sm'
+                    : 'text-neutral-400 hover:text-white bg-transparent'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-        {/* Filter Bar (Interactive Segmented Buttons) */}
-        <div className="flex flex-wrap items-center gap-2 mb-12 p-1.5 bg-[#121218] border border-white/[0.08] w-fit">
-          {[
-            { id: 'all', label: 'All Works' },
-            { id: '3d-webgl', label: '3D WebGL & Shaders' },
-            { id: 'brand-identity', label: 'Brand Identity' },
-            { id: 'ecommerce-luxe', label: 'Luxury E-Commerce' },
-            { id: 'generative-art', label: 'Generative Art' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setSelectedCategory(tab.id as ProjectCategory)}
-              data-hover="true"
-              className={`px-4 py-2 text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
-                selectedCategory === tab.id
-                  ? 'bg-white text-black shadow-sm'
-                  : 'text-neutral-400 hover:text-white bg-transparent'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Projects Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-          {filteredProjects.map((project, index) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              index={index}
-              onSelect={(p) => setActiveProject(p)}
-            />
-          ))}
-        </div>
-      </section>
+          {/* Projects Grid */}
+          {filteredProjects.length === 0 ? (
+            <div className="py-16 text-center border border-white/[0.06] bg-[#101016]">
+              <p className="text-sm font-mono text-neutral-400">
+                No published projects in this category yet.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+              {filteredProjects.map((project, index) => (
+                <ProjectCard
+                  key={project.id}
+                  project={project}
+                  index={index}
+                  onSelect={(p) => setActiveProject(p)}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* 
         =======================================================================
@@ -863,8 +806,6 @@ const App: React.FC = () => {
 
         {/* Narrative Manifest Card with User's Official Paragraph */}
         <div className="relative bg-[#111117] border border-white/[0.1] p-6 sm:p-8 md:p-12 mb-16 overflow-hidden w-full box-border">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-[#ff4b26]/10 blur-[90px] pointer-events-none" />
-
           <div className="relative z-10 max-w-4xl w-full">
             <span className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest block mb-4">
               Studio Manifesto & Official Profile
@@ -881,11 +822,15 @@ const App: React.FC = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 pt-8 mt-8 border-t border-white/[0.08] text-xs font-mono w-full">
             <div className="min-w-0 flex items-center gap-3">
               {studioInfo.founderImage && (
-                <div className="w-10 h-10 rounded-xl overflow-hidden border border-white/20 shrink-0 bg-neutral-900 shadow-sm">
+                <div 
+                  className="w-10 h-10 rounded-xl overflow-hidden border border-white/20 shrink-0 bg-neutral-900"
+                  style={{ boxShadow: 'none', filter: 'none', backdropFilter: 'none' }}
+                >
                   <img
                     src={studioInfo.founderImage}
                     alt={studioInfo.founderName}
                     className="w-full h-full object-cover object-center"
+                    style={{ filter: 'none', backdropFilter: 'none', imageRendering: 'auto' }}
                   />
                 </div>
               )}
@@ -940,15 +885,22 @@ const App: React.FC = () => {
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 w-full">
                 <div className="flex items-start sm:items-center gap-5">
                   {studioInfo.founderImage ? (
-                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-white/20 shadow-[0_0_28px_rgba(255,75,38,0.35)] shrink-0 group bg-neutral-900">
+                    <div 
+                      className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-white/20 shrink-0 bg-neutral-900"
+                      style={{ boxShadow: 'none', filter: 'none', backdropFilter: 'none' }}
+                    >
                       <img
                         src={studioInfo.founderImage}
                         alt={studioInfo.founderName}
-                        className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-110"
+                        className="w-full h-full object-cover object-center"
+                        style={{ filter: 'none', backdropFilter: 'none', imageRendering: 'auto' }}
                       />
                     </div>
                   ) : (
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#ff4b26] to-[#7f1d07] flex items-center justify-center font-heading font-black text-white text-xl sm:text-2xl shadow-[0_0_24px_rgba(255,75,38,0.35)] shrink-0">
+                    <div 
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#ff4b26] flex items-center justify-center font-heading font-black text-white text-xl sm:text-2xl border border-white/20 shrink-0"
+                      style={{ boxShadow: 'none', filter: 'none', backdropFilter: 'none' }}
+                    >
                       {studioInfo.founderName
                         .split(' ')
                         .map((n) => n[0])

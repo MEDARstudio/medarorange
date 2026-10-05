@@ -22,9 +22,13 @@ import {
   Camera,
   CheckCircle2,
   FileImage,
-  DollarSign
+  DollarSign,
+  Film,
+  Video,
+  Play,
+  PlusCircle
 } from 'lucide-react';
-import { CaseStudy, AgencyService, StudioGeneralInfo, ProjectCategory } from '../types';
+import { CaseStudy, AgencyService, StudioGeneralInfo, ProjectCategory, ProjectMediaItem } from '../types';
 
 interface AdminCMSModalProps {
   isOpen: boolean;
@@ -43,45 +47,8 @@ interface AdminCMSModalProps {
 
 type CMSTab = 'posts' | 'new-post' | 'media-library' | 'services' | 'pricing' | 'studio' | 'backup';
 
-// Initial HD Studio Presets
-const DEFAULT_PRESET_IMAGES = [
-  {
-    id: 'preset-1',
-    name: 'High Horology & Titanium 3D',
-    category: '3D & WebGL',
-    url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?q=80&w=1200&auto=format&fit=crop'
-  },
-  {
-    id: 'preset-2',
-    name: 'Football Matchday & Sports Poster',
-    category: 'Sports Design',
-    url: 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?q=80&w=1200&auto=format&fit=crop'
-  },
-  {
-    id: 'preset-3',
-    name: 'Minimalist Branding & Luxury Packaging',
-    category: 'Brand Identity',
-    url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=1200&auto=format&fit=crop'
-  },
-  {
-    id: 'preset-4',
-    name: 'Sculptural Art & 3D Goldsmithing',
-    category: '3D & Creative',
-    url: 'https://images.unsplash.com/photo-1634017839464-5c339ebe3cb4?q=80&w=1200&auto=format&fit=crop'
-  },
-  {
-    id: 'preset-5',
-    name: 'Editorial Typography & Art Book',
-    category: 'Print & Prepress',
-    url: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=1200&auto=format&fit=crop'
-  },
-  {
-    id: 'preset-6',
-    name: 'Haute Couture Digital Campaign',
-    category: 'Digital Design',
-    url: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?q=80&w=1200&auto=format&fit=crop'
-  }
-];
+// HD Studio Presets (Clean, ready for device upload)
+const DEFAULT_PRESET_IMAGES: { id: string; name: string; category: string; url: string }[] = [];
 
 const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
   isOpen,
@@ -129,33 +96,28 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
   // Studio Media Library (stored in localStorage)
   const [mediaLibrary, setMediaLibrary] = useState<{ id: string; name: string; url: string; date: string }[]>(() => {
     try {
-      const saved = localStorage.getItem('medar_studio_media_library');
+      const saved = localStorage.getItem('medar_studio_media_library_v2');
       if (saved) return JSON.parse(saved);
     } catch (e) {
       console.error(e);
     }
-    return DEFAULT_PRESET_IMAGES.map((p) => ({
-      id: p.id,
-      name: p.name,
-      url: p.url,
-      date: 'Studio Preset'
-    }));
+    return [];
   });
 
-  // New Post Form State
+  // New Post Form State (Clean and streamlined for freelance portfolio)
   const [newPost, setNewPost] = useState<Partial<CaseStudy>>({
     title: '',
     client: '',
-    year: '2026',
+    year: '2025',
     category: 'brand-identity',
-    categoryLabel: 'Visual Identity & Art Direction',
-    tagline: '',
+    categoryLabel: 'Brand Identity',
     description: '',
-    imagePromptFallback: DEFAULT_PRESET_IMAGES[0].url,
-    metrics: { stat: '+150%', label: 'Visual Lift' },
-    deliverables: ['Brand Identity', 'Art Direction', 'Rollout'],
-    award: ''
+    imagePromptFallback: ''
   });
+
+  // Multi-media state for New Post (Multiple photos + videos)
+  const [newPostMedia, setNewPostMedia] = useState<ProjectMediaItem[]>([]);
+  const [newVideoUrlInput, setNewVideoUrlInput] = useState('');
 
   // Temporary URL input for media library addition
   const [newImageUrl, setNewImageUrl] = useState('');
@@ -169,7 +131,12 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
   const postFileInputRef = useRef<HTMLInputElement>(null);
   const libraryFileInputRef = useRef<HTMLInputElement>(null);
   const founderFileInputRef = useRef<HTMLInputElement>(null);
+  const newPostMediaFileInputRef = useRef<HTMLInputElement>(null);
+  const existingPostMediaFileInputRef = useRef<HTMLInputElement>(null);
   const [activePostIdForUpload, setActivePostIdForUpload] = useState<string | null>(null);
+  const [activePostIdForMultiMedia, setActivePostIdForMultiMedia] = useState<string | null>(null);
+  const [existingVideoUrlInput, setExistingVideoUrlInput] = useState('');
+  const [isDraggingMedia, setIsDraggingMedia] = useState(false);
 
   // Synchronize with props
   React.useEffect(() => {
@@ -192,14 +159,56 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     onUpdateServices(localServices);
     onUpdateStudioInfo(localStudioInfo);
     try {
-      localStorage.setItem('medar_studio_media_library', JSON.stringify(mediaLibrary));
+      localStorage.setItem('medar_studio_media_library_v2', JSON.stringify(mediaLibrary));
     } catch (e) {
       console.warn("Storage quota exceeded or unavailable:", e);
     }
     triggerSaveNotification('All changes and posts have been saved successfully!');
   };
 
-  // Convert File to Base64 Data URL
+  // Smart client-side compression for high-res images so users can upload dozens of photos safely
+  const compressImageFile = (file: File): Promise<string> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        if (!file.type.startsWith('image/')) {
+          resolve(result);
+          return;
+        }
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          const MAX_DIM = 1400;
+          if (width > MAX_DIM || height > MAX_DIM) {
+            if (width > height) {
+              height = Math.round((height * MAX_DIM) / width);
+              width = MAX_DIM;
+            } else {
+              width = Math.round((width * MAX_DIM) / height);
+              height = MAX_DIM;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            resolve(canvas.toDataURL('image/jpeg', 0.84));
+          } else {
+            resolve(result);
+          }
+        };
+        img.onerror = () => resolve(result);
+        img.src = result;
+      };
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(file);
+    });
+  };
+
+  // Convert File to Base64 Data URL (for videos and direct reads)
   const convertFileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -237,7 +246,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       const updatedLib = [newMediaItem, ...mediaLibrary];
       setMediaLibrary(updatedLib);
       try {
-        localStorage.setItem('medar_studio_media_library', JSON.stringify(updatedLib));
+        localStorage.setItem('medar_studio_media_library_v2', JSON.stringify(updatedLib));
       } catch (err) {
         console.warn("Image stored in memory but exceeded localStorage quota");
       }
@@ -262,7 +271,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       const updatedLib = [newMediaItem, ...mediaLibrary];
       setMediaLibrary(updatedLib);
       try {
-        localStorage.setItem('medar_studio_media_library', JSON.stringify(updatedLib));
+        localStorage.setItem('medar_studio_media_library_v2', JSON.stringify(updatedLib));
       } catch (err) {
         console.warn("Image stored in memory but exceeded localStorage quota");
       }
@@ -292,7 +301,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       const updatedLib = [newMediaItem, ...mediaLibrary];
       setMediaLibrary(updatedLib);
       try {
-        localStorage.setItem('medar_studio_media_library', JSON.stringify(updatedLib));
+        localStorage.setItem('medar_studio_media_library_v2', JSON.stringify(updatedLib));
       } catch (err) {
         console.warn("Storage quota exceeded", err);
       }
@@ -316,7 +325,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     const updatedLib = [newMediaItem, ...mediaLibrary];
     setMediaLibrary(updatedLib);
     try {
-      localStorage.setItem('medar_studio_media_library', JSON.stringify(updatedLib));
+      localStorage.setItem('medar_studio_media_library_v2', JSON.stringify(updatedLib));
     } catch (e) {
       console.warn("Storage quota exceeded:", e);
     }
@@ -330,14 +339,207 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     const updated = mediaLibrary.filter((m) => m.id !== id);
     setMediaLibrary(updated);
     try {
-      localStorage.setItem('medar_studio_media_library', JSON.stringify(updated));
+      localStorage.setItem('medar_studio_media_library_v2', JSON.stringify(updated));
     } catch (e) {
       console.warn("Storage quota exceeded:", e);
     }
     triggerSaveNotification('Image removed from media library');
   };
 
-  // Create & Publish New Post
+  // Multi-media upload for New Post (Multiple photos & videos from device)
+  const handleUploadNewPostMedia = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      const added: ProjectMediaItem[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const isVid = file.type.startsWith('video/');
+        const base64 = isVid ? await convertFileToBase64(file) : await compressImageFile(file);
+        added.push({
+          id: `media-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`,
+          type: isVid ? 'video' : 'image',
+          url: base64,
+          title: file.name.replace(/\.[^/.]+$/, '')
+        });
+      }
+      setNewPostMedia((prev) => [...prev, ...added]);
+      if (!newPost.imagePromptFallback && added.length > 0) {
+        const firstImg = added.find(m => m.type === 'image')?.url || added[0].url;
+        setNewPost((prev) => ({ ...prev, imagePromptFallback: firstImg }));
+      }
+      triggerSaveNotification(`${added.length} photo(s)/vidéo(s) ajoutée(s) au post !`);
+    } catch {
+      triggerSaveNotification('Erreur lors du traitement des fichiers.');
+    }
+  };
+
+  // Drag & drop upload for New Post media
+  const handleDropMedia = async (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDraggingMedia(false);
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      const added: ProjectMediaItem[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const isVid = file.type.startsWith('video/');
+        const isImg = file.type.startsWith('image/');
+        if (!isVid && !isImg) continue;
+        const base64 = isVid ? await convertFileToBase64(file) : await compressImageFile(file);
+        added.push({
+          id: `media-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`,
+          type: isVid ? 'video' : 'image',
+          url: base64,
+          title: file.name.replace(/\.[^/.]+$/, '')
+        });
+      }
+      if (added.length > 0) {
+        setNewPostMedia((prev) => [...prev, ...added]);
+        if (!newPost.imagePromptFallback) {
+          const firstImg = added.find(m => m.type === 'image')?.url || added[0].url;
+          setNewPost((prev) => ({ ...prev, imagePromptFallback: firstImg }));
+        }
+        triggerSaveNotification(`${added.length} fichier(s) photo/vidéo déposé(s) !`);
+      }
+    } catch {
+      triggerSaveNotification('Erreur lors de la lecture des fichiers glissés.');
+    }
+  };
+
+  // Add video URL to New Post
+  const handleAddVideoUrlToNewPost = () => {
+    if (!newVideoUrlInput.trim()) return;
+    const newItem: ProjectMediaItem = {
+      id: `vid-${Date.now()}`,
+      type: 'video',
+      url: newVideoUrlInput.trim(),
+      title: 'Video Asset'
+    };
+    setNewPostMedia((prev) => [...prev, newItem]);
+    setNewVideoUrlInput('');
+    triggerSaveNotification('Video added to post!');
+  };
+
+  // Remove media item from New Post
+  const handleRemoveNewPostMedia = (mediaId: string) => {
+    setNewPostMedia((prev) => {
+      const updated = prev.filter((m) => m.id !== mediaId);
+      if (newPost.imagePromptFallback && !updated.some(m => m.url === newPost.imagePromptFallback)) {
+        setNewPost((p) => ({ ...p, imagePromptFallback: updated[0]?.url || '' }));
+      }
+      return updated;
+    });
+  };
+
+  // Set media item as cover in New Post
+  const handleSetNewPostCover = (mediaItem: ProjectMediaItem) => {
+    setNewPost((prev) => ({
+      ...prev,
+      imagePromptFallback: mediaItem.url,
+      videoUrl: mediaItem.type === 'video' ? mediaItem.url : prev.videoUrl
+    }));
+    setNewPostMedia((prev) => [mediaItem, ...prev.filter(m => m.id !== mediaItem.id)]);
+    triggerSaveNotification('Selected as cover for this project!');
+  };
+
+  // Multi-media upload for an existing post
+  const handleUploadMediaToExistingPost = async (e: React.ChangeEvent<HTMLInputElement>, postId: string) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      const added: ProjectMediaItem[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const isVid = file.type.startsWith('video/');
+        const base64 = await convertFileToBase64(file);
+        added.push({
+          id: `media-${Date.now()}-${i}`,
+          type: isVid ? 'video' : 'image',
+          url: base64,
+          title: file.name.replace(/\.[^/.]+$/, '')
+        });
+      }
+
+      const updated = localProjects.map((p) => {
+        if (p.id !== postId) return p;
+        const currentMedia = p.media && p.media.length > 0
+          ? p.media
+          : (p.imagePromptFallback ? [{ id: `img-0`, type: 'image' as const, url: p.imagePromptFallback }] : []);
+        const nextMedia = [...currentMedia, ...added];
+        const coverImg = p.imagePromptFallback || nextMedia.find(m => m.type === 'image')?.url || nextMedia[0]?.url;
+        return {
+          ...p,
+          media: nextMedia,
+          imagePromptFallback: coverImg
+        };
+      });
+
+      setLocalProjects(updated);
+      onUpdateProjects(updated);
+      try {
+        localStorage.setItem('medar_studio_projects_v2', JSON.stringify(updated));
+      } catch (err) {
+        console.warn("Storage quota exceeded", err);
+      }
+      triggerSaveNotification(`${added.length} file(s) added to project!`);
+    } catch {
+      triggerSaveNotification('Error while reading files.');
+    }
+  };
+
+  // Add video URL to existing post
+  const handleAddVideoToExistingPost = (postId: string) => {
+    if (!existingVideoUrlInput.trim()) return;
+    const newItem: ProjectMediaItem = {
+      id: `vid-${Date.now()}`,
+      type: 'video',
+      url: existingVideoUrlInput.trim(),
+      title: 'Video Asset'
+    };
+
+    const updated = localProjects.map((p) => {
+      if (p.id !== postId) return p;
+      const currentMedia = p.media && p.media.length > 0
+        ? p.media
+        : (p.imagePromptFallback ? [{ id: `img-0`, type: 'image' as const, url: p.imagePromptFallback }] : []);
+      return {
+        ...p,
+        media: [...currentMedia, newItem],
+        videoUrl: p.videoUrl || newItem.url
+      };
+    });
+
+    setLocalProjects(updated);
+    onUpdateProjects(updated);
+    setExistingVideoUrlInput('');
+    setActivePostIdForMultiMedia(null);
+    triggerSaveNotification('Video asset added to project!');
+  };
+
+  // Remove media from an existing post
+  const handleRemoveMediaFromExistingPost = (postId: string, mediaId: string) => {
+    const updated = localProjects.map((p) => {
+      if (p.id !== postId) return p;
+      const currentMedia = p.media || [];
+      const filtered = currentMedia.filter(m => m.id !== mediaId);
+      return {
+        ...p,
+        media: filtered,
+        imagePromptFallback: filtered.length > 0 ? (filtered.find(m => m.type === 'image')?.url || filtered[0].url) : ''
+      };
+    });
+
+    setLocalProjects(updated);
+    onUpdateProjects(updated);
+    triggerSaveNotification('Media removed from project');
+  };
+
+  // Create & Publish New Post (Requires at least 1 photo or video)
   const handleCreateNewPost = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPost.title || !newPost.client) {
@@ -345,46 +547,63 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       return;
     }
 
+    const mediaList = [...newPostMedia];
+    if (newPost.imagePromptFallback && !mediaList.some(m => m.url === newPost.imagePromptFallback)) {
+      mediaList.unshift({
+        id: `media-${Date.now()}`,
+        type: 'image',
+        url: newPost.imagePromptFallback,
+        title: 'Cover Image'
+      });
+    }
+
+    if (mediaList.length === 0) {
+      triggerSaveNotification('Please upload at least 1 photo or video so visitors can see this project!');
+      return;
+    }
+
+    const firstImage = mediaList.find(m => m.type === 'image')?.url || mediaList[0].url;
+    const firstVideo = mediaList.find(m => m.type === 'video')?.url;
+
     const createdPost: CaseStudy = {
       id: `post-${Date.now()}`,
       title: newPost.title,
       client: newPost.client,
-      year: newPost.year || '2026',
+      year: newPost.year || '2025',
       category: (newPost.category as ProjectCategory) || 'brand-identity',
-      categoryLabel: newPost.categoryLabel || 'Art Direction',
-      tagline: newPost.tagline || 'Bespoke visual solution',
-      description: newPost.description || 'Comprehensive project scope crafted by Medar Studio.',
-      metrics: newPost.metrics || { stat: '+100%', label: 'Impact' },
-      deliverables: typeof newPost.deliverables === 'string'
-        ? (newPost.deliverables as string).split(',').map((s) => s.trim())
-        : (newPost.deliverables || ['Brand Identity']),
-      gradientTheme: 'from-[#ff4b26]/30 to-black',
-      accentColor: '#ff4b26',
-      imagePromptFallback: newPost.imagePromptFallback || DEFAULT_PRESET_IMAGES[0].url,
-      award: newPost.award || undefined
+      categoryLabel: newPost.categoryLabel || 'Brand Identity',
+      description: newPost.description || 'Bespoke freelance design work crafted by Medar Studio.',
+      media: mediaList,
+      imagePromptFallback: firstImage,
+      videoUrl: firstVideo,
+      gradientTheme: 'from-[#ff4b26]/30 to-[#0c0c10]',
+      accentColor: '#ff4b26'
     };
 
     const updated = [createdPost, ...localProjects];
     setLocalProjects(updated);
     onUpdateProjects(updated);
+    try {
+      localStorage.setItem('medar_studio_projects_v2', JSON.stringify(updated));
+    } catch (e) {
+      console.warn("Storage quota exceeded", e);
+    }
 
     // Reset new post form
     setNewPost({
       title: '',
       client: '',
-      year: '2026',
+      year: '2025',
       category: 'brand-identity',
-      categoryLabel: 'Visual Identity & Art Direction',
-      tagline: '',
+      categoryLabel: 'Brand Identity',
       description: '',
-      imagePromptFallback: DEFAULT_PRESET_IMAGES[0].url,
-      metrics: { stat: '+150%', label: 'Visual Lift' },
-      deliverables: ['Brand Identity', 'Art Direction', 'Rollout'],
-      award: ''
+      imagePromptFallback: ''
     });
+    setNewPostMedia([]);
+    setNewVideoUrlInput('');
 
     setActiveTab('posts');
-    triggerSaveNotification(`Case study "${createdPost.title}" was published successfully!`);
+    triggerSaveNotification(`Project "${createdPost.title}" published with ${mediaList.length} media file(s)!`);
   };
 
   // Delete project
@@ -469,6 +688,26 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-[#09090d] text-white flex flex-col overflow-hidden font-sans">
       {/* Hidden Global File Inputs for direct upload */}
+      <input
+        type="file"
+        ref={newPostMediaFileInputRef}
+        multiple
+        accept="image/*,video/*"
+        onChange={handleUploadNewPostMedia}
+        className="hidden"
+      />
+      <input
+        type="file"
+        ref={existingPostMediaFileInputRef}
+        multiple
+        accept="image/*,video/*"
+        onChange={(e) => {
+          if (activePostIdForMultiMedia) {
+            handleUploadMediaToExistingPost(e, activePostIdForMultiMedia);
+          }
+        }}
+        className="hidden"
+      />
       <input
         type="file"
         ref={postFileInputRef}
@@ -570,10 +809,10 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               }`}
             >
               <FolderKanban className="w-4 h-4" />
-              <span>Manage Posts ({localProjects.length})</span>
+              <span>Mes Posts & Projets ({localProjects.length})</span>
             </button>
 
-            {/* Tab: Add New Case Study */}
+            {/* Tab: Add New Post with photos & videos */}
             <button
               onClick={() => setActiveTab('new-post')}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
@@ -583,7 +822,10 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               }`}
             >
               <Plus className="w-4 h-4 text-emerald-400" />
-              <span className="text-white font-semibold">+ New Case Study</span>
+              <div className="flex flex-col">
+                <span className="text-white font-semibold">+ Nouveau Post</span>
+                <span className="text-[10px] text-neutral-400 font-mono">Upload Photos & Vidéos</span>
+              </div>
             </button>
 
             {/* Tab: Media Library & Upload Images */}
@@ -805,10 +1047,10 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                           onChange={(e) => handleUpdateProjectField(project.id, 'category', e.target.value as ProjectCategory)}
                           className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
                         >
-                          <option value="3d-webgl">3D & WebGL</option>
                           <option value="brand-identity">Brand Identity</option>
-                          <option value="ecommerce-luxe">Luxury E-Commerce</option>
-                          <option value="generative-art">Generative Art</option>
+                          <option value="sports-design">Sports Design</option>
+                          <option value="3d-webgl">3D Design</option>
+                          <option value="visual-design">Visual Design</option>
                         </select>
                       </div>
 
@@ -822,96 +1064,116 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                         />
                       </div>
 
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Key Metric & Label</label>
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={project.metrics.stat}
-                            onChange={(e) => handleUpdateProjectMetrics(project.id, e.target.value, project.metrics.label)}
-                            className="w-24 bg-[#181824] border border-white/10 px-3 py-2 text-white font-bold"
-                            placeholder="+240%"
-                          />
-                          <input
-                            type="text"
-                            value={project.metrics.label}
-                            onChange={(e) => handleUpdateProjectMetrics(project.id, project.metrics.stat, e.target.value)}
-                            className="flex-1 bg-[#181824] border border-white/10 px-3 py-2 text-white"
-                            placeholder="Conversion"
-                          />
-                        </div>
-                      </div>
+                      {/* Media Assets Manager (Multiple Photos & Videos) */}
+                      <div className="md:col-span-3 bg-black/40 border border-white/10 p-4 rounded-lg space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <label className="text-white font-bold block text-xs">
+                              Media Assets ({project.media?.length || (project.imagePromptFallback ? 1 : 0)})
+                            </label>
+                            {(project.media && project.media.length > 0) || project.imagePromptFallback || project.videoUrl ? (
+                              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                                ● Visible to visitors
+                              </span>
+                            ) : (
+                              <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
+                                ○ Hidden from visitors (Upload photo to publish)
+                              </span>
+                            )}
+                          </div>
 
-                      {/* Image Field with Preview & Paste */}
-                      <div className="md:col-span-2">
-                        <div className="flex items-center justify-between mb-1">
-                          <label className="text-neutral-400 block">Image URL or Base64 Asset</label>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setActivePostIdForMultiMedia(project.id);
+                                existingPostMediaFileInputRef.current?.click();
+                              }}
+                              className="px-3 py-1.5 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white rounded text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow"
+                            >
+                              <Upload className="w-3.5 h-3.5" />
+                              <span>+ Add Photos & Videos</span>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Media Thumbnails Grid */}
+                        {project.media && project.media.length > 0 ? (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5 pt-1">
+                            {project.media.map((item, mIdx) => (
+                              <div
+                                key={item.id || mIdx}
+                                className="relative aspect-[4/5] bg-neutral-900 rounded-lg overflow-hidden border border-white/15 group"
+                              >
+                                {item.type === 'video' ? (
+                                  <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-900 text-cyan-400 p-2">
+                                    <Film className="w-6 h-6 mb-1" />
+                                    <span className="text-[8px] font-mono">VIDEO</span>
+                                  </div>
+                                ) : (
+                                  <img
+                                    src={item.url}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                  />
+                                )}
+                                <div className="absolute top-1 left-1">
+                                  <span className="text-[8px] font-mono bg-black/80 text-white px-1 rounded">
+                                    #{mIdx + 1}
+                                  </span>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveMediaFromExistingPost(project.id, item.id)}
+                                  className="absolute top-1 right-1 p-1 bg-black/80 hover:bg-red-500 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                                  title="Delete this media asset"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : project.imagePromptFallback ? (
+                          <div className="flex items-center gap-3">
+                            <div className="w-14 h-16 rounded overflow-hidden border border-white/15 shrink-0 bg-neutral-900">
+                              <img src={project.imagePromptFallback} alt="" className="w-full h-full object-cover" />
+                            </div>
+                            <span className="text-xs text-neutral-400">1 Cover Photo assigned. Click "+ Add Photos & Videos" to add more.</span>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-neutral-500 italic">
+                            No photos or videos uploaded yet. This post is currently hidden from visitors.
+                          </p>
+                        )}
+
+                        {/* Add Video URL Bar */}
+                        <div className="flex gap-2 pt-1">
+                          <input
+                            type="text"
+                            placeholder="Add video URL (MP4, Vimeo, WebM)..."
+                            value={activePostIdForMultiMedia === project.id ? existingVideoUrlInput : ''}
+                            onFocus={() => setActivePostIdForMultiMedia(project.id)}
+                            onChange={(e) => setExistingVideoUrlInput(e.target.value)}
+                            className="flex-1 bg-[#181824] border border-white/10 px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#ff4b26] font-mono"
+                          />
                           <button
                             type="button"
-                            onClick={() => {
-                              setActivePostIdForUpload(project.id);
-                              postFileInputRef.current?.click();
-                            }}
-                            className="text-[#ff4b26] hover:underline flex items-center gap-1 text-[11px] cursor-pointer"
+                            onClick={() => handleAddVideoToExistingPost(project.id)}
+                            className="px-3 py-1.5 bg-white/10 hover:bg-white text-white hover:text-black text-xs font-bold font-mono transition-colors cursor-pointer"
                           >
-                            <Upload className="w-3 h-3" />
-                            <span>Upload from device</span>
+                            + Add Video
                           </button>
                         </div>
-                        <input
-                          type="text"
-                          value={project.imagePromptFallback}
-                          onChange={(e) => handleUpdateProjectField(project.id, 'imagePromptFallback', e.target.value)}
-                          className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white text-[11px] focus:outline-none focus:border-[#ff4b26]"
-                          placeholder="https://... or upload local file"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Award / Honor (Optional)</label>
-                        <input
-                          type="text"
-                          value={project.award || ''}
-                          onChange={(e) => handleUpdateProjectField(project.id, 'award', e.target.value)}
-                          className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                          placeholder="Awwwards Site of the Day"
-                        />
                       </div>
 
                       <div className="md:col-span-3">
-                        <label className="text-neutral-400 block mb-1">Tagline / Hook *</label>
-                        <input
-                          type="text"
-                          value={project.tagline}
-                          onChange={(e) => handleUpdateProjectField(project.id, 'tagline', e.target.value)}
-                          className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        />
-                      </div>
-
-                      <div className="md:col-span-3">
-                        <label className="text-neutral-400 block mb-1">Strategic Description *</label>
+                        <label className="text-neutral-400 block mb-1">Project Description / Story</label>
                         <textarea
-                          rows={3}
+                          rows={2}
                           value={project.description}
                           onChange={(e) => handleUpdateProjectField(project.id, 'description', e.target.value)}
                           className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26] leading-relaxed"
-                        />
-                      </div>
-
-                      <div className="md:col-span-3">
-                        <label className="text-neutral-400 block mb-1">Deliverables (comma separated)</label>
-                        <input
-                          type="text"
-                          value={project.deliverables.join(', ')}
-                          onChange={(e) =>
-                            handleUpdateProjectField(
-                              project.id,
-                              'deliverables',
-                              e.target.value.split(',').map((s) => s.trim())
-                            )
-                          }
-                          className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                          placeholder="Brand Identity, Matchday Graphics, 3D Render"
+                          placeholder="Short summary of the visual project..."
                         />
                       </div>
                     </div>
@@ -997,21 +1259,21 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                               ...newPost,
                               category: e.target.value as ProjectCategory,
                               categoryLabel:
-                                e.target.value === '3d-webgl'
-                                  ? '3D & Immersive Rendering'
-                                  : e.target.value === 'brand-identity'
-                                  ? 'Visual Identity & Typography'
-                                  : e.target.value === 'ecommerce-luxe'
-                                  ? 'Luxury E-Commerce'
-                                  : 'Generative Art & Sports'
+                                e.target.value === 'sports-design'
+                                  ? 'Sports Design'
+                                  : e.target.value === '3d-webgl'
+                                  ? '3D Design'
+                                  : e.target.value === 'visual-design'
+                                  ? 'Visual Design'
+                                  : 'Brand Identity'
                             })
                           }
                           className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
                         >
                           <option value="brand-identity">Brand Identity</option>
-                          <option value="3d-webgl">3D & WebGL</option>
-                          <option value="ecommerce-luxe">Luxury E-Commerce</option>
-                          <option value="generative-art">Generative Art & Sports</option>
+                          <option value="sports-design">Sports Design</option>
+                          <option value="3d-webgl">3D Design</option>
+                          <option value="visual-design">Visual Design</option>
                         </select>
                       </div>
 
@@ -1026,119 +1288,164 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       </div>
                     </div>
 
-                    <div>
-                      <label className="text-neutral-400 block mb-1">Tagline / Hook *</label>
-                      <input
-                        type="text"
-                        value={newPost.tagline || ''}
-                        onChange={(e) => setNewPost({ ...newPost, tagline: e.target.value })}
-                        placeholder="A striking one-liner encapsulating the visual concept"
-                        className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                      />
+                    {/* Multi-Media Uploader for New Post (Photos & Videos) */}
+                    <div className="p-5 bg-[#181824] border border-white/10 rounded-xl space-y-4">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/10">
+                        <div>
+                          <label className="text-white font-bold block text-xs flex items-center gap-2">
+                            <Upload className="w-4 h-4 text-[#ff4b26]" />
+                            <span>Téléversement Photos & Vidéos (Depuis votre appareil)</span>
+                          </label>
+                          <span className="text-[11px] text-neutral-400 block mt-0.5">
+                            Permet de mettre beaucoup de photos à la fois et des vidéos.
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => newPostMediaFileInputRef.current?.click()}
+                          className="px-4 py-2 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white transition-colors rounded text-xs font-bold flex items-center gap-2 cursor-pointer shadow-md shrink-0"
+                        >
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>+ Parcourir Photos & Vidéos</span>
+                        </button>
+                      </div>
+
+                      {/* Interactive Drag & Drop Area */}
+                      <div
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          setIsDraggingMedia(true);
+                        }}
+                        onDragLeave={() => setIsDraggingMedia(false)}
+                        onDrop={handleDropMedia}
+                        onClick={() => newPostMediaFileInputRef.current?.click()}
+                        className={`p-6 border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+                          isDraggingMedia
+                            ? 'border-[#ff4b26] bg-[#ff4b26]/10 text-white scale-[1.01]'
+                            : 'border-white/20 bg-black/40 hover:border-white/40 text-neutral-300'
+                        }`}
+                      >
+                        <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-2.5">
+                          <Upload className="w-5 h-5 text-[#ff4b26]" />
+                        </div>
+                        <p className="text-xs font-semibold text-white mb-1">
+                          {isDraggingMedia
+                            ? 'Déposez vos photos et vidéos ici...'
+                            : 'Glissez-déposez plusieurs photos & vidéos ici, ou cliquez pour parcourir'}
+                        </p>
+                        <p className="text-[10px] font-mono text-neutral-400 max-w-sm">
+                          JPG, PNG, WEBP, GIF, MP4, WebM — Téléversement direct depuis votre PC/téléphone sans limite
+                        </p>
+                      </div>
+
+                      {/* Video URL Adder */}
+                      <div className="flex gap-2 pt-1">
+                        <input
+                          type="text"
+                          value={newVideoUrlInput}
+                          onChange={(e) => setNewVideoUrlInput(e.target.value)}
+                          placeholder="Ou collez un lien vidéo (MP4, YouTube, Vimeo, WebM)..."
+                          className="flex-1 bg-[#101019] border border-white/15 px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#ff4b26] font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddVideoUrlToNewPost}
+                          className="px-3.5 py-1.5 bg-white/10 hover:bg-white text-white hover:text-black text-xs font-bold font-mono rounded transition-colors cursor-pointer shrink-0"
+                        >
+                          + Ajouter Vidéo
+                        </button>
+                      </div>
+
+                      {/* Attached Media Grid */}
+                      {newPostMedia.length > 0 ? (
+                        <div className="space-y-2 pt-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[11px] font-mono text-neutral-300 block font-semibold">
+                              Médias attachés ({newPostMedia.length}) :
+                            </span>
+                            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                              ✓ Prêt à être publié aux visiteurs
+                            </span>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
+                            {newPostMedia.map((item, mIdx) => {
+                              const isCover = (newPost.imagePromptFallback === item.url) || (mIdx === 0 && !newPost.imagePromptFallback);
+                              return (
+                                <div
+                                  key={item.id || mIdx}
+                                  className={`relative aspect-[4/5] bg-black rounded-lg overflow-hidden border-2 group ${
+                                    isCover ? 'border-[#ff4b26] ring-2 ring-[#ff4b26]/30' : 'border-white/15'
+                                  }`}
+                                >
+                                  {item.type === 'video' ? (
+                                    <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-900 text-cyan-400 p-2">
+                                      <Film className="w-6 h-6 mb-1" />
+                                      <span className="text-[8px] font-mono font-bold">VIDÉO</span>
+                                    </div>
+                                  ) : (
+                                    <img
+                                      src={item.url}
+                                      alt=""
+                                      className="w-full h-full object-cover"
+                                    />
+                                  )}
+
+                                  {/* Badge */}
+                                  <div className="absolute top-1 left-1">
+                                    {isCover ? (
+                                      <span className="text-[8px] font-mono bg-[#ff4b26] text-white px-1.5 py-0.5 rounded font-bold">
+                                        COVER
+                                      </span>
+                                    ) : (
+                                      <span className="text-[8px] font-mono bg-black/80 text-white px-1 rounded">
+                                        #{mIdx + 1}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Actions */}
+                                  <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-1.5 transition-opacity p-1">
+                                    {!isCover && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSetNewPostCover(item)}
+                                        className="text-[9px] font-mono bg-[#ff4b26] text-white px-2 py-0.5 rounded hover:bg-[#ff5f3c] cursor-pointer font-bold"
+                                      >
+                                        Cover
+                                      </button>
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveNewPostMedia(item.id)}
+                                      className="text-[9px] font-mono bg-red-600 text-white p-1 rounded hover:bg-red-700 cursor-pointer"
+                                      title="Supprimer ce média"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded text-amber-300 text-xs flex items-center gap-2">
+                          <Info className="w-4 h-4 shrink-0" />
+                          <span>
+                            Ajoutez au moins 1 photo ou vidéo. Pour les visiteurs du site, seuls les posts avec photos/vidéos sont visibles.
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     <div>
-                      <label className="text-neutral-400 block mb-1">Full Description *</label>
+                      <label className="text-neutral-400 block mb-1">Project Description / Story</label>
                       <textarea
                         rows={3}
                         value={newPost.description || ''}
                         onChange={(e) => setNewPost({ ...newPost, description: e.target.value })}
-                        placeholder="Explain the artistic vision, creative challenge, and client result..."
+                        placeholder="Brief summary of the creative artwork, client, or concept..."
                         className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26] leading-relaxed"
-                      />
-                    </div>
-
-                    {/* Image Selector for New Post */}
-                    <div className="p-4 bg-[#181824] border border-white/10 rounded-lg space-y-3">
-                      <div className="flex items-center justify-between">
-                        <label className="text-white font-bold block">
-                          Cover Artwork / Image
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActivePostIdForUpload(null);
-                            postFileInputRef.current?.click();
-                          }}
-                          className="px-3 py-1 bg-[#ff4b26] hover:bg-white text-white hover:text-black transition-colors rounded text-[11px] font-bold flex items-center gap-1 cursor-pointer"
-                        >
-                          <Upload className="w-3 h-3" />
-                          <span>Upload from this device</span>
-                        </button>
-                      </div>
-
-                      <input
-                        type="text"
-                        value={newPost.imagePromptFallback || ''}
-                        onChange={(e) => setNewPost({ ...newPost, imagePromptFallback: e.target.value })}
-                        placeholder="Paste an image URL or click Upload..."
-                        className="w-full bg-[#101019] border border-white/15 px-3 py-2 text-white text-[11px] focus:outline-none focus:border-[#ff4b26]"
-                      />
-
-                      <div className="flex items-center gap-2 pt-1 text-[10px] text-neutral-400">
-                        <span>Or select from studio presets:</span>
-                        <div className="flex flex-wrap gap-1.5">
-                          {DEFAULT_PRESET_IMAGES.slice(0, 3).map((p) => (
-                            <button
-                              type="button"
-                              key={p.name}
-                              onClick={() => setNewPost({ ...newPost, imagePromptFallback: p.url })}
-                              className="px-2 py-0.5 bg-white/5 hover:bg-white/20 border border-white/10 text-neutral-300 rounded cursor-pointer"
-                            >
-                              {p.name.split(' ')[0]}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Key Metric (Stat)</label>
-                        <input
-                          type="text"
-                          value={newPost.metrics?.stat || ''}
-                          onChange={(e) =>
-                            setNewPost({
-                              ...newPost,
-                              metrics: { stat: e.target.value, label: newPost.metrics?.label || 'Impact' }
-                            })
-                          }
-                          placeholder="+280%"
-                          className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Metric Label</label>
-                        <input
-                          type="text"
-                          value={newPost.metrics?.label || ''}
-                          onChange={(e) =>
-                            setNewPost({
-                              ...newPost,
-                              metrics: { stat: newPost.metrics?.stat || '+100%', label: e.target.value }
-                            })
-                          }
-                          placeholder="Conversion lift"
-                          className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-neutral-400 block mb-1">Deliverables (comma separated)</label>
-                      <input
-                        type="text"
-                        value={Array.isArray(newPost.deliverables) ? newPost.deliverables.join(', ') : ''}
-                        onChange={(e) =>
-                          setNewPost({
-                            ...newPost,
-                            deliverables: e.target.value.split(',').map((s) => s.trim())
-                          })
-                        }
-                        placeholder="Brand Identity, 3D CGI, Matchday Posters"
-                        className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
                       />
                     </div>
 
@@ -1147,22 +1454,39 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       className="w-full py-4 bg-[#ff4b26] hover:bg-white text-white hover:text-black font-bold uppercase tracking-wider text-xs transition-colors cursor-pointer shadow-[0_4px_16px_rgba(255,75,38,0.35)] flex items-center justify-center gap-2"
                     >
                       <Check className="w-4 h-4" />
-                      <span>Publish This Case Study Now</span>
+                      <span>Publish This Project Now ({newPostMedia.length} Media)</span>
                     </button>
                   </div>
 
                   {/* Right Live Preview Column */}
                   <div className="md:col-span-4 space-y-4">
-                    <span className="text-[11px] font-mono text-neutral-400 uppercase tracking-widest block">
-                      4:5 Card Live Preview
-                    </span>
+                    <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 uppercase tracking-widest">
+                      <span>4:5 Card Preview</span>
+                      {newPostMedia.length > 0 && (
+                        <span className="text-[#ff4b26] font-bold">
+                          {newPostMedia.length} Media Attached
+                        </span>
+                      )}
+                    </div>
                     <div className="w-full aspect-[4/5] bg-[#12121b] border border-white/15 overflow-hidden relative flex flex-col justify-between p-4 shadow-xl">
-                      {newPost.imagePromptFallback && (
-                        <img
-                          src={newPost.imagePromptFallback}
-                          alt="Preview"
-                          className="absolute inset-0 w-full h-full object-cover"
-                        />
+                      {newPostMedia.length > 0 ? (
+                        newPostMedia[0].type === 'video' ? (
+                          <div className="absolute inset-0 bg-neutral-900 flex flex-col items-center justify-center text-cyan-400">
+                            <Film className="w-10 h-10 mb-2" />
+                            <span className="text-xs font-mono">Video Asset Cover</span>
+                          </div>
+                        ) : (
+                          <img
+                            src={newPost.imagePromptFallback || newPostMedia[0].url}
+                            alt="Preview"
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                        )
+                      ) : (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-neutral-500">
+                          <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
+                          <span className="text-xs">Upload media to see preview</span>
+                        </div>
                       )}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/60 pointer-events-none" />
 
@@ -1178,15 +1502,12 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                         <h4 className="font-heading font-bold text-sm text-white truncate">
                           {newPost.title || 'Project Title'}
                         </h4>
-                        <span className="text-[10px] text-[#ff4b26] block truncate">
-                          {newPost.tagline || 'Post tagline'}
-                        </span>
                       </div>
                     </div>
 
                     <div className="p-3 bg-white/5 border border-white/10 text-[11px] text-neutral-400 space-y-1">
-                      <span className="text-white font-bold block">Instant Live Publishing</span>
-                      <p>This case study will be instantly rendered at the very front of your portfolio grid.</p>
+                      <span className="text-white font-bold block">Visitor Privacy Rule</span>
+                      <p>Visitors only see this project if it contains at least 1 uploaded photo or video.</p>
                     </div>
                   </div>
                 </div>
@@ -1260,90 +1581,114 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {mediaLibrary.map((item) => (
-                    <div
-                      key={item.id}
-                      className="group bg-[#12121b] border border-white/10 rounded-xl overflow-hidden hover:border-[#ff4b26] transition-all flex flex-col justify-between"
+                {mediaLibrary.length === 0 ? (
+                  <div className="p-12 text-center border border-dashed border-white/15 rounded-xl bg-black/30 space-y-4">
+                    <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto text-[#ff4b26]">
+                      <Upload className="w-8 h-8" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="font-heading text-lg font-bold text-white">
+                        Your Media Library is clean and ready
+                      </h4>
+                      <p className="text-xs text-neutral-400 max-w-md mx-auto leading-relaxed">
+                        No dummy stock images. Upload your actual graphic design, sports visuals, and 3D artwork directly from this device (phone or PC).
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => libraryFileInputRef.current?.click()}
+                      className="px-6 py-3 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white text-xs font-mono font-bold uppercase tracking-wider rounded transition-colors inline-flex items-center gap-2 cursor-pointer shadow-lg"
                     >
-                      <div className="relative aspect-[4/3] bg-neutral-900 overflow-hidden">
-                        <img
-                          src={item.url}
-                          alt={item.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                      <Upload className="w-4 h-4" />
+                      <span>Upload Artwork from Device Now</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {mediaLibrary.map((item) => (
+                      <div
+                        key={item.id}
+                        className="group bg-[#12121b] border border-white/10 rounded-xl overflow-hidden hover:border-[#ff4b26] transition-all flex flex-col justify-between"
+                      >
+                        <div className="relative aspect-[4/3] bg-neutral-900 overflow-hidden">
+                          <img
+                            src={item.url}
+                            alt={item.name}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute top-2 right-2 flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                navigator.clipboard.writeText(item.url);
+                                triggerSaveNotification('Link copied to clipboard!');
+                              }}
+                              className="p-1.5 bg-black/70 hover:bg-[#ff4b26] text-white rounded transition-colors cursor-pointer"
+                              title="Copy link"
+                            >
+                              <Copy className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteMediaItem(item.id)}
+                              className="p-1.5 bg-black/70 hover:bg-red-500 text-white rounded transition-colors cursor-pointer"
+                              title="Delete from media library"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="p-4 space-y-3">
+                          <div>
+                            <span className="font-bold text-white text-xs block truncate">
+                              {item.name}
+                            </span>
+                            <span className="text-[10px] text-neutral-400 block mt-0.5">
+                              Added on {item.date}
+                            </span>
+                          </div>
+
+                          {/* Quick Assign Dropdown */}
+                          <div className="pt-2 border-t border-white/10 flex items-center gap-2">
+                            <select
+                              onChange={(e) => {
+                                if (e.target.value) {
+                                  handleAssignImageToPost(e.target.value, item.url);
+                                  e.target.value = '';
+                                }
+                              }}
+                              defaultValue=""
+                              className="w-full bg-[#181824] border border-white/15 px-2.5 py-1.5 text-[11px] text-neutral-200 focus:outline-none focus:border-[#ff4b26]"
+                            >
+                              <option value="" disabled>
+                                Assign to a post...
+                              </option>
+                              {localProjects.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.title} ({p.client})
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Set as Founder Profile Photo */}
                           <button
                             type="button"
                             onClick={() => {
-                              navigator.clipboard.writeText(item.url);
-                              triggerSaveNotification('Link copied to clipboard!');
+                              setLocalStudioInfo((prev) => ({ ...prev, founderImage: item.url }));
+                              triggerSaveNotification('Image set as Founder Profile Photo!');
                             }}
-                            className="p-1.5 bg-black/70 hover:bg-[#ff4b26] text-white rounded transition-colors cursor-pointer"
-                            title="Copy link"
+                            className="w-full py-1.5 px-2 bg-white/5 hover:bg-[#ff4b26]/20 hover:border-[#ff4b26] border border-white/10 text-[10px] text-neutral-300 hover:text-white rounded transition-colors flex items-center justify-center gap-1.5 cursor-pointer font-mono"
                           >
-                            <Copy className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteMediaItem(item.id)}
-                            className="p-1.5 bg-black/70 hover:bg-red-500 text-white rounded transition-colors cursor-pointer"
-                            title="Delete from media library"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Camera className="w-3 h-3 text-[#ff4b26]" />
+                            <span>Set as Founder Photo</span>
                           </button>
                         </div>
                       </div>
-
-                      <div className="p-4 space-y-3">
-                        <div>
-                          <span className="font-bold text-white text-xs block truncate">
-                            {item.name}
-                          </span>
-                          <span className="text-[10px] text-neutral-400 block mt-0.5">
-                            Added on {item.date}
-                          </span>
-                        </div>
-
-                        {/* Quick Assign Dropdown */}
-                        <div className="pt-2 border-t border-white/10 flex items-center gap-2">
-                          <select
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                handleAssignImageToPost(e.target.value, item.url);
-                                e.target.value = '';
-                              }
-                            }}
-                            defaultValue=""
-                            className="w-full bg-[#181824] border border-white/15 px-2.5 py-1.5 text-[11px] text-neutral-200 focus:outline-none focus:border-[#ff4b26]"
-                          >
-                            <option value="" disabled>
-                              Assign to a post...
-                            </option>
-                            {localProjects.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.title} ({p.client})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Set as Founder Profile Photo */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setLocalStudioInfo((prev) => ({ ...prev, founderImage: item.url }));
-                            triggerSaveNotification('Image set as Founder Profile Photo!');
-                          }}
-                          className="w-full py-1.5 px-2 bg-white/5 hover:bg-[#ff4b26]/20 hover:border-[#ff4b26] border border-white/10 text-[10px] text-neutral-300 hover:text-white rounded transition-colors flex items-center justify-center gap-1.5 cursor-pointer font-mono"
-                        >
-                          <Camera className="w-3 h-3 text-[#ff4b26]" />
-                          <span>Set as Founder Photo</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1476,15 +1821,22 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
 
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
                     {/* Visual Preview */}
-                    <div className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-white/20 shadow-[0_0_20px_rgba(255,75,38,0.25)] shrink-0 bg-neutral-900 group">
+                    <div 
+                      className="relative w-24 h-24 rounded-2xl overflow-hidden border border-white/20 shrink-0 bg-neutral-900 group"
+                      style={{ boxShadow: 'none', filter: 'none', backdropFilter: 'none' }}
+                    >
                       {localStudioInfo.founderImage ? (
                         <img
                           src={localStudioInfo.founderImage}
                           alt={localStudioInfo.founderName}
                           className="w-full h-full object-cover object-center"
+                          style={{ filter: 'none', backdropFilter: 'none', imageRendering: 'auto' }}
                         />
                       ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-[#ff4b26] to-[#7f1d07] flex items-center justify-center font-heading font-black text-white text-2xl">
+                        <div 
+                          className="w-full h-full bg-[#ff4b26] flex items-center justify-center font-heading font-black text-white text-2xl"
+                          style={{ boxShadow: 'none', filter: 'none', backdropFilter: 'none' }}
+                        >
                           {localStudioInfo.founderName
                             .split(' ')
                             .map((n) => n[0])
@@ -1499,7 +1851,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                         className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold transition-opacity cursor-pointer"
                         title="Click to upload new photo"
                       >
-                        <Camera className="w-4 h-4 mb-1 text-[#ff4b26]" />
+                        <Camera className="w-4 h-4 mb-1 text-white" />
                         <span>Change</span>
                       </button>
                     </div>
@@ -1510,7 +1862,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                         <button
                           type="button"
                           onClick={() => founderFileInputRef.current?.click()}
-                          className="px-3.5 py-2 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2 cursor-pointer shadow-md"
+                          className="px-3.5 py-2 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
                         >
                           <Upload className="w-3.5 h-3.5" />
                           <span>Upload Photo</span>
