@@ -3,11 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
 */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Layers, Film, Instagram } from 'lucide-react';
+import { ArrowUpRight, Layers, Film } from 'lucide-react';
 import { CaseStudy, ProjectMediaItem } from '../types';
-import { isInstagramUrl, getInstagramShortcode, getInstagramEmbedUrl } from '../utils/mediaHelper';
 
 interface ProjectCardProps {
   project: CaseStudy;
@@ -16,7 +15,7 @@ interface ProjectCardProps {
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onSelect }) => {
-  const [imageError, setImageError] = React.useState(false);
+  const [imageError, setImageError] = useState(false);
 
   // Extract all media items
   const mediaItems: ProjectMediaItem[] = React.useMemo(() => {
@@ -35,9 +34,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onSelect }) =
 
   const coverItem = mediaItems[0];
   const targetUrl = coverItem?.url || project.imagePromptFallback || '';
-  const isInsta = isInstagramUrl(targetUrl);
-  const instaShortcode = isInsta ? getInstagramShortcode(targetUrl) : null;
   const isVideo = coverItem?.type === 'video' || (targetUrl && (targetUrl.startsWith('data:video/') || targetUrl.endsWith('.mp4')));
+
+  // Filter out any unwanted client names
+  const displayClient = (project.client && !project.client.toLowerCase().includes('instagram'))
+    ? project.client
+    : 'Medar Studio';
 
   return (
     <motion.article
@@ -51,22 +53,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onSelect }) =
     >
       {/* 
         =======================================================================
-        VISUAL ARTWORK AREA - 4:5 ASPECT RATIO
+        VISUAL ARTWORK AREA - 4:5 ASPECT RATIO (Clean Photos & Videos Only)
         =======================================================================
       */}
       <div className="relative w-full aspect-[4/5] overflow-hidden mb-5 bg-[#0a0a0f] border border-white/[0.08] shadow-lg flex flex-col justify-between p-4">
-        {/* Render Cover Media */}
-        {isInsta && instaShortcode ? (
-          <div className="absolute inset-0 w-full h-full bg-[#0d0d14] flex flex-col items-center justify-center overflow-hidden">
-            <iframe
-              src={getInstagramEmbedUrl(instaShortcode) || undefined}
-              title={project.title}
-              className="w-full h-full border-0 pointer-events-none scale-[1.02] group-hover:scale-105 transition-transform duration-500"
-              scrolling="no"
-              loading="lazy"
-            />
-          </div>
-        ) : isVideo ? (
+        {/* Render Pure Photo or Video */}
+        {isVideo ? (
           <video
             src={targetUrl}
             muted
@@ -87,17 +79,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onSelect }) =
         ) : (
           <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-[#1c1c28] via-[#12121b] to-[#0a0a0f] flex flex-col items-center justify-center p-6 text-center">
             <div className="w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
-              {isInsta ? (
-                <Instagram className="w-7 h-7 text-pink-500" />
-              ) : (
-                <Layers className="w-7 h-7 text-[#ff4b26]" />
-              )}
+              <Layers className="w-7 h-7 text-[#ff4b26]" />
             </div>
             <span className="text-xs font-heading font-bold text-white mb-1 line-clamp-1">
               {project.title}
             </span>
             <span className="text-[10px] font-mono text-neutral-400">
-              {isInsta ? 'Post Instagram' : 'Artwork Design'}
+              Creative Visual Artwork
             </span>
           </div>
         )}
@@ -113,17 +101,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onSelect }) =
           </span>
 
           <div className="flex items-center gap-1.5">
-            {isInsta ? (
-              <span className="flex items-center gap-1 bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] px-2 py-0.5 text-white text-[9px] font-bold rounded">
-                <Instagram className="w-3 h-3" />
-                <span>INSTAGRAM</span>
-              </span>
-            ) : mediaItems.length > 1 ? (
+            {mediaItems.length > 1 && (
               <span className="flex items-center gap-1 bg-black/80 px-2 py-0.5 border border-white/15 text-white text-[9px]">
                 <Layers className="w-3 h-3 text-[#ff4b26]" />
-                <span>{mediaItems.length} MEDIA</span>
+                <span>{mediaItems.length} PHOTOS</span>
               </span>
-            ) : null}
+            )}
 
             {isVideo && (
               <span className="flex items-center gap-1 bg-black/80 px-2 py-0.5 border border-white/15 text-white text-[9px]">
@@ -145,7 +128,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onSelect }) =
         <div className="relative z-10 flex items-end justify-between border-t border-white/15 pt-2.5">
           <div className="min-w-0 pr-2">
             <span className="block text-[9px] font-mono text-neutral-400 uppercase tracking-widest truncate">
-              {project.client}
+              {displayClient}
             </span>
             <span className="block text-xs font-bold text-white tracking-wide truncate">
               {project.title}
@@ -162,7 +145,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, index, onSelect }) =
       <div className="flex-1 flex flex-col justify-between">
         <div>
           <div className="flex items-center gap-2 text-[11px] text-neutral-400 font-mono tracking-wider mb-1.5">
-            <span className="text-white/80 font-medium truncate">{project.client}</span>
+            <span className="text-white/80 font-medium truncate">{displayClient}</span>
             <span aria-hidden="true" className="text-neutral-600">·</span>
             <span className="tabular-nums">{project.year}</span>
           </div>

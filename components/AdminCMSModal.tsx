@@ -83,6 +83,12 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
 
   // Synchronize state if external props change
   useEffect(() => {
+    if (projects) {
+      setLocalProjects(projects);
+    }
+  }, [projects]);
+
+  useEffect(() => {
     if (budgetTiers) {
       setLocalBudgetTiers(budgetTiers);
     }
@@ -732,8 +738,8 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
 
     const newPostItem: CaseStudy = {
       id: `post-ig-${Date.now()}`,
-      title: directIgTitle.trim() || 'Instagram Visual Artwork',
-      client: localStudioInfo.instagramHandle || 'Instagram Project',
+      title: directIgTitle.trim() || 'Visual Design Artwork',
+      client: 'Medar Studio',
       year: new Date().getFullYear().toString(),
       category: directIgCategory,
       categoryLabel:
@@ -744,13 +750,13 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
           : directIgCategory === '3d-webgl'
           ? '3D Design'
           : 'Visual Design',
-      description: directIgCaption.trim() || `Design importé depuis Instagram (${directIgPostUrl.trim()})`,
+      description: directIgCaption.trim() || 'Création visuelle réalisée pour le portfolio Medar Studio.',
       media: [
         {
           id: `media-ig-${Date.now()}`,
           type: isVideo ? 'video' : 'image',
           url: mediaUrl,
-          title: 'Instagram Visual'
+          title: 'Photo'
         }
       ],
       imagePromptFallback: isVideo ? '' : mediaUrl,
@@ -793,12 +799,12 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
           .trim();
         const formattedTitle = cleanName
           ? cleanName.charAt(0).toUpperCase() + cleanName.slice(1)
-          : `Instagram Project #${localProjects.length + i + 1}`;
+          : `Projet Design #${localProjects.length + i + 1}`;
 
         const post: CaseStudy = {
           id: `post-batch-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`,
           title: formattedTitle,
-          client: localStudioInfo.instagramHandle || 'Medar Studio',
+          client: 'Medar Studio',
           year: new Date().getFullYear().toString(),
           category: batchDefaultCategory,
           categoryLabel:
@@ -809,7 +815,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               : batchDefaultCategory === '3d-webgl'
               ? '3D Design'
               : 'Visual Design',
-          description: `Création visuelle importée depuis Instagram (${localStudioInfo.instagramHandle || '@medarstudio'}).`,
+          description: `Création visuelle réalisée pour le portfolio de l'agence.`,
           media: [
             {
               id: `media-batch-${Date.now()}-${i}`,
@@ -835,7 +841,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
         } catch (e) {
           console.warn("Storage quota exceeded", e);
         }
-        triggerSaveNotification(`🎉 ${newPosts.length} projet(s) Instagram importé(s) instantanément dans votre portfolio !`);
+        triggerSaveNotification(`🎉 ${newPosts.length} photo(s) importée(s) instantanément dans votre portfolio !`);
       }
     } catch (err) {
       console.error(err);
@@ -843,7 +849,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     }
   };
 
-  // Batch paste links: Takes multiple Instagram links pasted in a textarea
+  // Batch paste image links: Takes multiple direct image links pasted in a textarea
   const handleBatchLinksImport = (e: React.FormEvent) => {
     e.preventDefault();
     if (!batchLinksText.trim()) return;
@@ -856,11 +862,11 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     if (lines.length === 0) return;
 
     const newPosts: CaseStudy[] = lines.map((link, idx) => {
-      const isReel = link.includes('/reel/');
+      const isVid = link.includes('.mp4') || link.includes('.webm');
       return {
         id: `post-link-${Date.now()}-${idx}`,
-        title: `Instagram Artwork #${localProjects.length + idx + 1}`,
-        client: localStudioInfo.instagramHandle || 'Instagram',
+        title: `Projet Design #${localProjects.length + idx + 1}`,
+        client: 'Medar Studio',
         year: new Date().getFullYear().toString(),
         category: batchDefaultCategory,
         categoryLabel:
@@ -871,17 +877,17 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
             : batchDefaultCategory === '3d-webgl'
             ? '3D Design'
             : 'Visual Design',
-        description: `Projet issu d'Instagram : ${link}`,
+        description: `Création graphique et direction artistique.`,
         media: [
           {
             id: `media-link-${Date.now()}-${idx}`,
-            type: isReel ? 'video' : 'image',
+            type: isVid ? 'video' : 'image',
             url: link,
-            title: 'Instagram Post'
+            title: 'Photo'
           }
         ],
-        imagePromptFallback: isReel ? '' : link,
-        videoUrl: isReel ? link : undefined,
+        imagePromptFallback: isVid ? '' : link,
+        videoUrl: isVid ? link : undefined,
         accentColor: '#ff4b26',
         gradientTheme: 'from-[#ff4b26]/30 to-[#0c0c10]'
       };
@@ -893,10 +899,10 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     try {
       localStorage.setItem('medar_studio_projects_v2', JSON.stringify(updated));
     } catch (e) {
-      console.warn(e);
+      console.warn("Storage quota exceeded", e);
     }
     setBatchLinksText('');
-    triggerSaveNotification(`${newPosts.length} post(s) Instagram ajouté(s) au portfolio !`);
+    triggerSaveNotification(`🎉 ${newPosts.length} photo(s) ajoutée(s) à votre portfolio !`);
   };
 
   // Delete all imported projects (Reset portfolio)
@@ -1148,19 +1154,19 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               </div>
             </button>
 
-            {/* Tab: Instagram Sync & Import */}
+            {/* Tab: Batch Photo Import */}
             <button
               onClick={() => setActiveTab('instagram')}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
                 activeTab === 'instagram'
-                  ? 'bg-gradient-to-r from-[#E1306C] via-[#FD1D1D] to-[#F56040] text-white font-bold shadow-md'
+                  ? 'bg-[#ff4b26] text-white font-bold shadow-md'
                   : 'text-neutral-400 hover:bg-white/5 hover:text-white'
               }`}
             >
-              <Instagram className="w-4 h-4 text-pink-400 shrink-0" />
+              <Upload className="w-4 h-4 text-emerald-400 shrink-0" />
               <div className="flex flex-col">
-                <span className="text-white font-semibold">Instagram Import</span>
-                <span className="text-[10px] text-neutral-400 font-mono">Sync & Importer Posts</span>
+                <span className="text-white font-semibold">Import par Lots (Photos)</span>
+                <span className="text-[10px] text-neutral-400 font-mono">Glisser 5-20 photos d'un coup</span>
               </div>
             </button>
 
@@ -1276,12 +1282,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       <div className="flex items-center gap-4">
                         {/* Live Image Thumbnail with Upload Trigger */}
                         <div className="relative group w-20 h-24 rounded-lg overflow-hidden border border-white/15 bg-neutral-900 shrink-0">
-                          {isInstagramUrl(project.imagePromptFallback) ? (
-                            <div className="w-full h-full bg-gradient-to-tr from-[#833ab4] via-[#fd1d1d] to-[#fcb045] flex flex-col items-center justify-center text-white p-1 text-center">
-                              <Instagram className="w-6 h-6 mb-1" />
-                              <span className="text-[8px] font-mono font-bold leading-tight">POST IG</span>
-                            </div>
-                          ) : project.imagePromptFallback ? (
+                          {project.imagePromptFallback ? (
                             <img
                               src={project.imagePromptFallback}
                               alt={project.title}
@@ -1858,7 +1859,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
           )}
 
           {/* ================================================================= */}
-          {/* TAB: INSTAGRAM SYNC & POST IMPORTER (EASY SOLUTION)               */}
+          {/* TAB: BATCH PHOTO IMPORT (NO SIMULATION, CLEAN PHOTOS ONLY)        */}
           {/* ================================================================= */}
           {activeTab === 'instagram' && (
             <div className="max-w-5xl mx-auto space-y-8 font-mono text-xs">
@@ -1866,46 +1867,33 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
               <div className="pb-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="p-1.5 rounded-lg bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] text-white">
-                      <Instagram className="w-5 h-5" />
+                    <span className="p-1.5 rounded-lg bg-[#ff4b26] text-white">
+                      <Upload className="w-5 h-5" />
                     </span>
                     <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                      Importation Facile Instagram & Gestion Portfolio
+                      Import par Lots de Photos (Sans Simulation)
                     </h2>
                   </div>
                   <p className="text-xs text-neutral-400 mt-1">
-                    Importez directement vos créations Instagram en un clic, puis faites votre tri facilement : gardez ce qui vous plaît et effacez ce que vous ne voulez pas.
+                    Importez directement vos photos par lots en un clic. Chaque photo est immédiatement intégrée dans votre portfolio sans aucune simulation externe ni mention de compte.
                   </p>
                 </div>
-
-                {localStudioInfo.instagramUrl && (
-                  <a
-                    href={localStudioInfo.instagramUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2 bg-gradient-to-r from-[#E1306C] via-[#FD1D1D] to-[#F56040] hover:opacity-90 text-white font-bold rounded-lg transition-opacity flex items-center gap-2 self-start sm:self-center cursor-pointer shadow-md"
-                  >
-                    <Instagram className="w-4 h-4" />
-                    <span>Mon Compte Instagram</span>
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
               </div>
 
-              {/* SECTION 1: LA SOLUTION LA PLUS FACILE (IMPORT PAR LOTS EN 1 CLIC) */}
+              {/* SECTION 1: IMPORT PAR LOTS EN 1 CLIC */}
               <div className="bg-[#12121b] border-2 border-[#ff4b26]/50 p-6 md:p-8 rounded-xl space-y-6 shadow-xl relative overflow-hidden">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="px-2 py-0.5 bg-[#ff4b26] text-white text-[10px] font-bold rounded uppercase">
-                        Méthode Recommandée · Ultra Rapide
+                        Méthode Ultra Rapide
                       </span>
                       <h3 className="font-heading text-base md:text-lg font-bold text-white">
-                        1. Glisser-Déposer en masse vos créations Instagram
+                        1. Glisser-Déposer vos photos par lots (5, 10, 20 photos...)
                       </h3>
                     </div>
                     <p className="text-xs text-neutral-300 mt-1">
-                      Prenez les photos ou vidéos de vos publications Instagram (sur votre ordinateur ou téléphone) et déposez-les ici. Chaque fichier devient instantanément un post dans votre portfolio !
+                      Sélectionnez vos fichiers photos directement sur votre ordinateur ou smartphone et déposez-les ici. Chaque photo devient instantanément un projet dans votre portfolio !
                     </p>
                   </div>
 
@@ -1945,16 +1933,16 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       : 'border-white/20 bg-black/40 hover:border-[#ff4b26]/60 hover:bg-black/60'
                   }`}
                 >
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-[#f09433] via-[#dc2743] to-[#bc1888] flex items-center justify-center mb-4 shadow-lg">
+                  <div className="w-16 h-16 rounded-full bg-[#ff4b26] flex items-center justify-center mb-4 shadow-lg">
                     <Upload className="w-8 h-8 text-white" />
                   </div>
                   <h4 className="font-heading text-lg font-bold text-white mb-2">
                     {isDraggingBatchInstagram
-                      ? 'Relâchez vos fichiers pour les importer tous !'
-                      : 'Glissez ici 5, 10 ou 20 photos/vidéos Instagram d\'un coup'}
+                      ? 'Relâchez vos photos pour les importer toutes !'
+                      : 'Glissez ici vos photos d\'un coup (JPG, PNG, WEBP)'}
                   </h4>
                   <p className="text-xs text-neutral-400 max-w-md leading-relaxed mb-4">
-                    Ou cliquez pour ouvrir vos dossiers et sélectionner vos créations. Chaque image sera automatiquement convertie en projet dans votre portfolio.
+                    Ou cliquez pour ouvrir vos dossiers et sélectionner vos créations. Chaque photo est immédiatement ajoutée à votre portfolio en haute définition.
                   </p>
                   <button
                     type="button"
@@ -1962,28 +1950,25 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       e.stopPropagation();
                       batchInstagramFileInputRef.current?.click();
                     }}
-                    className="px-6 py-3 bg-[#ff4b26] hover:bg-white text-white hover:text-black font-bold uppercase tracking-wider text-xs rounded-lg transition-all flex items-center gap-2 shadow-lg"
+                    className="px-6 py-3 bg-[#ff4b26] hover:bg-white text-white hover:text-black font-bold uppercase tracking-wider text-xs rounded-lg transition-all flex items-center gap-2 shadow-lg cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
-                    <span>Sélectionner plusieurs fichiers Instagram</span>
+                    <span>Sélectionner plusieurs photos depuis votre appareil</span>
                   </button>
                 </div>
 
-                {/* Ou importation de liens multiples */}
+                {/* Alternative : importation de liens d'images directs */}
                 <div className="pt-4 border-t border-white/10 space-y-3">
                   <span className="text-xs text-neutral-300 font-bold block flex items-center gap-2">
                     <LinkIcon className="w-3.5 h-3.5 text-[#ff4b26]" />
-                    <span>Alternative : Coller un ou plusieurs liens de posts Instagram (1 par ligne)</span>
+                    <span>Alternative : Coller des liens d'images directs (1 par ligne)</span>
                   </span>
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded text-[11px] font-mono text-amber-300 leading-relaxed">
-                    💡 <strong>Important :</strong> Un lien de publication Instagram (ex: <code>https://www.instagram.com/p/...</code>) est une page web. Le site l'affiche automatiquement via le lecteur officiel <strong>Instagram Embed</strong>. Si vous souhaitez une image plein écran sans cadre Instagram, préférez glisser vos photos directement dans la zone ci-dessus, ou cliquez sur <em>« Joindre la photo »</em> sur chaque projet ci-dessous.
-                  </div>
                   <form onSubmit={handleBatchLinksImport} className="space-y-3">
                     <textarea
                       rows={3}
                       value={batchLinksText}
                       onChange={(e) => setBatchLinksText(e.target.value)}
-                      placeholder="https://www.instagram.com/p/DFxyz1/&#10;https://www.instagram.com/p/DFxyz2/&#10;https://www.instagram.com/reel/DFxyz3/"
+                      placeholder="https://.../photo-1.jpg&#10;https://.../photo-2.png"
                       className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white text-xs font-mono focus:outline-none focus:border-[#ff4b26]"
                     />
                     <button
@@ -1992,7 +1977,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       className="px-4 py-2 bg-white/10 hover:bg-white text-white hover:text-black disabled:opacity-40 font-bold rounded transition-colors flex items-center gap-2 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>Importer ces liens dans le portfolio</span>
+                      <span>Importer ces photos dans le portfolio</span>
                     </button>
                   </form>
                 </div>
@@ -2009,7 +1994,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       </h3>
                     </div>
                     <p className="text-xs text-neutral-400 mt-1">
-                      Voici les <strong>{localProjects.length} projet(s)</strong> actuellement dans votre portfolio. Cliquez sur « Effacer » pour supprimer en un instant les posts que vous ne souhaitez pas garder.
+                      Voici les <strong>{localProjects.length} projet(s)</strong> actuellement dans votre portfolio. Cliquez sur « Effacer » pour supprimer en un instant ce que vous ne souhaitez pas garder.
                     </p>
                   </div>
 
@@ -2029,7 +2014,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                 {localProjects.length === 0 ? (
                   <div className="py-12 text-center border border-white/10 bg-black/30 rounded-xl space-y-2">
                     <p className="text-neutral-400 text-xs">
-                      Votre portfolio est actuellement vide. Déposez des photos Instagram ci-dessus pour le remplir en 2 secondes !
+                      Votre portfolio est actuellement vide. Déposez des photos ci-dessus pour le remplir en 2 secondes !
                     </p>
                   </div>
                 ) : (
@@ -2039,7 +2024,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                         key={project.id}
                         className="bg-[#181824] border border-white/15 rounded-xl p-3 flex flex-col justify-between hover:border-[#ff4b26]/50 transition-all space-y-3 group"
                       >
-                        {/* Media Thumbnail */}
+                        {/* Pure Media Thumbnail */}
                         <div className="relative aspect-[4/5] bg-black rounded-lg overflow-hidden border border-white/10">
                           {project.videoUrl ? (
                             <video
@@ -2047,17 +2032,6 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                               className="w-full h-full object-cover"
                               muted
                             />
-                          ) : isInstagramUrl(project.imagePromptFallback) ? (
-                            <div className="w-full h-full bg-gradient-to-tr from-[#833ab4] via-[#fd1d1d] to-[#fcb045] flex flex-col items-center justify-center text-white p-3 text-center">
-                              <Instagram className="w-8 h-8 mb-2 drop-shadow" />
-                              <span className="text-xs font-bold font-mono">Post Instagram</span>
-                              <span className="text-[9px] font-mono opacity-80 mt-1 line-clamp-1">
-                                {getInstagramShortcode(project.imagePromptFallback) || 'Lien importé'}
-                              </span>
-                              <span className="text-[8px] font-mono bg-black/60 px-1.5 py-0.5 rounded mt-2 border border-white/20">
-                                Embed actif
-                              </span>
-                            </div>
                           ) : project.imagePromptFallback ? (
                             <img
                               src={project.imagePromptFallback}
@@ -2094,14 +2068,9 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                             className="w-full bg-[#12121b] border border-white/10 px-2.5 py-1 text-white text-xs font-bold focus:outline-none focus:border-[#ff4b26] rounded mb-1"
                           />
                           <div className="flex items-center justify-between text-[10px] text-neutral-400">
-                            <span>Client : {project.client}</span>
+                            <span>Client : {project.client && !project.client.toLowerCase().includes('instagram') ? project.client : 'Medar Studio'}</span>
                             <span>Année : {project.year}</span>
                           </div>
-                          {isInstagramUrl(project.imagePromptFallback) && (
-                            <p className="text-[10px] text-amber-300 font-mono mt-1">
-                              ⚡ Lecteur Instagram actif. Vous pouvez joindre la photo ci-dessous :
-                            </p>
-                          )}
                         </div>
 
                         {/* Actions : Upload Photo + Delete Button */}
@@ -2113,10 +2082,10 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                               postFileInputRef.current?.click();
                             }}
                             className="w-full py-1.5 bg-white/10 hover:bg-white text-white hover:text-black text-xs font-mono font-bold rounded transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                            title="Joindre la photo originale depuis votre PC ou téléphone"
+                            title="Remplacer la photo depuis votre PC ou téléphone"
                           >
                             <Camera className="w-3.5 h-3.5 text-[#ff4b26]" />
-                            <span>Joindre la photo originale</span>
+                            <span>Remplacer la photo</span>
                           </button>
 
                           <button
@@ -2135,110 +2104,6 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
-
-              {/* SECTION 3: PROFIL INSTAGRAM OFFICIEL */}
-              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                  <div className="flex items-center gap-2">
-                    <Instagram className="w-4 h-4 text-[#ff4b26]" />
-                    <h3 className="font-heading text-base font-bold text-white">
-                      3. Lien & Profil Instagram Officiel du Studio
-                    </h3>
-                  </div>
-                  <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
-                    Affiché dans la barre de navigation et le footer
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-neutral-300 block mb-1 font-bold">Identifiant / Handle Instagram</label>
-                    <input
-                      type="text"
-                      value={localStudioInfo.instagramHandle || ''}
-                      onChange={(e) =>
-                        setLocalStudioInfo({ ...localStudioInfo, instagramHandle: e.target.value })
-                      }
-                      placeholder="@medarstudio"
-                      className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-neutral-300 block mb-1 font-bold">URL complète du compte Instagram</label>
-                    <input
-                      type="url"
-                      value={localStudioInfo.instagramUrl || ''}
-                      onChange={(e) =>
-                        setLocalStudioInfo({ ...localStudioInfo, instagramUrl: e.target.value })
-                      }
-                      placeholder="https://instagram.com/medarstudio"
-                      className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-2">
-                  <p className="text-[11px] text-neutral-400">
-                    Vos visiteurs peuvent cliquer directement sur l'icône Instagram pour visiter votre profil officiel.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onUpdateStudioInfo(localStudioInfo);
-                      try {
-                        localStorage.setItem('medar_studio_general', JSON.stringify(localStudioInfo));
-                      } catch (e) {
-                        console.warn(e);
-                      }
-                      triggerSaveNotification('Lien Instagram enregistré avec succès !');
-                    }}
-                    className="px-3.5 py-1.5 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white font-bold rounded transition-colors cursor-pointer shrink-0"
-                  >
-                    Enregistrer
-                  </button>
-                </div>
-              </div>
-
-              {/* SECTION 4: OPTION AVANCÉE META API (POUR CEUX QUI ONT UN TOKEN) */}
-              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
-                <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                  <div className="flex items-center gap-2">
-                    <Compass className="w-4 h-4 text-[#ff4b26]" />
-                    <h3 className="font-heading text-sm font-bold text-white">
-                      4. Option Avancée : Jeton Meta Instagram Graph API (Facultatif)
-                    </h3>
-                  </div>
-                  <span className="text-[10px] text-neutral-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded">
-                    Optionnel
-                  </span>
-                </div>
-
-                <div className="flex gap-2">
-                  <input
-                    type="password"
-                    value={localStudioInfo.instagramToken || ''}
-                    onChange={(e) =>
-                      setLocalStudioInfo({ ...localStudioInfo, instagramToken: e.target.value })
-                    }
-                    placeholder="Collez votre jeton utilisateur Meta si vous en possédez un..."
-                    className="flex-1 bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26] text-xs font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleFetchInstagramFeed}
-                    disabled={isFetchingInstagram}
-                    className="px-4 py-2 bg-white/10 hover:bg-white text-white hover:text-black font-bold rounded transition-colors flex items-center gap-2 cursor-pointer shrink-0"
-                  >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isFetchingInstagram ? 'animate-spin' : ''}`} />
-                    <span>{isFetchingInstagram ? 'Chargement...' : 'Tester le Jeton'}</span>
-                  </button>
-                </div>
-
-                {instagramFetchError && (
-                  <p className="text-red-400 text-[11px]">{instagramFetchError}</p>
                 )}
               </div>
             </div>

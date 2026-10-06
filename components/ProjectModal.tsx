@@ -5,9 +5,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Film, Image as ImageIcon, Layers, Instagram, ExternalLink } from 'lucide-react';
+import { X, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight, Film, Layers } from 'lucide-react';
 import { CaseStudy, ProjectMediaItem } from '../types';
-import { isInstagramUrl, getInstagramShortcode, getInstagramEmbedUrl } from '../utils/mediaHelper';
 
 interface ProjectModalProps {
   project: CaseStudy | null;
@@ -31,10 +30,10 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
     }
     const items: ProjectMediaItem[] = [];
     if (project.videoUrl) {
-      items.push({ id: 'video-1', type: 'video', url: project.videoUrl, title: 'Video' });
+      items.push({ id: 'video-1', type: 'video', url: project.videoUrl, title: 'Video Asset' });
     }
     if (project.imagePromptFallback) {
-      items.push({ id: 'img-1', type: 'image', url: project.imagePromptFallback, title: 'Cover Image' });
+      items.push({ id: 'img-1', type: 'image', url: project.imagePromptFallback, title: 'Artwork' });
     }
     return items;
   }, [project]);
@@ -49,9 +48,12 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
 
   const currentMedia = mediaItems[activeMediaIndex] || mediaItems[0];
   const currentUrl = currentMedia?.url || project.imagePromptFallback || '';
-  const isInsta = isInstagramUrl(currentUrl);
-  const instaShortcode = isInsta ? getInstagramShortcode(currentUrl) : null;
   const isVideo = currentMedia?.type === 'video' || (currentUrl && (currentUrl.startsWith('data:video/') || currentUrl.endsWith('.mp4')));
+
+  // Filter out any unwanted client names
+  const displayClient = (project.client && !project.client.toLowerCase().includes('instagram'))
+    ? project.client
+    : 'Medar Studio';
 
   const handleNextMedia = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -83,7 +85,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
           {/* Top Bar inside modal */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08] bg-[#0c0c12]">
             <div className="flex items-center gap-3 text-xs font-mono text-neutral-400">
-              <span className="text-white font-semibold">{project.client}</span>
+              <span className="text-white font-semibold">{displayClient}</span>
               <span aria-hidden="true">·</span>
               <span className="text-[#ff4b26]">{project.categoryLabel}</span>
               <span aria-hidden="true">·</span>
@@ -132,59 +134,37 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
               {/* Visual Display (4:5 Artwork Carousel) */}
               <div className="md:col-span-7 flex flex-col gap-3">
                 <div className="relative w-full aspect-[4/5] bg-[#08080c] border border-white/15 overflow-hidden flex flex-col justify-between p-4 shadow-xl group">
-                  {/* Media Content */}
-                  {isInsta && instaShortcode ? (
-                    <div className="absolute inset-0 w-full h-full bg-[#0a0a10] flex flex-col">
-                      <iframe
-                        src={getInstagramEmbedUrl(instaShortcode, true) || undefined}
-                        title={project.title}
-                        className="w-full h-full border-0"
-                        scrolling="yes"
-                        loading="lazy"
-                        allowTransparency
-                      />
+                  {/* Pure Photo or Video Media Content */}
+                  {isVideo ? (
+                    <video
+                      key={currentMedia.url}
+                      src={currentMedia.url}
+                      controls
+                      playsInline
+                      autoPlay
+                      className="absolute inset-0 w-full h-full object-cover"
+                    />
+                  ) : !imgError && currentMedia?.url ? (
+                    <img
+                      key={currentMedia.url}
+                      src={currentMedia.url}
+                      alt={project.title}
+                      referrerPolicy="no-referrer"
+                      onError={() => setImgError(true)}
+                      className="absolute inset-0 w-full h-full object-cover"
+                      style={{ imageRendering: 'auto' }}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 w-full h-full bg-[#12121b] flex flex-col items-center justify-center p-6 text-center">
+                      <Layers className="w-10 h-10 text-[#ff4b26] mb-2" />
+                      <span className="text-sm font-bold text-white mb-1">Visual Artwork</span>
                     </div>
-                  ) : currentMedia && (
-                    isVideo ? (
-                      <video
-                        key={currentMedia.url}
-                        src={currentMedia.url}
-                        controls
-                        playsInline
-                        autoPlay
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                    ) : !imgError ? (
-                      <img
-                        key={currentMedia.url}
-                        src={currentMedia.url}
-                        alt={project.title}
-                        referrerPolicy="no-referrer"
-                        onError={() => setImgError(true)}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        style={{ imageRendering: 'auto' }}
-                      />
-                    ) : (
-                      <div className="absolute inset-0 w-full h-full bg-[#12121b] flex flex-col items-center justify-center p-6 text-center">
-                        <Instagram className="w-10 h-10 text-pink-500 mb-2" />
-                        <span className="text-sm font-bold text-white mb-1">Visual Media</span>
-                        <a
-                          href={currentMedia.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-3 py-1.5 bg-white/10 hover:bg-white text-white hover:text-black text-xs font-mono rounded mt-2 flex items-center gap-1.5"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          <span>Ouvrir le lien média</span>
-                        </a>
-                      </div>
-                    )
                   )}
 
                   {/* Top Overlay Badge */}
                   <div className="relative z-10 flex items-center justify-between text-[10px] font-mono text-white/90">
                     <span className="bg-black/80 px-2 py-0.5 border border-white/15">
-                      {isInsta ? 'POST INSTAGRAM' : isVideo ? 'VIDEO ASSET' : '4:5 POST'}
+                      {isVideo ? 'VIDEO ASSET' : '4:5 POST'}
                     </span>
                     {mediaItems.length > 1 && (
                       <span className="bg-black/80 px-2 py-0.5 border border-white/15 text-white flex items-center gap-1 font-mono">
@@ -223,7 +203,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
                       <span className="block text-xs font-bold text-white truncate max-w-[200px]">{project.title}</span>
                     </div>
                     <span className="text-[10px] font-mono text-neutral-400">
-                      {isInsta ? 'Instagram Embed' : isVideo ? 'Dynamic Motion' : 'High Resolution'}
+                      {isVideo ? 'Dynamic Motion' : 'High Resolution'}
                     </span>
                   </div>
                 </div>
@@ -248,10 +228,6 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
                         {item.type === 'video' ? (
                           <div className="w-full h-full bg-black flex items-center justify-center text-cyan-400">
                             <Film className="w-5 h-5" />
-                          </div>
-                        ) : isInstagramUrl(item.url) ? (
-                          <div className="w-full h-full bg-gradient-to-tr from-[#833ab4] via-[#fd1d1d] to-[#fcb045] flex items-center justify-center text-white">
-                            <Instagram className="w-5 h-5" />
                           </div>
                         ) : (
                           <img
@@ -280,25 +256,10 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
                     {project.title}
                   </h2>
                   <div className="flex items-center gap-3 text-xs font-mono text-neutral-400 mt-2">
-                    <span>Client: <strong className="text-white">{project.client}</strong></span>
+                    <span>Client: <strong className="text-white">{displayClient}</strong></span>
                     <span>·</span>
                     <span>Year: <strong className="text-white">{project.year}</strong></span>
                   </div>
-
-                  {isInsta && (
-                    <div className="mt-4">
-                      <a
-                        href={currentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-[#833ab4] via-[#fd1d1d] to-[#fcb045] text-white text-xs font-bold font-mono rounded hover:opacity-95 transition-opacity shadow-md"
-                      >
-                        <Instagram className="w-4 h-4" />
-                        <span>Voir la publication sur Instagram</span>
-                        <ExternalLink className="w-3 h-3 ml-0.5" />
-                      </a>
-                    </div>
-                  )}
                 </div>
 
                 <div className="p-4 bg-white/[0.02] border border-white/[0.08] rounded">
