@@ -19,7 +19,9 @@ import {
   Box,
   Monitor,
   Flame,
-  AlertCircle
+  AlertCircle,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { StudioGeneralInfo } from '../types';
 import { GmailIcon, WhatsAppIcon } from './SocialLinks';
@@ -147,14 +149,26 @@ export const InitiatePartnership: React.FC<InitiatePartnershipProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isFormExpanded, setIsFormExpanded] = useState(false);
+  const formMatrixRef = React.useRef<HTMLDivElement>(null);
   const contactSectionRef = React.useRef<HTMLElement>(null);
 
-  // Sync if selectedService changes from exterior
+  // Sync if selectedService changes from exterior and auto-expand form
   React.useEffect(() => {
     if (selectedService) {
       setFormState((prev) => ({ ...prev, discipline: selectedService }));
+      setIsFormExpanded(true);
     }
   }, [selectedService]);
+
+  // Listen to open_brief_form trigger from CTA buttons ('Start a Project')
+  React.useEffect(() => {
+    const handleOpenBrief = () => {
+      setIsFormExpanded(true);
+    };
+    window.addEventListener('open_brief_form', handleOpenBrief);
+    return () => window.removeEventListener('open_brief_form', handleOpenBrief);
+  }, []);
 
   // Track when contact form comes into view
   React.useEffect(() => {
@@ -480,27 +494,93 @@ export const InitiatePartnership: React.FC<InitiatePartnershipProps> = ({
       </div>
 
       {/* The Creative Brief Studio Matrix (Creative Architecture) */}
-      <div className="bg-[#0f0f14] border border-white/[0.1] relative overflow-hidden">
+      <div ref={formMatrixRef} className="bg-[#0f0f14] border border-white/[0.1] relative overflow-hidden transition-all duration-300">
         {/* Subtle architectural grid pattern */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:4rem_4rem] pointer-events-none" />
 
         <div className="relative p-6 sm:p-8 md:p-12 lg:p-16">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-8 mb-8 border-b border-white/[0.08]">
-            <div>
-              <span className="text-[11px] font-mono text-[#ff4b26] uppercase tracking-widest block mb-1">
-                Phase 01 — Bespoke Inquiry
-              </span>
-              <h3 className="font-heading text-2xl md:text-3xl font-bold text-white tracking-tight">
-                Commission Architecture
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/[0.08]">
+            <div 
+              onClick={() => setIsFormExpanded(prev => !prev)}
+              className="cursor-pointer group select-none"
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[11px] font-mono text-[#ff4b26] uppercase tracking-widest block">
+                  Phase 01 — Bespoke Inquiry
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 text-neutral-400 border border-white/10 group-hover:border-[#ff4b26]/40 transition-colors">
+                  {isFormExpanded ? 'Formulaire Ouvert' : 'Formulaire Replié / Masqué'}
+                </span>
+              </div>
+              <h3 className="font-heading text-2xl md:text-3xl font-bold text-white tracking-tight flex items-center gap-3">
+                <span>Commission Architecture & Brief</span>
+                <span className="text-[#ff4b26] text-sm group-hover:translate-x-1 transition-transform">
+                  {isFormExpanded ? '▲' : '▼'}
+                </span>
               </h3>
             </div>
-            <div className="flex items-center gap-2 text-xs font-mono text-neutral-400">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
-              <span>Studio NDA Guarantee</span>
+
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="hidden sm:flex items-center gap-2 text-xs font-mono text-neutral-400">
+                <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                <span>Studio NDA Guarantee</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const nextState = !isFormExpanded;
+                  setIsFormExpanded(nextState);
+                  if (!nextState && formMatrixRef.current) {
+                    formMatrixRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                  }
+                }}
+                className={`px-4 py-2 border text-xs font-mono font-bold uppercase tracking-wider transition-all duration-200 flex items-center gap-2 cursor-pointer ${
+                  isFormExpanded
+                    ? 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+                    : 'bg-[#ff4b26] hover:bg-[#ff5f3c] text-white border-[#ff4b26] shadow-[0_2px_12px_rgba(255,75,38,0.35)]'
+                }`}
+              >
+                <span>{isFormExpanded ? 'Masquer / Replier' : 'Déplier le Formulaire'}</span>
+                {isFormExpanded ? (
+                  <ChevronUp className="w-4 h-4" />
+                ) : (
+                  <ChevronDown className="w-4 h-4" />
+                )}
+              </button>
             </div>
           </div>
 
-          {isSubmitted ? (
+          {/* Collapsed State Teaser when hidden */}
+          {!isFormExpanded && !isSubmitted && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="py-10 text-center max-w-xl mx-auto space-y-4"
+            >
+              <div className="text-xs font-mono text-neutral-400 leading-relaxed">
+                Le formulaire de brief détaillé est replié pour alléger la page. Vous pouvez le remonter et l’ouvrir en un clic ou utiliser les lignes directes ci-dessus (WhatsApp & Gmail).
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsFormExpanded(true)}
+                className="px-6 py-3 bg-white hover:bg-[#ff4b26] text-black hover:text-white font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 inline-flex items-center gap-2 cursor-pointer shadow-lg"
+              >
+                <span>Ouvrir & Remplir le Brief Projet</span>
+                <ChevronDown className="w-4 h-4" />
+              </button>
+            </motion.div>
+          )}
+
+          <AnimatePresence>
+            {isFormExpanded && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.3 }}
+                className="pt-8 overflow-hidden"
+              >
+                {isSubmitted ? (
             <motion.div
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -850,6 +930,9 @@ export const InitiatePartnership: React.FC<InitiatePartnershipProps> = ({
               </div>
             </form>
           )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
     </section>

@@ -82,12 +82,6 @@ export interface StudioValue {
   description: string;
 }
 
-export interface ChatMessage {
-  role: 'user' | 'model';
-  text: string;
-  isError?: boolean;
-}
-
 export interface CreativeBriefState {
   clientName: string;
   email: string;

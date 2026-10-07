@@ -39,7 +39,6 @@ import ServiceCard from './components/ServiceCard';
 import SocialLinks from './components/SocialLinks';
 import InitiatePartnership from './components/InitiatePartnership';
 import PageTransition from './components/PageTransition';
-import AIChat from './components/AIChat';
 import SecretAuthModal from './components/SecretAuthModal';
 import AdminCMSModal from './components/AdminCMSModal';
 import { trackStartProjectClick, trackContactFormView } from './utils/leadAnalytics';
@@ -357,6 +356,13 @@ const App: React.FC = () => {
         if (!parsed.formspreeEndpoint) {
           parsed.formspreeEndpoint = 'https://formspree.io/f/xnpjpvaw';
         }
+        // Ensure official Quote & Paragraph match the canonical studio manifesto
+        if (!parsed.officialQuote) {
+          parsed.officialQuote = DEFAULT_STUDIO_INFO.officialQuote;
+        }
+        if (!parsed.officialParagraph) {
+          parsed.officialParagraph = DEFAULT_STUDIO_INFO.officialParagraph;
+        }
         return parsed;
       }
     } catch (e) {
@@ -548,6 +554,9 @@ const App: React.FC = () => {
 
   const scrollToSection = (id: string) => {
     setMobileMenuOpen(false);
+    if (id === 'contact') {
+      window.dispatchEvent(new CustomEvent('open_brief_form'));
+    }
     const element = document.getElementById(id);
     if (element) {
       const headerOffset = 90;
@@ -1127,9 +1136,6 @@ const App: React.FC = () => {
 
       {/* Cinematic Right-to-Left Page Transition Curtain with Centered Logo */}
       <PageTransition isTransitioning={isPageTransitioning} />
-
-      {/* Medar Studio AI Advisor Widget */}
-      <AIChat />
 
       {/* Secret Authentication Modal (Masked PIN 010904) */}
       <SecretAuthModal
