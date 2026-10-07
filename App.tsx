@@ -34,61 +34,135 @@ import FluidBackground from './components/FluidBackground';
 import GradientText from './components/GlitchText';
 import ProjectCard from './components/ProjectCard';
 import ProjectModal from './components/ProjectModal';
+import AllProjectsView from './components/AllProjectsView';
 import ServiceCard from './components/ServiceCard';
+import SocialLinks from './components/SocialLinks';
+import InitiatePartnership from './components/InitiatePartnership';
+import PageTransition from './components/PageTransition';
 import AIChat from './components/AIChat';
 import SecretAuthModal from './components/SecretAuthModal';
 import AdminCMSModal from './components/AdminCMSModal';
+import { trackStartProjectClick, trackContactFormView } from './utils/leadAnalytics';
 import { CaseStudy, ProjectCategory, PaletteMood, AgencyService, TeamMember, StudioValue, StudioGeneralInfo } from './types';
 
-// Curated Agency Case Studies (Clean Starter Slots for Freelance Portfolio)
+// Curated Agency Case Studies (9 Studio Projects Ready for Assets)
 const PORTFOLIO_PROJECTS: CaseStudy[] = [
   {
     id: 'project-1',
-    title: 'Visual Identity & Branding',
-    client: 'Freelance Client',
-    year: '2025',
-    category: 'brand-identity',
-    categoryLabel: 'Brand Identity',
-    description: 'Bespoke brand architecture, logotype crafting, typography system, and complete visual identity.',
-    imagePromptFallback: '',
-    accentColor: '#ff4b26',
-    gradientTheme: 'from-[#ff4b26]/30 to-[#0c0c10]'
-  },
-  {
-    id: 'project-2',
-    title: 'Sports Graphics & Matchday',
-    client: 'Sports Project',
+    title: 'Apex Athletic Performance',
+    client: 'Apex Global',
     year: '2025',
     category: 'sports-design',
     categoryLabel: 'Sports Design',
-    description: 'High-impact matchday announcements, athletic typography, player posters, and visual communication.',
+    description: 'High-intensity athletic branding, dynamic matchday posters, player art direction, and bespoke kit concepts.',
+    media: [],
     imagePromptFallback: '',
-    accentColor: '#38bdf8',
-    gradientTheme: 'from-[#38bdf8]/30 to-[#0c0c10]'
+    isFeatured: true,
+    accentColor: '#38bdf8'
+  },
+  {
+    id: 'project-2',
+    title: 'Chrono Precision Horology',
+    client: 'Chrono Atelier',
+    year: '2025',
+    category: 'brand-identity',
+    categoryLabel: 'Brand Identity',
+    description: 'Luxury horology brand architecture, bespoke editorial typography, and minimalist gold-foil collateral.',
+    media: [],
+    imagePromptFallback: '',
+    isFeatured: true,
+    accentColor: '#ff4b26'
   },
   {
     id: 'project-3',
-    title: '3D Visual & Digital Artwork',
-    client: '3D Studio',
+    title: 'Nova Spatial Dimension',
+    client: 'Nova Interactive',
     year: '2025',
     category: '3d-webgl',
     categoryLabel: '3D Design',
-    description: 'Hyper-detailed 3D modeling, studio lighting setup, and photorealistic creative artwork.',
+    description: 'Immersive real-time spatial visuals, abstract geometric compositions, and dynamic 3D digital branding.',
+    media: [],
     imagePromptFallback: '',
-    accentColor: '#f59e0b',
-    gradientTheme: 'from-[#f59e0b]/30 to-[#0c0c10]'
+    isFeatured: true,
+    accentColor: '#a855f7'
   },
   {
     id: 'project-4',
-    title: 'Digital Campaign & Social Posters',
-    client: 'Visual Communications',
+    title: 'Velour Haute Couture',
+    client: 'Maison Velour',
+    year: '2025',
+    category: 'visual-design',
+    categoryLabel: 'Visual Design',
+    description: 'Contemporary fashion editorial art direction, runway lookbook layout, and high-contrast typographic identity.',
+    media: [],
+    imagePromptFallback: '',
+    isFeatured: true,
+    accentColor: '#e0a96d'
+  },
+  {
+    id: 'project-5',
+    title: 'Zenith Formula GP',
+    client: 'Zenith Racing',
+    year: '2024',
+    category: 'sports-design',
+    categoryLabel: 'Sports Design',
+    description: 'Motorsport aerodynamic livery design, paddock visual environment, and kinetic digital racing assets.',
+    media: [],
+    imagePromptFallback: '',
+    isFeatured: true,
+    accentColor: '#f59e0b'
+  },
+  {
+    id: 'project-6',
+    title: 'Lumina Sound Acoustics',
+    client: 'Lumina Audio',
+    year: '2024',
+    category: 'brand-identity',
+    categoryLabel: 'Brand Identity',
+    description: 'Acoustic waveform identity system, packaging design, and sensory spatial product communication.',
+    media: [],
+    imagePromptFallback: '',
+    isFeatured: true,
+    accentColor: '#2ee9a7'
+  },
+  {
+    id: 'project-7',
+    title: 'Orbit Global Protocol',
+    client: 'Orbit Labs',
+    year: '2024',
+    category: '3d-webgl',
+    categoryLabel: '3D Design',
+    description: 'Decentralized digital brand system, motion graphic design tokens, and next-gen interface guidelines.',
+    media: [],
+    imagePromptFallback: '',
+    isFeatured: true,
+    accentColor: '#06b6d4'
+  },
+  {
+    id: 'project-8',
+    title: 'Kanso Pure Living',
+    client: 'Kanso Studio',
     year: '2024',
     category: 'visual-design',
     categoryLabel: 'Visual Design',
-    description: 'Engaging digital promotional assets, layout designs, and social media art direction.',
+    description: 'Architectural lifestyle identity, sustainable tactile packaging, and Japanese-inspired editorial book.',
+    media: [],
     imagePromptFallback: '',
-    accentColor: '#2ee9a7',
-    gradientTheme: 'from-[#2ee9a7]/30 to-[#0c0c10]'
+    isFeatured: true,
+    accentColor: '#ec4899'
+  },
+  {
+    id: 'project-9',
+    title: 'Solaris Future Energy',
+    client: 'Solaris Collective',
+    year: '2024',
+    category: 'brand-identity',
+    categoryLabel: 'Brand Identity',
+    description: 'Clean energy vision identity, editorial infographic systems, and dynamic brand storytelling.',
+    media: [],
+    imagePromptFallback: '',
+    isFeatured: true,
+    accentColor: '#eab308'
   }
 ];
 
@@ -186,15 +260,6 @@ const AGENCY_SERVICES: AgencyService[] = [
   }
 ];
 
-// Founder Profile & Approach for About Section
-const STUDIO_FOUNDER: TeamMember = {
-  name: 'Mohamed Amine Amarir',
-  role: 'Founder & Studio Director',
-  focus: 'Studio Direction, Strategic Vision & Brand Architecture',
-  bio: 'Founder of Medar Studio, Mohamed Amine Amarir guides the studio’s strategic vision and curatorial standard. He established Medar Studio to unite an elite collective of specialized designers, 3D artists, typographers, and creative engineers. Under his leadership, the studio’s multidisciplinary team crafts bespoke visual solutions for brands, corporations, sports organizations, and creators worldwide.',
-  tag: 'Founder & Studio Leadership'
-};
-
 // Core Approach Pillars derived from official manifesto
 const STUDIO_APPROACH: StudioValue[] = [
   {
@@ -222,8 +287,8 @@ const STUDIO_APPROACH: StudioValue[] = [
 // Default Studio General Info
 const DEFAULT_STUDIO_INFO: StudioGeneralInfo = {
   studioName: 'Medar Studio',
-  tagline: 'Creative Design & Visual Communications Studio',
-  officialQuote: 'Medar Studio is a multidisciplinary creative design studio founded by Mohamed Amine Amarir, dedicated to graphic design and visual communications.',
+  tagline: 'Digital Agency · Creative Design & Visual Communications',
+  officialQuote: 'Medar Studio is a multidisciplinary digital agency dedicated to graphic design, visual identity, sports design, and 3D experiences.',
   officialParagraph: 'Our studio engineers bespoke visual solutions for brands, businesses, sports organizations, and creators — spanning digital experiences to print production, sports design, and 3D. Our approach combines creative ingenuity, mathematical precision, and obsessive attention to detail to transform each idea into an enduring, modern, and memorable visual universe.',
   city: 'Worldwide',
   address: "",
@@ -237,6 +302,10 @@ const DEFAULT_STUDIO_INFO: StudioGeneralInfo = {
   founderImage: '',
   instagramHandle: '@medarstudio',
   instagramUrl: 'https://instagram.com/medarstudio',
+  facebookUrl: 'https://facebook.com/medarstudio',
+  linkedinUrl: 'https://linkedin.com/company/medarstudio',
+  xUrl: 'https://x.com/medarstudio',
+  tiktokUrl: 'https://tiktok.com/@medarstudio',
   instagramToken: ''
 };
 
@@ -374,13 +443,6 @@ const App: React.FC = () => {
     } catch (e) {
       console.warn("Storage quota exceeded or unavailable:", e);
     }
-    // Update active form budget if current selection is no longer present
-    setFormData((prev) => {
-      if (!newTiers.includes(prev.budget) && newTiers.length > 0) {
-        return { ...prev, budget: newTiers[Math.min(1, newTiers.length - 1)] };
-      }
-      return prev;
-    });
   };
 
   const handleResetDefaults = () => {
@@ -403,37 +465,60 @@ const App: React.FC = () => {
 
   // States
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<ProjectCategory>('all');
+  const [isAllProjectsOpen, setIsAllProjectsOpen] = useState(false);
   const [activeProject, setActiveProject] = useState<CaseStudy | null>(null);
   const [currentMood, setCurrentMood] = useState<PaletteMood>('vermilion');
+  const [isPageTransitioning, setIsPageTransitioning] = useState(false);
 
-  // Contact Form State
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    company: '',
-    projectType: 'Visual Identity',
-    budget: DEFAULT_BUDGET_TIERS[1],
-    message: ''
-  });
-  const [formSubmitted, setFormSubmitted] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Helper to determine if a project has real uploaded media (photos or videos)
-  const hasUploadedMedia = (p: CaseStudy) => {
-    if (p.media && p.media.length > 0) return true;
-    if (p.imagePromptFallback && p.imagePromptFallback.trim() !== '') return true;
-    if (p.videoUrl && p.videoUrl.trim() !== '') return true;
-    return false;
+  // Full-Screen Page Transition from Right to Left with Centered Logo
+  const triggerPageTransition = (action?: () => void) => {
+    if (isPageTransitioning) return;
+    setIsPageTransitioning(true);
+    // Midpoint: screen is completely covered by transition curtain
+    setTimeout(() => {
+      action?.();
+    }, 440);
+    // Transition curtain completes its sweep to the left
+    setTimeout(() => {
+      setIsPageTransitioning(false);
+    }, 950);
   };
 
-  // Only published projects with actual uploaded media are shown to visitors!
-  const publishedProjects = projectsList.filter(hasUploadedMedia);
+  const handleOpenAllProjects = () => {
+    setMobileMenuOpen(false);
+    triggerPageTransition(() => {
+      setIsAllProjectsOpen(true);
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    });
+  };
 
-  // Filter projects dynamically
-  const filteredProjects = selectedCategory === 'all'
-    ? publishedProjects
-    : publishedProjects.filter(p => p.category === selectedCategory);
+  const handleCloseAllProjects = () => {
+    triggerPageTransition(() => {
+      setIsAllProjectsOpen(false);
+    });
+  };
+
+  const handleNavigateToSection = (id: string) => {
+    setMobileMenuOpen(false);
+    if (isAllProjectsOpen) {
+      triggerPageTransition(() => {
+        setIsAllProjectsOpen(false);
+        setTimeout(() => {
+          scrollToSection(id);
+        }, 50);
+      });
+    } else {
+      triggerPageTransition(() => {
+        scrollToSection(id);
+      });
+    }
+  };
+
+  // Active Selected Service for Commission
+  const [selectedServiceTitle, setSelectedServiceTitle] = useState('Visual Identity');
+
+  // Featured projects shown on the homepage (the 9 projects or user-selected featured ones)
+  const featuredProjects = projectsList.filter((p) => p.isFeatured !== false);
 
   // Keyboard navigation for project modal
   useEffect(() => {
@@ -445,16 +530,16 @@ const App: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [activeProject, publishedProjects]);
+  }, [activeProject, projectsList]);
 
   const navigateProject = (direction: 'next' | 'prev') => {
-    if (!activeProject || publishedProjects.length === 0) return;
-    const currentIndex = publishedProjects.findIndex(p => p.id === activeProject.id);
+    if (!activeProject || projectsList.length === 0) return;
+    const currentIndex = projectsList.findIndex(p => p.id === activeProject.id);
     if (currentIndex === -1) return;
     let nextIndex = direction === 'next' 
-      ? (currentIndex + 1) % publishedProjects.length
-      : (currentIndex - 1 + publishedProjects.length) % publishedProjects.length;
-    setActiveProject(publishedProjects[nextIndex]);
+      ? (currentIndex + 1) % projectsList.length
+      : (currentIndex - 1 + projectsList.length) % projectsList.length;
+    setActiveProject(projectsList[nextIndex]);
   };
 
   const scrollToSection = (id: string) => {
@@ -473,22 +558,8 @@ const App: React.FC = () => {
   };
 
   const handleSelectService = (serviceTitle: string) => {
-    setFormData(prev => ({
-      ...prev,
-      projectType: serviceTitle
-    }));
-    scrollToSection('contact');
-  };
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name || !formData.email) return;
-
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setFormSubmitted(true);
-    }, 1200);
+    setSelectedServiceTitle(serviceTitle);
+    handleNavigateToSection('contact');
   };
 
   return (
@@ -506,59 +577,58 @@ const App: React.FC = () => {
       */}
       <header className="fixed top-0 left-0 right-0 z-40 bg-[#0c0c10]/90 backdrop-blur-md border-b border-white/[0.08]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 h-20 flex items-center justify-between gap-4">
-          {/* Zone 1: Single element wordmark */}
+          {/* Zone 1: Wordmark */}
           <a 
             href="#" 
-            className="font-heading text-lg md:text-xl font-black tracking-tight text-white hover:text-[#ff4b26] transition-colors shrink-0"
+            className="flex items-center group shrink-0"
           >
-            MEDAR STUDIO
+            <span className="font-heading text-lg md:text-xl font-black tracking-tight text-white group-hover:text-[#ff4b26] transition-colors">
+              MEDAR STUDIO
+            </span>
           </a>
 
           {/* Zone 2: Clean text links */}
-          <nav className="hidden md:flex items-center gap-5 lg:gap-8 xl:gap-10 text-xs font-semibold uppercase tracking-wider text-neutral-300">
-            {publishedProjects.length > 0 && (
-              <button 
-                onClick={() => scrollToSection('works')}
-                className="hover:text-white transition-colors bg-transparent border-none cursor-pointer whitespace-nowrap"
-              >
-                Works
-              </button>
-            )}
+          <nav className="hidden md:flex items-center gap-5 lg:gap-7 xl:gap-9 text-xs font-semibold uppercase tracking-wider text-neutral-300">
             <button 
-              onClick={() => scrollToSection('services')}
+              onClick={() => handleNavigateToSection('works')}
+              className="hover:text-white transition-colors bg-transparent border-none cursor-pointer whitespace-nowrap"
+            >
+              Works
+            </button>
+            <button 
+              onClick={handleOpenAllProjects}
+              className="hover:text-white text-neutral-300 transition-colors bg-transparent border-none cursor-pointer whitespace-nowrap"
+            >
+              All Projects
+            </button>
+            <button 
+              onClick={() => handleNavigateToSection('services')}
               className="hover:text-white transition-colors bg-transparent border-none cursor-pointer whitespace-nowrap"
             >
               Services
             </button>
             <button 
-              onClick={() => scrollToSection('about')}
+              onClick={() => handleNavigateToSection('about')}
               className="hover:text-white transition-colors bg-transparent border-none cursor-pointer whitespace-nowrap"
             >
               About
             </button>
             <button 
-              onClick={() => scrollToSection('contact')}
+              onClick={() => handleNavigateToSection('contact')}
               className="hover:text-white transition-colors bg-transparent border-none cursor-pointer whitespace-nowrap"
             >
               Contact
             </button>
           </nav>
 
-          {/* Zone 3: Primary action & Instagram */}
+          {/* Zone 3: Primary action */}
           <div className="hidden md:flex items-center gap-3 shrink-0">
-            {studioInfo.instagramUrl && (
-              <a
-                href={studioInfo.instagramUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 text-neutral-400 hover:text-white transition-colors"
-                title={`Follow ${studioInfo.instagramHandle || 'Instagram'}`}
-              >
-                <Instagram className="w-4 h-4" />
-              </a>
-            )}
             <button
-              onClick={() => scrollToSection('contact')}
+              onClick={() => {
+                trackStartProjectClick('navbar');
+                trackContactFormView('Navbar CTA');
+                handleNavigateToSection('contact');
+              }}
               className="px-4 lg:px-5 py-2.5 bg-white text-black hover:bg-[#ff4b26] hover:text-white text-xs font-bold uppercase tracking-wider transition-all duration-200 cursor-pointer whitespace-nowrap"
             >
               Start a Project
@@ -586,24 +656,44 @@ const App: React.FC = () => {
             className="fixed inset-0 z-30 bg-[#0c0c10]/98 backdrop-blur-2xl flex flex-col justify-center px-8 md:hidden"
           >
             <div className="flex flex-col gap-6 text-2xl font-heading font-bold text-white mb-10">
-              {[
-                ...(publishedProjects.length > 0 ? [{ label: 'Works', id: 'works' }] : []),
-                { label: 'Services', id: 'services' },
-                { label: 'About', id: 'about' },
-                { label: 'Contact', id: 'contact' }
-              ].map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => scrollToSection(item.id)}
-                  className="text-left hover:text-[#ff4b26] transition-colors bg-transparent border-none py-2"
-                >
-                  {item.label}
-                </button>
-              ))}
+              <button
+                onClick={() => handleNavigateToSection('works')}
+                className="text-left hover:text-[#ff4b26] transition-colors bg-transparent border-none py-2"
+              >
+                Works
+              </button>
+              <button
+                onClick={handleOpenAllProjects}
+                className="text-left hover:text-[#ff4b26] transition-colors bg-transparent border-none py-2"
+              >
+                All Projects
+              </button>
+              <button
+                onClick={() => handleNavigateToSection('services')}
+                className="text-left hover:text-[#ff4b26] transition-colors bg-transparent border-none py-2"
+              >
+                Services
+              </button>
+              <button
+                onClick={() => handleNavigateToSection('about')}
+                className="text-left hover:text-[#ff4b26] transition-colors bg-transparent border-none py-2"
+              >
+                About
+              </button>
+              <button
+                onClick={() => handleNavigateToSection('contact')}
+                className="text-left hover:text-[#ff4b26] transition-colors bg-transparent border-none py-2"
+              >
+                Contact
+              </button>
             </div>
 
             <button
-              onClick={() => scrollToSection('contact')}
+              onClick={() => {
+                trackStartProjectClick('mobileDrawer');
+                trackContactFormView('Mobile Drawer CTA');
+                handleNavigateToSection('contact');
+              }}
               className="w-full py-4 bg-[#ff4b26] text-white font-bold uppercase tracking-wider text-sm text-center"
             >
               Start a Project
@@ -651,18 +741,18 @@ const App: React.FC = () => {
           {/* Hero Actions */}
           <div className="flex flex-wrap items-center gap-4 pt-2">
             <button
-              onClick={() => scrollToSection('works')}
+              onClick={() => handleNavigateToSection('works')}
               data-hover="true"
-              className="px-8 py-4 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white text-xs font-bold uppercase tracking-widest transition-all duration-200 flex items-center gap-3"
+              className="px-8 py-4 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white text-xs font-bold uppercase tracking-widest transition-all duration-200 flex items-center gap-3 cursor-pointer"
             >
               <span>Explore Works</span>
               <ArrowDownRight className="w-4 h-4" />
             </button>
 
             <button
-              onClick={() => scrollToSection('services')}
+              onClick={() => handleNavigateToSection('services')}
               data-hover="true"
-              className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/15 text-white text-xs font-bold uppercase tracking-widest transition-all duration-200 flex items-center gap-3"
+              className="px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/15 text-white text-xs font-bold uppercase tracking-widest transition-all duration-200 flex items-center gap-3 cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-[#ff4b26]" />
               <span>Discover Our Services</span>
@@ -670,96 +760,84 @@ const App: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Studio Editorial Ticker / Institutional References */}
+        {/* Studio Core Pillars & Capabilities */}
         <div className="mt-20 pt-8 border-t border-white/[0.08] grid grid-cols-2 md:grid-cols-4 gap-6 text-xs text-neutral-400 font-mono">
           <div>
-            <span className="block text-white font-bold tabular-nums text-sm">14 MAJOR AWARDS</span>
-            <span className="text-[11px] text-neutral-500">Awwwards, FWA, Red Dot</span>
+            <span className="block text-white font-bold text-sm tracking-wide">DIRECTION ARTISTIQUE</span>
+            <span className="text-[11px] text-neutral-500">Identités visuelles & chartes fortes</span>
           </div>
           <div>
-            <span className="block text-white font-bold tabular-nums text-sm">+185% CONVERSION</span>
-            <span className="text-[11px] text-neutral-500">Average client lift</span>
+            <span className="block text-white font-bold text-sm tracking-wide">DESIGN SPORT & CULTURE</span>
+            <span className="text-[11px] text-neutral-500">Affiches, athlètes & branding</span>
           </div>
           <div>
-            <span className="block text-white font-bold tabular-nums text-sm">WORLDWIDE & REMOTE</span>
-            <span className="text-[11px] text-neutral-500">Global creative reach</span>
+            <span className="block text-white font-bold text-sm tracking-wide">CRÉATION 3D & DIGITAL</span>
+            <span className="text-[11px] text-neutral-500">Rendus haute précision & visuels web</span>
           </div>
           <div>
-            <span className="block text-white font-bold tabular-nums text-sm">BESPOKE CODE</span>
-            <span className="text-[11px] text-neutral-500">Zero templates, 100% custom</span>
+            <span className="block text-white font-bold text-sm tracking-wide">ACCOMPAGNEMENT DÉDIÉ</span>
+            <span className="text-[11px] text-neutral-500">Écoute, réactivité & livrables soignés</span>
           </div>
         </div>
       </section>
 
       {/* 
         =======================================================================
-        PORTFOLIO / SHOWCASE SECTION (Only visible to visitors if media exists)
+        PORTFOLIO / SHOWCASE SECTION (Featured Projects on Homepage)
         =======================================================================
       */}
-      {publishedProjects.length > 0 && (
-        <section id="works" className="py-24 md:py-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
-          {/* Section Header */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
-            <div>
-              <div className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest mb-3 flex items-center gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#ff4b26]" />
-                <span>Selected Archives · 4:5 Post Format</span>
-              </div>
-              <h2 className="font-heading text-3xl md:text-5xl font-bold tracking-tight text-white">
-                Digital Works & Case Studies.
-              </h2>
+      <section id="works" className="py-24 md:py-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
+        {/* Section Header */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-14 gap-6">
+          <div>
+            <div className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest mb-3 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#ff4b26]" />
+              <span>Homepage Showcase · {featuredProjects.length} Selected Projects</span>
             </div>
+            <h2 className="font-heading text-3xl md:text-5xl font-bold tracking-tight text-white">
+              Featured Projects.
+            </h2>
+          </div>
 
-            <p className="text-sm md:text-base text-neutral-400 max-w-md leading-relaxed">
-              Signature artworks and visual deliverables calibrated to the 4:5 ratio for digital and editorial showcase, uniting artistic distinction and technical precision.
+          <p className="text-sm md:text-base text-neutral-400 max-w-md leading-relaxed">
+            Curated selection of our standout case studies across brand identity, sports design, and 3D visual direction.
+          </p>
+        </div>
+
+        {/* The Featured Projects Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          {featuredProjects.map((project, index) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              index={index}
+              onSelect={(p) => setActiveProject(p)}
+            />
+          ))}
+        </div>
+
+        {/* Discovery Call-to-Action: Opens dedicated All Projects Page */}
+        <div className="mt-14 pt-10 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-6 bg-[#111117] border border-white/10 p-6 md:p-8">
+          <div>
+            <span className="text-[11px] font-mono uppercase tracking-widest text-[#ff4b26] block mb-1">
+              Complete Studio Archive
+            </span>
+            <h3 className="text-xl md:text-2xl font-heading font-bold text-white tracking-tight">
+              Explore all {projectsList.length} studio projects
+            </h3>
+            <p className="text-xs md:text-sm text-neutral-400 font-mono mt-1">
+              Browse our full portfolio archive with case studies, art direction, and digital assets.
             </p>
           </div>
-
-          {/* Filter Bar (Interactive Segmented Buttons) */}
-          <div className="flex flex-wrap items-center gap-2 mb-12 p-1.5 bg-[#121218] border border-white/[0.08] w-fit">
-            {[
-              { id: 'all', label: 'All Works' },
-              { id: 'brand-identity', label: 'Brand Identity' },
-              { id: 'sports-design', label: 'Sports Design' },
-              { id: '3d-webgl', label: '3D Design' },
-              { id: 'visual-design', label: 'Visual Design' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setSelectedCategory(tab.id as ProjectCategory)}
-                data-hover="true"
-                className={`px-4 py-2 text-xs font-semibold transition-all duration-200 whitespace-nowrap ${
-                  selectedCategory === tab.id
-                    ? 'bg-white text-black shadow-sm'
-                    : 'text-neutral-400 hover:text-white bg-transparent'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Projects Grid */}
-          {filteredProjects.length === 0 ? (
-            <div className="py-16 text-center border border-white/[0.06] bg-[#101016]">
-              <p className="text-sm font-mono text-neutral-400">
-                No published projects in this category yet.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-              {filteredProjects.map((project, index) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  index={index}
-                  onSelect={(p) => setActiveProject(p)}
-                />
-              ))}
-            </div>
-          )}
-        </section>
-      )}
+          <button
+            onClick={handleOpenAllProjects}
+            className="px-8 py-4 bg-white hover:bg-[#ff4b26] text-black hover:text-white text-xs font-bold font-mono uppercase tracking-widest transition-all duration-200 flex items-center gap-3 shrink-0 cursor-pointer shadow-xl group"
+          >
+            <span>Discover All Projects</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </div>
+      </section>
 
       {/* 
         =======================================================================
@@ -799,7 +877,7 @@ const App: React.FC = () => {
       {/* 
         =======================================================================
         ABOUT SECTION — MEDAR STUDIO COLLECTIVE
-        Founded by Mohamed Amine Amarir · Studio leadership and creative team
+        Studio leadership and creative team
         =======================================================================
       */}
       <section id="about" className="py-24 md:py-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08] w-full box-border overflow-hidden">
@@ -808,7 +886,7 @@ const App: React.FC = () => {
           <div className="max-w-2xl">
             <div className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest mb-3 flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-[#ff4b26] shrink-0" />
-              <span>Creative Studio · Founded by {studioInfo.founderName}</span>
+              <span>Creative Studio · Digital Agency</span>
             </div>
             <h2 className="font-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white break-words">
               ABOUT MEDAR STUDIO
@@ -835,26 +913,10 @@ const App: React.FC = () => {
 
           {/* Key Facts Ribbon */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 pt-8 mt-8 border-t border-white/[0.08] text-xs font-mono w-full">
-            <div className="min-w-0 flex items-center gap-3">
-              {studioInfo.founderImage && (
-                <div 
-                  className="w-10 h-10 rounded-xl overflow-hidden border border-white/20 shrink-0 bg-neutral-900"
-                  style={{ boxShadow: 'none', filter: 'none', backdropFilter: 'none' }}
-                >
-                  <img
-                    src={studioInfo.founderImage}
-                    alt={studioInfo.founderName}
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover object-center"
-                    style={{ filter: 'none', backdropFilter: 'none', imageRendering: 'auto' }}
-                  />
-                </div>
-              )}
-              <div className="min-w-0">
-                <span className="text-[10px] sm:text-[11px] text-neutral-500 uppercase tracking-wider block mb-0.5">Founder</span>
-                <span className="text-white font-bold text-xs sm:text-sm block truncate">{studioInfo.founderName}</span>
-                <span className="text-neutral-400 text-[10px] sm:text-[11px] truncate block">{studioInfo.founderRole}</span>
-              </div>
+            <div className="min-w-0">
+              <span className="text-[10px] sm:text-[11px] text-neutral-500 uppercase tracking-wider block mb-1">Studio</span>
+              <span className="text-white font-bold text-xs sm:text-sm block truncate">MEDAR STUDIO</span>
+              <span className="text-neutral-400 text-[10px] sm:text-[11px] truncate block">Casablanca & International</span>
             </div>
             <div className="min-w-0">
               <span className="text-[10px] sm:text-[11px] text-neutral-500 uppercase tracking-wider block mb-1">Discipline</span>
@@ -871,79 +933,6 @@ const App: React.FC = () => {
               <span className="text-white font-bold text-xs sm:text-sm block truncate">100% Bespoke</span>
               <span className="text-neutral-400 text-[10px] sm:text-[11px] truncate block">Precision & Detail</span>
             </div>
-          </div>
-        </div>
-
-        {/* The Founder Card Spotlight */}
-        <div className="mb-20 w-full">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-3">
-            <div>
-              <span className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest block mb-1">
-                Studio Leadership & Vision
-              </span>
-              <h3 className="font-heading text-2xl md:text-3xl font-bold text-white tracking-tight">
-                The Founder
-              </h3>
-            </div>
-            <span className="text-xs font-mono text-neutral-400 uppercase tracking-widest border border-white/10 px-3 py-1 self-start sm:self-auto">
-              {studioInfo.founderName}
-            </span>
-          </div>
-
-          <div className="w-full">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.5 }}
-              className="bg-[#111117] border border-white/[0.08] hover:border-[#ff4b26]/50 p-6 sm:p-10 transition-all duration-300 relative overflow-hidden w-full box-border"
-            >
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 w-full">
-                <div className="flex items-start sm:items-center gap-5">
-                  {studioInfo.founderImage ? (
-                    <div 
-                      className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border border-white/20 shrink-0 bg-neutral-900"
-                      style={{ boxShadow: 'none', filter: 'none', backdropFilter: 'none' }}
-                    >
-                      <img
-                        src={studioInfo.founderImage}
-                        alt={studioInfo.founderName}
-                        referrerPolicy="no-referrer"
-                        className="w-full h-full object-cover object-center"
-                        style={{ filter: 'none', backdropFilter: 'none', imageRendering: 'auto' }}
-                      />
-                    </div>
-                  ) : (
-                    <div 
-                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#ff4b26] flex items-center justify-center font-heading font-black text-white text-xl sm:text-2xl border border-white/20 shrink-0"
-                      style={{ boxShadow: 'none', filter: 'none', backdropFilter: 'none' }}
-                    >
-                      {studioInfo.founderName
-                        .split(' ')
-                        .map((n) => n[0])
-                        .slice(0, 2)
-                        .join('')
-                        .toUpperCase() || 'MA'}
-                    </div>
-                  )}
-                  <div>
-                    <h4 className="font-heading text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                      {studioInfo.founderName}
-                    </h4>
-                    <span className="text-xs sm:text-sm font-mono text-[#ff4b26] font-semibold block mt-1">
-                      {studioInfo.founderRole}
-                    </span>
-                    <span className="text-xs font-mono text-neutral-400 block mt-1">
-                      {studioInfo.founderFocus}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="max-w-xl text-sm sm:text-base text-neutral-300 leading-relaxed break-words border-t lg:border-t-0 lg:border-l border-white/[0.08] pt-6 lg:pt-0 lg:pl-8">
-                  {studioInfo.founderBio}
-                </div>
-              </div>
-            </motion.div>
           </div>
         </div>
 
@@ -999,7 +988,11 @@ const App: React.FC = () => {
           </div>
 
           <button
-            onClick={() => scrollToSection('contact')}
+            onClick={() => {
+              trackStartProjectClick('aboutBanner');
+              trackContactFormView('About Banner CTA');
+              scrollToSection('contact');
+            }}
             className="w-full sm:w-auto px-8 py-4 bg-[#ff4b26] hover:bg-white text-white hover:text-black font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-3 shrink-0 cursor-pointer shadow-[0_4px_20px_rgba(255,75,38,0.35)]"
           >
             <span>Start a Project</span>
@@ -1010,214 +1003,16 @@ const App: React.FC = () => {
 
       {/* 
         =======================================================================
-        INTERACTIVE BRIEF & CONTACT SECTION
+        INTERACTIVE COMMISSION & PARTNERSHIP SECTION (INITIATE A PARTNERSHIP)
+        Bespoke Creative Architecture & Direct Hotlines (WhatsApp & Gmail)
         =======================================================================
       */}
-      <section id="contact" className="py-24 md:py-32 px-4 sm:px-6 md:px-12 max-w-7xl mx-auto border-t border-white/[0.08]">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-          {/* Left Info Column */}
-          <div className="lg:col-span-5 space-y-8">
-            <div>
-              <div className="text-xs font-mono text-[#ff4b26] uppercase tracking-widest mb-3">
-                Initiate a Partnership
-              </div>
-              <h2 className="font-heading text-3xl md:text-5xl font-bold tracking-tight text-white mb-6">
-                Let’s Discuss Your Next Commission.
-              </h2>
-              <p className="text-sm md:text-base text-neutral-300 leading-relaxed mb-8">
-                We take on a curated number of commissions each quarter to guarantee that every client receives the undivided attention of our studio directors and specialist creative team.
-              </p>
-            </div>
-
-            <div className="space-y-4 pt-4 border-t border-white/[0.08] font-mono text-xs">
-              <div className="flex items-center gap-3 text-neutral-300">
-                <Globe className="w-4 h-4 text-[#ff4b26]" />
-                <span>Digital Creative Studio · Serving Clients Worldwide</span>
-              </div>
-              <div className="flex items-center gap-3 text-neutral-300">
-                <Mail className="w-4 h-4 text-[#ff4b26]" />
-                <a href="mailto:medarstudio@gmail.com" className="hover:text-white underline underline-offset-4">
-                  medarstudio@gmail.com
-                </a>
-              </div>
-              <div className="flex items-center gap-3 text-neutral-300">
-                <Phone className="w-4 h-4 text-[#ff4b26]" />
-                <a href="tel:+212698048499" className="hover:text-white underline underline-offset-4">
-                  +212 698-048499
-                </a>
-              </div>
-              <div className="flex items-center gap-3 text-neutral-300">
-                <Clock className="w-4 h-4 text-[#ff4b26]" />
-                <span>Average response time: Within 12 hours</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-white/[0.03] border border-white/[0.08] text-xs text-neutral-400">
-              <span className="text-white font-semibold block mb-1">Strict Confidentiality</span>
-              All project briefs, intellectual property, and inquiries submitted through this form are governed by our studio non-disclosure standard.
-            </div>
-          </div>
-
-          {/* Right Lead Capture Form */}
-          <div className="lg:col-span-7 bg-[#111117] border border-white/[0.1] p-8 md:p-12">
-            {formSubmitted ? (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="py-12 text-center space-y-4"
-              >
-                <div className="w-14 h-14 rounded-full bg-[#ff4b26]/20 border border-[#ff4b26] flex items-center justify-center mx-auto text-[#ff4b26]">
-                  <Check className="w-7 h-7" />
-                </div>
-                <h3 className="font-heading text-2xl font-bold text-white">
-                  Brief Received by Studio.
-                </h3>
-                <p className="text-sm text-neutral-300 max-w-md mx-auto leading-relaxed">
-                  Thank you {formData.name}. Our studio creative team is reviewing your brief and will respond within 12 hours with a strategic orientation.
-                </p>
-                <button
-                  onClick={() => setFormSubmitted(false)}
-                  className="mt-4 px-6 py-2.5 bg-white/10 hover:bg-white text-white hover:text-black text-xs font-mono uppercase tracking-wider transition-colors"
-                >
-                  Submit Another Inquiry
-                </button>
-              </motion.div>
-            ) : (
-              <form onSubmit={handleFormSubmit} className="space-y-6">
-                {/* 1. Project Type Selector */}
-                <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-2">
-                    Requested Capability
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {[
-                      'Visual Identity',
-                      'Graphic Design',
-                      'Digital Design',
-                      'Sports Design',
-                      '3D & Creative',
-                      'Print Production'
-                    ].map((type) => (
-                      <button
-                        type="button"
-                        key={type}
-                        onClick={() => setFormData({ ...formData, projectType: type })}
-                        className={`p-2.5 text-left text-xs border transition-colors ${
-                          formData.projectType === type
-                            ? 'bg-white text-black border-white font-semibold'
-                            : 'bg-black/30 border-white/[0.08] text-neutral-300 hover:border-white/30'
-                        }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 2. Budget Selector */}
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400">
-                      Target Budget
-                    </label>
-                    <span className="text-[10px] font-mono text-emerald-400">
-                      Beginner-friendly & scalable pricing
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {budgetTiers.map((range) => (
-                      <button
-                        type="button"
-                        key={range}
-                        onClick={() => setFormData({ ...formData, budget: range })}
-                        className={`p-2.5 text-center text-xs font-mono border transition-colors cursor-pointer ${
-                          formData.budget === range
-                            ? 'bg-[#ff4b26] text-white border-[#ff4b26] font-bold shadow-[0_2px_10px_rgba(255,75,38,0.4)]'
-                            : 'bg-black/30 border-white/[0.08] text-neutral-400 hover:text-white hover:border-white/20'
-                        }`}
-                      >
-                        {range}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* 3. Inputs */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-1.5">
-                      Full Name *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="e.g. Alexander Vance"
-                      className="w-full bg-white/5 border border-white/10 px-4 py-3 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-[#ff4b26]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-1.5">
-                      Work Email *
-                    </label>
-                    <input
-                      type="email"
-                      required
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                      placeholder="alexander@company.com"
-                      className="w-full bg-white/5 border border-white/10 px-4 py-3 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-[#ff4b26]"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-1.5">
-                    Company / Organization
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.company}
-                    onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                    placeholder="e.g. Fine Watchmaking House or Athletic Brand"
-                    className="w-full bg-white/5 border border-white/10 px-4 py-3 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-[#ff4b26]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400 mb-1.5">
-                    Project Scope & Ambition
-                  </label>
-                  <textarea
-                    rows={4}
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                    placeholder="Describe your creative ambitions, key deliverables, target schedule, or references..."
-                    className="w-full bg-white/5 border border-white/10 px-4 py-3 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-[#ff4b26] resize-none"
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  data-hover="true"
-                  className="w-full py-4 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white font-bold text-xs uppercase tracking-widest transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isSubmitting ? (
-                    <span>Transmitting brief...</span>
-                  ) : (
-                    <>
-                      <span>Submit Brief to Studio</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </form>
-            )}
-          </div>
-        </div>
-      </section>
+      <InitiatePartnership
+        studioInfo={studioInfo}
+        budgetTiers={budgetTiers}
+        selectedService={selectedServiceTitle}
+        onSelectService={(service) => setSelectedServiceTitle(service)}
+      />
 
       {/* 
         =======================================================================
@@ -1226,8 +1021,9 @@ const App: React.FC = () => {
         =======================================================================
       */}
       <footer className="w-full bg-[#09090d]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 border-t border-white/[0.08] pt-12 pb-28 md:pb-20">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 md:gap-8 text-xs font-mono text-neutral-500 text-center md:text-left">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-12 border-t border-white/[0.08] pt-12 pb-24 md:pb-16">
+          {/* Top Row: Brand Info & Primary Navigation */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6 pb-8 border-b border-white/[0.06] text-xs font-mono text-neutral-500 text-center md:text-left">
             {/* Left: Brand & Legal */}
             <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 sm:gap-3">
               {/* Secret 5-Clicks Admin Trigger: Completely discreet, no counter display */}
@@ -1239,37 +1035,68 @@ const App: React.FC = () => {
                 {studioInfo.studioName.toUpperCase()}
               </span>
               <span aria-hidden="true">·</span>
+              <span className="text-neutral-400">Digital Agency</span>
+              <span aria-hidden="true">·</span>
               <span>{studioInfo.city}</span>
               <span aria-hidden="true">·</span>
               <span>All rights reserved © 2026</span>
             </div>
 
-            {/* Center: In-frame Navigation Links */}
+            {/* Center: In-frame Navigation Links (No numbers next to All Projects) */}
             <nav className="flex flex-wrap items-center justify-center gap-6 text-neutral-400">
-              {publishedProjects.length > 0 && (
-                <a href="#works" className="hover:text-white transition-colors">Works</a>
-              )}
-              <a href="#services" className="hover:text-white transition-colors">Services</a>
-              <a href="#about" className="hover:text-white transition-colors">About</a>
-              <a href="#contact" className="hover:text-white transition-colors">Contact</a>
-              {studioInfo.instagramUrl && (
-                <a
-                  href={studioInfo.instagramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-[#ff4b26] transition-colors flex items-center gap-1.5 text-white/80"
-                >
-                  <Instagram className="w-3.5 h-3.5 text-[#ff4b26]" />
-                  <span>Instagram</span>
-                </a>
-              )}
+              <button 
+                type="button"
+                onClick={() => handleNavigateToSection('works')} 
+                className="hover:text-white transition-colors bg-transparent border-none cursor-pointer"
+              >
+                Works
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenAllProjects}
+                className="hover:text-white transition-colors bg-transparent border-none cursor-pointer"
+              >
+                All Projects
+              </button>
+              <button 
+                type="button"
+                onClick={() => handleNavigateToSection('services')} 
+                className="hover:text-white transition-colors bg-transparent border-none cursor-pointer"
+              >
+                Services
+              </button>
+              <button 
+                type="button"
+                onClick={() => handleNavigateToSection('about')} 
+                className="hover:text-white transition-colors bg-transparent border-none cursor-pointer"
+              >
+                About
+              </button>
+              <button 
+                type="button"
+                onClick={() => handleNavigateToSection('contact')} 
+                className="hover:text-white transition-colors bg-transparent border-none cursor-pointer"
+              >
+                Contact
+              </button>
             </nav>
+          </div>
+
+          {/* Bottom Row: Official Social Platforms & Back to Top */}
+          <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-6 text-center sm:text-left">
+            {/* Social Platforms Dock: Instagram, Facebook, LinkedIn, X, TikTok */}
+            <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 text-xs font-mono text-neutral-400">
+              <span className="text-[10px] uppercase tracking-widest text-neutral-500 font-semibold">
+                Socials:
+              </span>
+              <SocialLinks studioInfo={studioInfo} variant="footer" />
+            </div>
 
             {/* Right: Back to Top */}
             <div className="flex items-center justify-center md:justify-end">
               <button
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="text-neutral-400 hover:text-[#ff4b26] transition-colors bg-transparent border-none cursor-pointer flex items-center gap-1.5"
+                className="text-xs font-mono text-neutral-400 hover:text-[#ff4b26] transition-colors bg-transparent border-none cursor-pointer flex items-center gap-1.5"
               >
                 <span>↑ Back to Top</span>
               </button>
@@ -1278,12 +1105,24 @@ const App: React.FC = () => {
         </div>
       </footer>
 
+      {/* Complete Projects Archive View (Dedicated Page/Overlay) */}
+      <AllProjectsView
+        isOpen={isAllProjectsOpen}
+        onClose={handleCloseAllProjects}
+        projects={projectsList}
+        onSelectProject={(p) => setActiveProject(p)}
+        onOpenContact={() => handleNavigateToSection('contact')}
+      />
+
       {/* Interactive Project Deep-Dive Modal */}
       <ProjectModal
         project={activeProject}
         onClose={() => setActiveProject(null)}
         onNavigate={navigateProject}
       />
+
+      {/* Cinematic Right-to-Left Page Transition Curtain with Centered Logo */}
+      <PageTransition isTransitioning={isPageTransitioning} />
 
       {/* Medar Studio AI Advisor Widget */}
       <AIChat />

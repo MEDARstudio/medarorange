@@ -1,40 +1,52 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+*/
+
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
-  Save,
   Plus,
   Trash2,
-  Edit3,
-  Image as ImageIcon,
-  FolderKanban,
-  Sparkles,
-  Info,
-  RotateCcw,
   Check,
-  ExternalLink,
-  Download,
   Upload,
   LogOut,
-  Copy,
   Layers,
-  Eye,
-  Camera,
-  CheckCircle2,
-  FileImage,
-  DollarSign,
+  Save,
+  Star,
   Film,
-  Video,
-  Play,
-  PlusCircle,
-  Instagram,
-  RefreshCw,
-  Link as LinkIcon,
+  Search,
+  CheckCircle2,
   AlertCircle,
-  Compass
+  TrendingUp,
+  MousePointerClick,
+  Eye,
+  Mail,
+  MessageSquare,
+  FileText,
+  RotateCcw,
+  Sparkles,
+  BarChart3,
+  Clock,
+  ArrowUpRight,
+  Filter,
+  Copy,
+  Activity,
+  Flame,
+  Send,
+  Calendar,
+  ShieldCheck
 } from 'lucide-react';
-import { CaseStudy, AgencyService, StudioGeneralInfo, ProjectCategory, ProjectMediaItem } from '../types';
-import { isInstagramUrl, getInstagramShortcode, getInstagramEmbedUrl } from '../utils/mediaHelper';
+import { CaseStudy, AgencyService, StudioGeneralInfo, ProjectMediaItem } from '../types';
+import {
+  getLeadAnalytics,
+  resetLeadAnalytics,
+  subscribeToLeadAnalytics,
+  trackStartProjectClick,
+  LeadAnalyticsData,
+  LeadAnalyticsEvent
+} from '../utils/leadAnalytics';
 
 interface AdminCMSModalProps {
   isOpen: boolean;
@@ -42,171 +54,193 @@ interface AdminCMSModalProps {
   onLogout: () => void;
   projects: CaseStudy[];
   onUpdateProjects: (projects: CaseStudy[]) => void;
-  services: AgencyService[];
-  onUpdateServices: (services: AgencyService[]) => void;
-  studioInfo: StudioGeneralInfo;
-  onUpdateStudioInfo: (info: StudioGeneralInfo) => void;
+  services?: AgencyService[];
+  onUpdateServices?: (services: AgencyService[]) => void;
+  studioInfo?: StudioGeneralInfo;
+  onUpdateStudioInfo?: (info: StudioGeneralInfo) => void;
   budgetTiers?: string[];
   onUpdateBudgetTiers?: (tiers: string[]) => void;
-  onResetDefaults: () => void;
+  onResetDefaults?: () => void;
 }
-
-type CMSTab = 'posts' | 'new-post' | 'instagram' | 'media-library' | 'services' | 'pricing' | 'studio' | 'backup';
-
-// HD Studio Presets (Clean, ready for device upload)
-const DEFAULT_PRESET_IMAGES: { id: string; name: string; category: string; url: string }[] = [];
 
 const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
   isOpen,
   onClose,
   onLogout,
   projects,
-  onUpdateProjects,
-  services,
-  onUpdateServices,
-  studioInfo,
-  onUpdateStudioInfo,
-  budgetTiers = ['< €100', '€100 - €300', '€300 - €750', '€750+'],
-  onUpdateBudgetTiers,
-  onResetDefaults
+  onUpdateProjects
 }) => {
-  const [activeTab, setActiveTab] = useState<CMSTab>('posts');
-  const [saveNotification, setSaveNotification] = useState<string | null>(null);
-  const [confirmReset, setConfirmReset] = useState(false);
-
-  // Local working copy of state
+  const [activeTab, setActiveTab] = useState<'projects' | 'analytics'>('analytics');
   const [localProjects, setLocalProjects] = useState<CaseStudy[]>(projects);
-  const [localServices, setLocalServices] = useState<AgencyService[]>(services);
-  const [localStudioInfo, setLocalStudioInfo] = useState<StudioGeneralInfo>(studioInfo);
-  const [localBudgetTiers, setLocalBudgetTiers] = useState<string[]>(budgetTiers);
-  const [newBudgetTierInput, setNewBudgetTierInput] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterMode, setFilterMode] = useState<'all' | 'featured' | 'archive'>('all');
+  const [saveNotification, setSaveNotification] = useState<string | null>(null);
+  const [activeUploadProjectId, setActiveUploadProjectId] = useState<string | null>(null);
 
-  // Synchronize state if external props change
+  // Lead Analytics & Counter State
+  const [analytics, setAnalytics] = useState<LeadAnalyticsData>(getLeadAnalytics());
+  const [analyticsFilter, setAnalyticsFilter] = useState<'all' | 'clicks' | 'views' | 'inquiries'>('all');
+  const [analyticsSearchQuery, setAnalyticsSearchQuery] = useState('');
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Synchronize state when projects prop changes
   useEffect(() => {
     if (projects) {
       setLocalProjects(projects);
     }
   }, [projects]);
 
+  // Subscribe to real-time analytics updates whenever modal is open
   useEffect(() => {
-    if (budgetTiers) {
-      setLocalBudgetTiers(budgetTiers);
-    }
-  }, [budgetTiers]);
+    setAnalytics(getLeadAnalytics());
+    const unsubscribe = subscribeToLeadAnalytics((data) => {
+      setAnalytics(data);
+    });
+    return unsubscribe;
+  }, [isOpen]);
 
-  const handleSaveBudgetTiers = (tiersToSave?: string[]) => {
-    const list = tiersToSave || localBudgetTiers;
-    if (list.length === 0) return;
-    setLocalBudgetTiers(list);
-    if (onUpdateBudgetTiers) {
-      onUpdateBudgetTiers(list);
-    }
-    setSaveNotification('Pricing and target budget tiers updated successfully!');
+  const triggerNotification = (msg: string) => {
+    setSaveNotification(msg);
     setTimeout(() => setSaveNotification(null), 3000);
   };
 
-  // Studio Media Library (stored in localStorage)
-  const [mediaLibrary, setMediaLibrary] = useState<{ id: string; name: string; url: string; date: string }[]>(() => {
-    try {
-      const saved = localStorage.getItem('medar_studio_media_library_v2');
-      if (saved) return JSON.parse(saved);
-    } catch (e) {
-      console.error(e);
-    }
-    return [];
-  });
-
-  // New Post Form State (Clean and streamlined for freelance portfolio)
-  const [newPost, setNewPost] = useState<Partial<CaseStudy>>({
-    title: '',
-    client: '',
-    year: '2025',
-    category: 'brand-identity',
-    categoryLabel: 'Brand Identity',
-    description: '',
-    imagePromptFallback: ''
-  });
-
-  // Multi-media state for New Post (Multiple photos + videos)
-  const [newPostMedia, setNewPostMedia] = useState<ProjectMediaItem[]>([]);
-  const [newVideoUrlInput, setNewVideoUrlInput] = useState('');
-
-  // Temporary URL input for media library addition
-  const [newImageUrl, setNewImageUrl] = useState('');
-  const [newImageName, setNewImageName] = useState('');
-
-  // Project selector for quick image assignment modal
-  const [selectedImageToAssign, setSelectedImageToAssign] = useState<string | null>(null);
-  const [isSelectingFounderImage, setIsSelectingFounderImage] = useState(false);
-
-  // Hidden file inputs refs
-  const postFileInputRef = useRef<HTMLInputElement>(null);
-  const libraryFileInputRef = useRef<HTMLInputElement>(null);
-  const founderFileInputRef = useRef<HTMLInputElement>(null);
-  const newPostMediaFileInputRef = useRef<HTMLInputElement>(null);
-  const existingPostMediaFileInputRef = useRef<HTMLInputElement>(null);
-  const [activePostIdForUpload, setActivePostIdForUpload] = useState<string | null>(null);
-  const [activePostIdForMultiMedia, setActivePostIdForMultiMedia] = useState<string | null>(null);
-  const [existingVideoUrlInput, setExistingVideoUrlInput] = useState('');
-  const [isDraggingMedia, setIsDraggingMedia] = useState(false);
-
-  // Instagram Integration & Importer States
-  const batchInstagramFileInputRef = useRef<HTMLInputElement>(null);
-  const [isDraggingBatchInstagram, setIsDraggingBatchInstagram] = useState(false);
-  const [batchLinksText, setBatchLinksText] = useState('');
-  const [batchDefaultCategory, setBatchDefaultCategory] = useState<ProjectCategory>('visual-design');
-  const [instagramFeed, setInstagramFeed] = useState<any[]>([]);
-  const [isFetchingInstagram, setIsFetchingInstagram] = useState(false);
-  const [instagramFetchError, setInstagramFetchError] = useState<string | null>(null);
-  const [directIgPostUrl, setDirectIgPostUrl] = useState('');
-  const [directIgMediaUrl, setDirectIgMediaUrl] = useState('');
-  const [directIgTitle, setDirectIgTitle] = useState('');
-  const [directIgCaption, setDirectIgCaption] = useState('');
-  const [directIgCategory, setDirectIgCategory] = useState<ProjectCategory>('visual-design');
-
-  // Synchronize with props
-  React.useEffect(() => {
-    if (isOpen) {
-      setLocalProjects(projects);
-      setLocalServices(services);
-      setLocalStudioInfo(studioInfo);
-    }
-  }, [isOpen, projects, services, studioInfo]);
-
-  const triggerSaveNotification = (msg: string) => {
-    setSaveNotification(msg);
-    setTimeout(() => {
-      setSaveNotification(null);
-    }, 2800);
+  // Simulate a test interaction for instant verification
+  const handleSimulateTestLead = () => {
+    const sources: Array<'navbar' | 'mobileDrawer' | 'aboutBanner' | 'allProjectsModal'> = [
+      'navbar',
+      'aboutBanner',
+      'mobileDrawer',
+      'allProjectsModal'
+    ];
+    const picked = sources[Math.floor(Math.random() * sources.length)];
+    trackStartProjectClick(picked);
+    triggerNotification(`Logged test 'Start a Project' click (${picked})!`);
   };
 
-  const handleSaveAll = () => {
-    onUpdateProjects(localProjects);
-    onUpdateServices(localServices);
-    onUpdateStudioInfo(localStudioInfo);
-    try {
-      localStorage.setItem('medar_studio_media_library_v2', JSON.stringify(mediaLibrary));
-    } catch (e) {
-      console.warn("Storage quota exceeded or unavailable:", e);
-    }
-    triggerSaveNotification('All changes and posts have been saved successfully!');
+  // Reset counters and clear log with confirmation
+  const handleResetAnalytics = () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to reset all lead interest counters and clear the activity log? This cannot be undone.'
+    );
+    if (!confirmed) return;
+    const clean = resetLeadAnalytics();
+    setAnalytics(clean);
+    triggerNotification('Lead counters and activity log reset.');
   };
 
-  // Smart client-side compression for high-res images so users can upload dozens of photos safely
+  // Copy analytics summary to clipboard
+  const handleCopyAnalyticsSummary = () => {
+    const totalClicks = analytics.totalStartProjectClicks;
+    const totalViews = analytics.totalFormViews;
+    const totalEmail = analytics.totalEmailDirectClicks;
+    const totalWhatsApp = analytics.totalWhatsAppDirectClicks;
+    const totalSubmissions = analytics.totalFormSubmissions;
+    const totalInquiries = totalEmail + totalWhatsApp + totalSubmissions;
+    const convRate = totalClicks > 0 ? ((totalInquiries / totalClicks) * 100).toFixed(1) : '0';
+
+    const report = `MEDAR STUDIO — LEAD INTEREST & CONVERSION REPORT\n` +
+      `Generated: ${new Date().toLocaleString()}\n` +
+      `========================================\n` +
+      `• Total 'Start a Project' Clicks: ${totalClicks}\n` +
+      `  - Navbar CTA: ${analytics.clicksBySource.navbar}\n` +
+      `  - About Banner: ${analytics.clicksBySource.aboutBanner}\n` +
+      `  - Mobile Drawer: ${analytics.clicksBySource.mobileDrawer}\n` +
+      `  - Archive Overlay CTA: ${analytics.clicksBySource.allProjectsModal}\n` +
+      `• Contact Form Views: ${totalViews}\n` +
+      `• Direct Gmail / Mail Clicks: ${totalEmail}\n` +
+      `• Direct WhatsApp Inquiries: ${totalWhatsApp}\n` +
+      `• Brief Form Submissions: ${totalSubmissions}\n` +
+      `• Total Inbound Leads: ${totalInquiries}\n` +
+      `• Conversion / Interest Rate: ${convRate}%\n` +
+      `========================================\n` +
+      `Total Logged Events: ${analytics.recentEvents.length}`;
+
+    navigator.clipboard.writeText(report);
+    triggerNotification('Lead metrics copied to clipboard!');
+  };
+
+  // Save all projects to parent and localStorage
+  const handleSaveAll = (updatedProjects?: CaseStudy[]) => {
+    const list = updatedProjects || localProjects;
+    setLocalProjects(list);
+    onUpdateProjects(list);
+    try {
+      localStorage.setItem('medar_studio_projects_v2', JSON.stringify(list));
+      localStorage.setItem('medar_studio_projects_v3', JSON.stringify(list));
+    } catch (e) {
+      console.warn('Storage quota exceeded:', e);
+    }
+    triggerNotification('All portfolio projects saved successfully!');
+  };
+
+  // Toggle Featured Status (À la Une / Homepage Showcase)
+  const handleToggleFeatured = (projectId: string) => {
+    const updated = localProjects.map((p) => {
+      if (p.id === projectId) {
+        const nextState = p.isFeatured !== false ? false : true;
+        return { ...p, isFeatured: nextState };
+      }
+      return p;
+    });
+    handleSaveAll(updated);
+  };
+
+  // Update specific field for a project
+  const handleUpdateField = (projectId: string, field: keyof CaseStudy, value: any) => {
+    const updated = localProjects.map((p) => {
+      if (p.id === projectId) {
+        return { ...p, [field]: value };
+      }
+      return p;
+    });
+    setLocalProjects(updated);
+  };
+
+  // Create a new project slot
+  const handleAddNewProject = () => {
+    const newId = `project-${Date.now()}`;
+    const newProject: CaseStudy = {
+      id: newId,
+      title: `New Design Project #${localProjects.length + 1}`,
+      client: 'Medar Studio',
+      year: new Date().getFullYear().toString(),
+      category: 'brand-identity',
+      categoryLabel: 'Brand Identity',
+      description: 'Bespoke design, visual communication, and creative direction.',
+      media: [],
+      imagePromptFallback: '',
+      isFeatured: true,
+      accentColor: '#ff4b26'
+    };
+
+    const updated = [newProject, ...localProjects];
+    handleSaveAll(updated);
+    triggerNotification(`Created "${newProject.title}"!`);
+  };
+
+  // Delete project
+  const handleDeleteProject = (projectId: string) => {
+    const pToDelete = localProjects.find((p) => p.id === projectId);
+    const confirmed = window.confirm(`Are you sure you want to delete "${pToDelete?.title || 'this project'}"?`);
+    if (!confirmed) return;
+
+    const updated = localProjects.filter((p) => p.id !== projectId);
+    handleSaveAll(updated);
+    triggerNotification('Project deleted from portfolio.');
+  };
+
+  // Convert File to Compressed Base64 Data URL
   const compressImageFile = (file: File): Promise<string> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const result = e.target?.result as string;
-        if (!file.type.startsWith('image/')) {
-          resolve(result);
-          return;
-        }
         const img = new Image();
         img.onload = () => {
           const canvas = document.createElement('canvas');
           let { width, height } = img;
-          const MAX_DIM = 1400;
+          const MAX_DIM = 1600;
           if (width > MAX_DIM || height > MAX_DIM) {
             if (width > height) {
               height = Math.round((height * MAX_DIM) / width);
@@ -221,7 +255,7 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
           const ctx = canvas.getContext('2d');
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            resolve(canvas.toDataURL('image/jpeg', 0.84));
+            resolve(canvas.toDataURL('image/jpeg', 0.86));
           } else {
             resolve(result);
           }
@@ -234,7 +268,6 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     });
   };
 
-  // Convert File to Base64 Data URL (for videos and direct reads)
   const convertFileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -244,246 +277,18 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
     });
   };
 
-  // Upload image directly for a specific post
-  const handleUploadImageForPost = async (e: React.ChangeEvent<HTMLInputElement>, postId?: string) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const base64 = await convertFileToBase64(file);
-
-      // If uploading for a specific post in the list
-      if (postId) {
-        handleUpdateProjectField(postId, 'imagePromptFallback', base64);
-        triggerSaveNotification(`Image uploaded successfully for this post!`);
-      } else {
-        // For new post form
-        setNewPost((prev) => ({ ...prev, imagePromptFallback: base64 }));
-        triggerSaveNotification(`Image applied to new case study!`);
-      }
-
-      // Automatically add to Studio Media Library as well!
-      const newMediaItem = {
-        id: `upload-${Date.now()}`,
-        name: file.name.replace(/\.[^/.]+$/, ''),
-        url: base64,
-        date: new Date().toLocaleDateString('en-US')
-      };
-      const updatedLib = [newMediaItem, ...mediaLibrary];
-      setMediaLibrary(updatedLib);
-      try {
-        localStorage.setItem('medar_studio_media_library_v2', JSON.stringify(updatedLib));
-      } catch (err) {
-        console.warn("Image stored in memory but exceeded localStorage quota");
-      }
-    } catch (err) {
-      triggerSaveNotification("Unable to read this image file.");
-    }
-  };
-
-  // Upload image to library directly
-  const handleUploadImageToLibrary = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const base64 = await convertFileToBase64(file);
-      const newMediaItem = {
-        id: `lib-${Date.now()}`,
-        name: file.name.replace(/\.[^/.]+$/, ''),
-        url: base64,
-        date: new Date().toLocaleDateString('en-US')
-      };
-      const updatedLib = [newMediaItem, ...mediaLibrary];
-      setMediaLibrary(updatedLib);
-      try {
-        localStorage.setItem('medar_studio_media_library_v2', JSON.stringify(updatedLib));
-      } catch (err) {
-        console.warn("Image stored in memory but exceeded localStorage quota");
-      }
-      triggerSaveNotification(`Image "${newMediaItem.name}" added to media library!`);
-    } catch (err) {
-      triggerSaveNotification("Error while uploading image.");
-    }
-  };
-
-  // Upload Founder Profile Photo directly
-  const handleUploadFounderImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    try {
-      const base64 = await convertFileToBase64(file);
-      setLocalStudioInfo((prev) => ({ ...prev, founderImage: base64 }));
-      triggerSaveNotification('Founder profile photo updated successfully!');
-
-      // Add to Studio Media Library as well
-      const newMediaItem = {
-        id: `founder-${Date.now()}`,
-        name: `Founder - ${file.name.replace(/\.[^/.]+$/, '')}`,
-        url: base64,
-        date: new Date().toLocaleDateString('en-US')
-      };
-      const updatedLib = [newMediaItem, ...mediaLibrary];
-      setMediaLibrary(updatedLib);
-      try {
-        localStorage.setItem('medar_studio_media_library_v2', JSON.stringify(updatedLib));
-      } catch (err) {
-        console.warn("Storage quota exceeded", err);
-      }
-    } catch {
-      triggerSaveNotification('Unable to process the selected image.');
-    }
-  };
-
-  // Add Image URL to Media Library
-  const handleAddImageUrlToLibrary = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newImageUrl.trim()) return;
-
-    const newMediaItem = {
-      id: `url-${Date.now()}`,
-      name: newImageName.trim() || `Image ${mediaLibrary.length + 1}`,
-      url: newImageUrl.trim(),
-      date: new Date().toLocaleDateString('en-US')
-    };
-
-    const updatedLib = [newMediaItem, ...mediaLibrary];
-    setMediaLibrary(updatedLib);
-    try {
-      localStorage.setItem('medar_studio_media_library_v2', JSON.stringify(updatedLib));
-    } catch (e) {
-      console.warn("Storage quota exceeded:", e);
-    }
-    setNewImageUrl('');
-    setNewImageName('');
-    triggerSaveNotification('Image saved to media library!');
-  };
-
-  // Delete image from media library
-  const handleDeleteMediaItem = (id: string) => {
-    const updated = mediaLibrary.filter((m) => m.id !== id);
-    setMediaLibrary(updated);
-    try {
-      localStorage.setItem('medar_studio_media_library_v2', JSON.stringify(updated));
-    } catch (e) {
-      console.warn("Storage quota exceeded:", e);
-    }
-    triggerSaveNotification('Image removed from media library');
-  };
-
-  // Multi-media upload for New Post (Multiple photos & videos from device)
-  const handleUploadNewPostMedia = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Upload Multiple Photos / Videos for a specific project
+  const handleUploadFilesForProject = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0 || !activeUploadProjectId) return;
 
     try {
-      const added: ProjectMediaItem[] = [];
+      const addedMedia: ProjectMediaItem[] = [];
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         const isVid = file.type.startsWith('video/');
         const base64 = isVid ? await convertFileToBase64(file) : await compressImageFile(file);
-        added.push({
-          id: `media-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`,
-          type: isVid ? 'video' : 'image',
-          url: base64,
-          title: file.name.replace(/\.[^/.]+$/, '')
-        });
-      }
-      setNewPostMedia((prev) => [...prev, ...added]);
-      if (!newPost.imagePromptFallback && added.length > 0) {
-        const firstImg = added.find(m => m.type === 'image')?.url || added[0].url;
-        setNewPost((prev) => ({ ...prev, imagePromptFallback: firstImg }));
-      }
-      triggerSaveNotification(`${added.length} photo(s)/vidéo(s) ajoutée(s) au post !`);
-    } catch {
-      triggerSaveNotification('Erreur lors du traitement des fichiers.');
-    }
-  };
-
-  // Drag & drop upload for New Post media
-  const handleDropMedia = async (e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDraggingMedia(false);
-    const files = e.dataTransfer.files;
-    if (!files || files.length === 0) return;
-
-    try {
-      const added: ProjectMediaItem[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const isVid = file.type.startsWith('video/');
-        const isImg = file.type.startsWith('image/');
-        if (!isVid && !isImg) continue;
-        const base64 = isVid ? await convertFileToBase64(file) : await compressImageFile(file);
-        added.push({
-          id: `media-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`,
-          type: isVid ? 'video' : 'image',
-          url: base64,
-          title: file.name.replace(/\.[^/.]+$/, '')
-        });
-      }
-      if (added.length > 0) {
-        setNewPostMedia((prev) => [...prev, ...added]);
-        if (!newPost.imagePromptFallback) {
-          const firstImg = added.find(m => m.type === 'image')?.url || added[0].url;
-          setNewPost((prev) => ({ ...prev, imagePromptFallback: firstImg }));
-        }
-        triggerSaveNotification(`${added.length} fichier(s) photo/vidéo déposé(s) !`);
-      }
-    } catch {
-      triggerSaveNotification('Erreur lors de la lecture des fichiers glissés.');
-    }
-  };
-
-  // Add video URL to New Post
-  const handleAddVideoUrlToNewPost = () => {
-    if (!newVideoUrlInput.trim()) return;
-    const newItem: ProjectMediaItem = {
-      id: `vid-${Date.now()}`,
-      type: 'video',
-      url: newVideoUrlInput.trim(),
-      title: 'Video Asset'
-    };
-    setNewPostMedia((prev) => [...prev, newItem]);
-    setNewVideoUrlInput('');
-    triggerSaveNotification('Video added to post!');
-  };
-
-  // Remove media item from New Post
-  const handleRemoveNewPostMedia = (mediaId: string) => {
-    setNewPostMedia((prev) => {
-      const updated = prev.filter((m) => m.id !== mediaId);
-      if (newPost.imagePromptFallback && !updated.some(m => m.url === newPost.imagePromptFallback)) {
-        setNewPost((p) => ({ ...p, imagePromptFallback: updated[0]?.url || '' }));
-      }
-      return updated;
-    });
-  };
-
-  // Set media item as cover in New Post
-  const handleSetNewPostCover = (mediaItem: ProjectMediaItem) => {
-    setNewPost((prev) => ({
-      ...prev,
-      imagePromptFallback: mediaItem.url,
-      videoUrl: mediaItem.type === 'video' ? mediaItem.url : prev.videoUrl
-    }));
-    setNewPostMedia((prev) => [mediaItem, ...prev.filter(m => m.id !== mediaItem.id)]);
-    triggerSaveNotification('Selected as cover for this project!');
-  };
-
-  // Multi-media upload for an existing post
-  const handleUploadMediaToExistingPost = async (e: React.ChangeEvent<HTMLInputElement>, postId: string) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    try {
-      const added: ProjectMediaItem[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const isVid = file.type.startsWith('video/');
-        const base64 = await convertFileToBase64(file);
-        added.push({
+        addedMedia.push({
           id: `media-${Date.now()}-${i}`,
           type: isVid ? 'video' : 'image',
           url: base64,
@@ -492,615 +297,207 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
       }
 
       const updated = localProjects.map((p) => {
-        if (p.id !== postId) return p;
-        const currentMedia = p.media && p.media.length > 0
-          ? p.media
-          : (p.imagePromptFallback ? [{ id: `img-0`, type: 'image' as const, url: p.imagePromptFallback }] : []);
-        const nextMedia = [...currentMedia, ...added];
-        const coverImg = p.imagePromptFallback || nextMedia.find(m => m.type === 'image')?.url || nextMedia[0]?.url;
+        if (p.id !== activeUploadProjectId) return p;
+        const currentMedia = p.media || [];
+        const nextMedia = [...currentMedia, ...addedMedia];
+        const firstImg = nextMedia.find((m) => m.type === 'image')?.url || nextMedia[0]?.url || '';
         return {
           ...p,
           media: nextMedia,
-          imagePromptFallback: coverImg
+          imagePromptFallback: p.imagePromptFallback || firstImg,
+          videoUrl: p.videoUrl || nextMedia.find((m) => m.type === 'video')?.url
         };
       });
 
-      setLocalProjects(updated);
-      onUpdateProjects(updated);
-      try {
-        localStorage.setItem('medar_studio_projects_v2', JSON.stringify(updated));
-      } catch (err) {
-        console.warn("Storage quota exceeded", err);
-      }
-      triggerSaveNotification(`${added.length} file(s) added to project!`);
+      handleSaveAll(updated);
+      triggerNotification(`${addedMedia.length} media file(s) attached to project!`);
     } catch {
-      triggerSaveNotification('Error while reading files.');
+      triggerNotification('Error reading uploaded files.');
+    } finally {
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      setActiveUploadProjectId(null);
     }
   };
 
-  // Add video URL to existing post
-  const handleAddVideoToExistingPost = (postId: string) => {
-    if (!existingVideoUrlInput.trim()) return;
-    const newItem: ProjectMediaItem = {
-      id: `vid-${Date.now()}`,
-      type: 'video',
-      url: existingVideoUrlInput.trim(),
-      title: 'Video Asset'
-    };
-
+  // Remove a media item from a project
+  const handleRemoveMediaItem = (projectId: string, mediaId: string) => {
     const updated = localProjects.map((p) => {
-      if (p.id !== postId) return p;
-      const currentMedia = p.media && p.media.length > 0
-        ? p.media
-        : (p.imagePromptFallback ? [{ id: `img-0`, type: 'image' as const, url: p.imagePromptFallback }] : []);
-      return {
-        ...p,
-        media: [...currentMedia, newItem],
-        videoUrl: p.videoUrl || newItem.url
-      };
-    });
-
-    setLocalProjects(updated);
-    onUpdateProjects(updated);
-    setExistingVideoUrlInput('');
-    setActivePostIdForMultiMedia(null);
-    triggerSaveNotification('Video asset added to project!');
-  };
-
-  // Remove media from an existing post
-  const handleRemoveMediaFromExistingPost = (postId: string, mediaId: string) => {
-    const updated = localProjects.map((p) => {
-      if (p.id !== postId) return p;
-      const currentMedia = p.media || [];
-      const filtered = currentMedia.filter(m => m.id !== mediaId);
+      if (p.id !== projectId) return p;
+      const filtered = (p.media || []).filter((m) => m.id !== mediaId);
+      const firstImg = filtered.find((m) => m.type === 'image')?.url || filtered[0]?.url || '';
       return {
         ...p,
         media: filtered,
-        imagePromptFallback: filtered.length > 0 ? (filtered.find(m => m.type === 'image')?.url || filtered[0].url) : ''
+        imagePromptFallback: firstImg,
+        videoUrl: filtered.find((m) => m.type === 'video')?.url
       };
     });
-
-    setLocalProjects(updated);
-    onUpdateProjects(updated);
-    triggerSaveNotification('Media removed from project');
-  };
-
-  // Create & Publish New Post (Requires at least 1 photo or video)
-  const handleCreateNewPost = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPost.title || !newPost.client) {
-      triggerSaveNotification('Please enter at least a project title and client name.');
-      return;
-    }
-
-    const mediaList = [...newPostMedia];
-    if (newPost.imagePromptFallback && !mediaList.some(m => m.url === newPost.imagePromptFallback)) {
-      mediaList.unshift({
-        id: `media-${Date.now()}`,
-        type: 'image',
-        url: newPost.imagePromptFallback,
-        title: 'Cover Image'
-      });
-    }
-
-    if (mediaList.length === 0) {
-      triggerSaveNotification('Please upload at least 1 photo or video so visitors can see this project!');
-      return;
-    }
-
-    const firstImage = mediaList.find(m => m.type === 'image')?.url || mediaList[0].url;
-    const firstVideo = mediaList.find(m => m.type === 'video')?.url;
-
-    const createdPost: CaseStudy = {
-      id: `post-${Date.now()}`,
-      title: newPost.title,
-      client: newPost.client,
-      year: newPost.year || '2025',
-      category: (newPost.category as ProjectCategory) || 'brand-identity',
-      categoryLabel: newPost.categoryLabel || 'Brand Identity',
-      description: newPost.description || 'Bespoke freelance design work crafted by Medar Studio.',
-      media: mediaList,
-      imagePromptFallback: firstImage,
-      videoUrl: firstVideo,
-      gradientTheme: 'from-[#ff4b26]/30 to-[#0c0c10]',
-      accentColor: '#ff4b26'
-    };
-
-    const updated = [createdPost, ...localProjects];
-    setLocalProjects(updated);
-    onUpdateProjects(updated);
-    try {
-      localStorage.setItem('medar_studio_projects_v2', JSON.stringify(updated));
-    } catch (e) {
-      console.warn("Storage quota exceeded", e);
-    }
-
-    // Reset new post form
-    setNewPost({
-      title: '',
-      client: '',
-      year: '2025',
-      category: 'brand-identity',
-      categoryLabel: 'Brand Identity',
-      description: '',
-      imagePromptFallback: ''
-    });
-    setNewPostMedia([]);
-    setNewVideoUrlInput('');
-
-    setActiveTab('posts');
-    triggerSaveNotification(`Project "${createdPost.title}" published with ${mediaList.length} media file(s)!`);
-  };
-
-  // Fetch Instagram feed from Meta Graph API using user's access token
-  const handleFetchInstagramFeed = async () => {
-    const token = localStudioInfo.instagramToken?.trim();
-    if (!token) {
-      setInstagramFetchError("Veuillez renseigner votre jeton d'accès Instagram (Access Token) ci-dessous.");
-      return;
-    }
-    setIsFetchingInstagram(true);
-    setInstagramFetchError(null);
-    try {
-      const url = `https://graph.instagram.com/me/media?fields=id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,children{id,media_type,media_url}&access_token=${token}`;
-      const res = await fetch(url);
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData?.error?.message || `Erreur Instagram API HTTP ${res.status}`);
-      }
-      const data = await res.json();
-      if (data && data.data && data.data.length > 0) {
-        setInstagramFeed(data.data);
-        triggerSaveNotification(`${data.data.length} publication(s) Instagram récupérée(s) !`);
-      } else {
-        setInstagramFeed([]);
-        triggerSaveNotification("Aucune publication trouvée sur ce compte Instagram.");
-      }
-    } catch (err: any) {
-      console.error("Instagram fetch error:", err);
-      setInstagramFetchError(err.message || "Impossible de contacter l'API Instagram. Vérifiez votre jeton.");
-    } finally {
-      setIsFetchingInstagram(false);
-    }
-  };
-
-  // 1-Click Import of an Instagram post (photo, carousel album, or reel video) into Portfolio
-  const handleImportInstagramPost = (igPost: any) => {
-    const mediaItems: ProjectMediaItem[] = [];
-
-    if (igPost.children && igPost.children.data && igPost.children.data.length > 0) {
-      igPost.children.data.forEach((c: any, idx: number) => {
-        mediaItems.push({
-          id: `ig-child-${c.id || Date.now()}-${idx}`,
-          type: c.media_type === 'VIDEO' ? 'video' : 'image',
-          url: c.media_url,
-          title: `Instagram Media #${idx + 1}`
-        });
-      });
-    } else if (igPost.media_url) {
-      mediaItems.push({
-        id: `ig-${igPost.id || Date.now()}`,
-        type: igPost.media_type === 'VIDEO' ? 'video' : 'image',
-        url: igPost.media_url,
-        title: 'Instagram Post'
-      });
-    }
-
-    if (mediaItems.length === 0) {
-      triggerSaveNotification("Aucune image ou vidéo exploitable trouvée pour ce post.");
-      return;
-    }
-
-    const caption = igPost.caption || 'Publication Instagram';
-    const firstLine = caption.split('\n')[0].replace(/[#@][\w]+/g, '').trim() || 'Instagram Artwork';
-    const postTitle = firstLine.length > 40 ? firstLine.substring(0, 40) + '...' : firstLine;
-    const postYear = igPost.timestamp ? new Date(igPost.timestamp).getFullYear().toString() : '2025';
-    const firstImage = mediaItems.find((m) => m.type === 'image')?.url || mediaItems[0]?.url;
-    const firstVideo = mediaItems.find((m) => m.type === 'video')?.url;
-
-    const newPostItem: CaseStudy = {
-      id: `post-ig-${igPost.id || Date.now()}`,
-      title: postTitle,
-      client: localStudioInfo.instagramHandle || 'Instagram',
-      year: postYear,
-      category: 'visual-design',
-      categoryLabel: 'Visual Design',
-      description: caption,
-      media: mediaItems,
-      imagePromptFallback: firstImage,
-      videoUrl: firstVideo,
-      accentColor: '#ff4b26',
-      gradientTheme: 'from-[#ff4b26]/30 to-[#0c0c10]'
-    };
-
-    const updated = [newPostItem, ...localProjects];
-    setLocalProjects(updated);
-    onUpdateProjects(updated);
-    try {
-      localStorage.setItem('medar_studio_projects_v2', JSON.stringify(updated));
-    } catch (e) {
-      console.warn("Storage quota exceeded", e);
-    }
-
-    triggerSaveNotification(`Publication "${postTitle}" importée avec succès dans le portfolio !`);
-  };
-
-  // Direct manual Instagram Post URL import
-  const handleDirectInstagramImport = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!directIgMediaUrl.trim() && !directIgPostUrl.trim()) {
-      triggerSaveNotification("Veuillez renseigner le lien média ou l'URL du post Instagram.");
-      return;
-    }
-
-    const mediaUrl = directIgMediaUrl.trim() || directIgPostUrl.trim();
-    const isVideo = mediaUrl.includes('.mp4') || directIgPostUrl.includes('/reel/');
-
-    const newPostItem: CaseStudy = {
-      id: `post-ig-${Date.now()}`,
-      title: directIgTitle.trim() || 'Visual Design Artwork',
-      client: 'Medar Studio',
-      year: new Date().getFullYear().toString(),
-      category: directIgCategory,
-      categoryLabel:
-        directIgCategory === 'brand-identity'
-          ? 'Brand Identity'
-          : directIgCategory === 'sports-design'
-          ? 'Sports Design'
-          : directIgCategory === '3d-webgl'
-          ? '3D Design'
-          : 'Visual Design',
-      description: directIgCaption.trim() || 'Création visuelle réalisée pour le portfolio Medar Studio.',
-      media: [
-        {
-          id: `media-ig-${Date.now()}`,
-          type: isVideo ? 'video' : 'image',
-          url: mediaUrl,
-          title: 'Photo'
-        }
-      ],
-      imagePromptFallback: isVideo ? '' : mediaUrl,
-      videoUrl: isVideo ? mediaUrl : undefined,
-      accentColor: '#ff4b26',
-      gradientTheme: 'from-[#ff4b26]/30 to-[#0c0c10]'
-    };
-
-    const updated = [newPostItem, ...localProjects];
-    setLocalProjects(updated);
-    onUpdateProjects(updated);
-    try {
-      localStorage.setItem('medar_studio_projects_v2', JSON.stringify(updated));
-    } catch (e) {
-      console.warn("Storage quota exceeded", e);
-    }
-
-    setDirectIgPostUrl('');
-    setDirectIgMediaUrl('');
-    setDirectIgTitle('');
-    setDirectIgCaption('');
-    triggerSaveNotification('Post Instagram importé avec succès dans le portfolio !');
-  };
-
-  // Batch upload: Takes multiple photos/videos and converts each one into a standalone portfolio project in 1 second!
-  const handleBatchInstagramFiles = async (fileList: FileList | File[]) => {
-    if (!fileList || fileList.length === 0) return;
-    try {
-      const newPosts: CaseStudy[] = [];
-      for (let i = 0; i < fileList.length; i++) {
-        const file = fileList[i];
-        const isVid = file.type.startsWith('video/');
-        const isImg = file.type.startsWith('image/');
-        if (!isVid && !isImg) continue;
-
-        const base64 = isVid ? await convertFileToBase64(file) : await compressImageFile(file);
-        const cleanName = file.name
-          .replace(/\.[^/.]+$/, '')
-          .replace(/[-_]/g, ' ')
-          .trim();
-        const formattedTitle = cleanName
-          ? cleanName.charAt(0).toUpperCase() + cleanName.slice(1)
-          : `Projet Design #${localProjects.length + i + 1}`;
-
-        const post: CaseStudy = {
-          id: `post-batch-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 4)}`,
-          title: formattedTitle,
-          client: 'Medar Studio',
-          year: new Date().getFullYear().toString(),
-          category: batchDefaultCategory,
-          categoryLabel:
-            batchDefaultCategory === 'brand-identity'
-              ? 'Brand Identity'
-              : batchDefaultCategory === 'sports-design'
-              ? 'Sports Design'
-              : batchDefaultCategory === '3d-webgl'
-              ? '3D Design'
-              : 'Visual Design',
-          description: `Création visuelle réalisée pour le portfolio de l'agence.`,
-          media: [
-            {
-              id: `media-batch-${Date.now()}-${i}`,
-              type: isVid ? 'video' : 'image',
-              url: base64,
-              title: formattedTitle
-            }
-          ],
-          imagePromptFallback: isVid ? '' : base64,
-          videoUrl: isVid ? base64 : undefined,
-          accentColor: '#ff4b26',
-          gradientTheme: 'from-[#ff4b26]/30 to-[#0c0c10]'
-        };
-        newPosts.push(post);
-      }
-
-      if (newPosts.length > 0) {
-        const updated = [...newPosts, ...localProjects];
-        setLocalProjects(updated);
-        onUpdateProjects(updated);
-        try {
-          localStorage.setItem('medar_studio_projects_v2', JSON.stringify(updated));
-        } catch (e) {
-          console.warn("Storage quota exceeded", e);
-        }
-        triggerSaveNotification(`🎉 ${newPosts.length} photo(s) importée(s) instantanément dans votre portfolio !`);
-      }
-    } catch (err) {
-      console.error(err);
-      triggerSaveNotification('Erreur lors du traitement des fichiers.');
-    }
-  };
-
-  // Batch paste image links: Takes multiple direct image links pasted in a textarea
-  const handleBatchLinksImport = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!batchLinksText.trim()) return;
-
-    const lines = batchLinksText
-      .split('\n')
-      .map((l) => l.trim())
-      .filter((l) => l.length > 0);
-
-    if (lines.length === 0) return;
-
-    const newPosts: CaseStudy[] = lines.map((link, idx) => {
-      const isVid = link.includes('.mp4') || link.includes('.webm');
-      return {
-        id: `post-link-${Date.now()}-${idx}`,
-        title: `Projet Design #${localProjects.length + idx + 1}`,
-        client: 'Medar Studio',
-        year: new Date().getFullYear().toString(),
-        category: batchDefaultCategory,
-        categoryLabel:
-          batchDefaultCategory === 'brand-identity'
-            ? 'Brand Identity'
-            : batchDefaultCategory === 'sports-design'
-            ? 'Sports Design'
-            : batchDefaultCategory === '3d-webgl'
-            ? '3D Design'
-            : 'Visual Design',
-        description: `Création graphique et direction artistique.`,
-        media: [
-          {
-            id: `media-link-${Date.now()}-${idx}`,
-            type: isVid ? 'video' : 'image',
-            url: link,
-            title: 'Photo'
-          }
-        ],
-        imagePromptFallback: isVid ? '' : link,
-        videoUrl: isVid ? link : undefined,
-        accentColor: '#ff4b26',
-        gradientTheme: 'from-[#ff4b26]/30 to-[#0c0c10]'
-      };
-    });
-
-    const updated = [...newPosts, ...localProjects];
-    setLocalProjects(updated);
-    onUpdateProjects(updated);
-    try {
-      localStorage.setItem('medar_studio_projects_v2', JSON.stringify(updated));
-    } catch (e) {
-      console.warn("Storage quota exceeded", e);
-    }
-    setBatchLinksText('');
-    triggerSaveNotification(`🎉 ${newPosts.length} photo(s) ajoutée(s) à votre portfolio !`);
-  };
-
-  // Delete all imported projects (Reset portfolio)
-  const handleDeleteAllProjects = () => {
-    if (window.confirm("Êtes-vous sûr de vouloir effacer TOUS les posts du portfolio ?")) {
-      setLocalProjects([]);
-      onUpdateProjects([]);
-      try {
-        localStorage.setItem('medar_studio_projects_v2', JSON.stringify([]));
-      } catch (e) {
-        console.warn(e);
-      }
-      triggerSaveNotification('Tous les projets ont été effacés. Le portfolio est propre et vide.');
-    }
-  };
-
-  // Delete project
-  const handleDeleteProject = (id: string) => {
-    const filtered = localProjects.filter((p) => p.id !== id);
-    setLocalProjects(filtered);
-    onUpdateProjects(filtered);
-    triggerSaveNotification('Post removed successfully');
-  };
-
-  // Quick field updates
-  const handleUpdateProjectField = (id: string, field: keyof CaseStudy, value: any) => {
-    setLocalProjects((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, [field]: value } : p))
-    );
-  };
-
-  const handleUpdateProjectMetrics = (id: string, stat: string, label: string) => {
-    setLocalProjects((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, metrics: { stat, label } } : p))
-    );
-  };
-
-  const handleUpdateServiceField = (id: string, field: keyof AgencyService, value: any) => {
-    setLocalServices((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, [field]: value } : s))
-    );
-  };
-
-  // Assign image from library to a post
-  const handleAssignImageToPost = (postId: string, imageUrl: string) => {
-    handleUpdateProjectField(postId, 'imagePromptFallback', imageUrl);
-    setSelectedImageToAssign(null);
-    triggerSaveNotification('Image applied to selected post!');
-  };
-
-  // Export JSON
-  const handleExportJSON = () => {
-    const data = {
-      projects: localProjects,
-      services: localServices,
-      studioInfo: localStudioInfo,
-      budgetTiers: localBudgetTiers,
-      mediaLibrary: mediaLibrary,
-      exportedAt: new Date().toISOString()
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `medar-studio-export-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  // Import JSON
-  const handleImportJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target?.result as string);
-        if (parsed.projects) setLocalProjects(parsed.projects);
-        if (parsed.services) setLocalServices(parsed.services);
-        if (parsed.studioInfo) setLocalStudioInfo(parsed.studioInfo);
-        if (parsed.budgetTiers && Array.isArray(parsed.budgetTiers)) {
-          setLocalBudgetTiers(parsed.budgetTiers);
-          if (onUpdateBudgetTiers) onUpdateBudgetTiers(parsed.budgetTiers);
-        }
-        if (parsed.mediaLibrary) setMediaLibrary(parsed.mediaLibrary);
-        triggerSaveNotification('Data imported successfully! Click "Save Live Changes" to confirm.');
-      } catch (err) {
-        triggerSaveNotification('Error: The selected JSON file is invalid.');
-      }
-    };
-    reader.readAsText(file);
+    handleSaveAll(updated);
+    triggerNotification('Media item removed.');
   };
 
   if (!isOpen) return null;
 
+  // Filtered list according to search & filter
+  const featuredCount = localProjects.filter((p) => p.isFeatured !== false).length;
+  const filteredList = localProjects.filter((p) => {
+    const matchesSearch =
+      p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.client.toLowerCase().includes(searchQuery.toLowerCase());
+    if (!matchesSearch) return false;
+    if (filterMode === 'featured') return p.isFeatured !== false;
+    if (filterMode === 'archive') return p.isFeatured === false;
+    return true;
+  });
+
   return (
-    <div className="fixed inset-0 z-50 bg-[#09090d] text-white flex flex-col overflow-hidden font-sans">
-      {/* Hidden Global File Inputs for direct upload */}
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#0a0a0f] text-neutral-200 overflow-hidden">
+      {/* Hidden file input for multi-photo & video uploads */}
       <input
         type="file"
-        ref={newPostMediaFileInputRef}
+        ref={fileInputRef}
+        onChange={handleUploadFilesForProject}
         multiple
         accept="image/*,video/*"
-        onChange={handleUploadNewPostMedia}
-        className="hidden"
-      />
-      <input
-        type="file"
-        ref={existingPostMediaFileInputRef}
-        multiple
-        accept="image/*,video/*"
-        onChange={(e) => {
-          if (activePostIdForMultiMedia) {
-            handleUploadMediaToExistingPost(e, activePostIdForMultiMedia);
-          }
-        }}
-        className="hidden"
-      />
-      <input
-        type="file"
-        ref={postFileInputRef}
-        accept="image/*"
-        onChange={(e) => handleUploadImageForPost(e, activePostIdForUpload || undefined)}
-        className="hidden"
-      />
-      <input
-        type="file"
-        ref={libraryFileInputRef}
-        accept="image/*"
-        onChange={handleUploadImageToLibrary}
-        className="hidden"
-      />
-      <input
-        type="file"
-        ref={founderFileInputRef}
-        accept="image/*"
-        onChange={handleUploadFounderImage}
-        className="hidden"
-      />
-      <input
-        type="file"
-        ref={batchInstagramFileInputRef}
-        multiple
-        accept="image/*,video/*"
-        onChange={(e) => {
-          if (e.target.files) {
-            handleBatchInstagramFiles(e.target.files);
-            e.target.value = '';
-          }
-        }}
         className="hidden"
       />
 
-      {/* Top Bar Header */}
-      <header className="h-16 md:h-20 border-b border-white/10 px-4 md:px-8 flex items-center justify-between shrink-0 bg-[#0d0d14]">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-[#ff4b26] flex items-center justify-center font-bold text-white text-sm shadow-[0_0_15px_rgba(255,75,38,0.5)]">
+      {/* Top Header Bar */}
+      <header className="h-20 border-b border-white/10 bg-[#0e0e16] px-6 md:px-10 flex items-center justify-between shrink-0 gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-xl bg-[#ff4b26] flex items-center justify-center text-white font-bold text-lg shadow-lg shrink-0">
             M
           </div>
-          <div>
+          <div className="hidden lg:block">
             <div className="flex items-center gap-2">
-              <span className="font-heading text-base md:text-lg font-bold text-white tracking-tight">
-                MEDAR STUDIO CMS
-              </span>
-              <span className="text-[10px] font-mono px-2 py-0.5 bg-[#ff4b26]/15 text-[#ff4b26] border border-[#ff4b26]/30 uppercase tracking-widest font-semibold">
-                Live Studio
+              <h1 className="font-heading text-lg font-bold text-white tracking-tight">
+                {activeTab === 'projects' ? 'Portfolio & Homepage Showcase' : 'Lead Interest & Telemetry'}
+              </h1>
+              <span className="text-[10px] font-mono bg-white/10 text-neutral-300 px-2 py-0.5 rounded border border-white/10">
+                Admin Panel
               </span>
             </div>
-            <span className="text-xs font-mono text-neutral-400 hidden sm:block">
-              Full control of case studies, official statements, and media assets without code
-            </span>
+            <p className="text-xs text-neutral-400 font-mono">
+              {activeTab === 'projects' 
+                ? 'Curate featured projects, attach media, and edit portfolio case studies.'
+                : "Real-time tracker of 'Start a Project' clicks and email/contact inquiries."}
+            </p>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-3">
+        {/* Primary Tab Switcher */}
+        <div className="flex items-center bg-[#151522] border border-white/15 p-1 rounded-xl gap-1">
           <button
-            onClick={handleSaveAll}
-            className="px-4 py-2 bg-[#ff4b26] hover:bg-white text-white hover:text-black font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 flex items-center gap-2 cursor-pointer shadow-[0_4px_16px_rgba(255,75,38,0.3)]"
+            type="button"
+            onClick={() => setActiveTab('projects')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              activeTab === 'projects'
+                ? 'bg-white text-black shadow-md'
+                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+            }`}
           >
-            <Save className="w-4 h-4" />
-            <span className="hidden sm:inline">Save Live Changes</span>
+            <Layers className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Portfolio Projects</span>
+            <span className="sm:hidden">Projects</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded font-bold ${
+              activeTab === 'projects' ? 'bg-black/15 text-black' : 'bg-white/10 text-neutral-300'
+            }`}>
+              {localProjects.length}
+            </span>
           </button>
 
           <button
-            onClick={onClose}
-            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white font-mono text-xs font-medium uppercase tracking-wider transition-colors flex items-center gap-2 cursor-pointer border border-white/15"
+            type="button"
+            onClick={() => setActiveTab('analytics')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              activeTab === 'analytics'
+                ? 'bg-[#ff4b26] text-white shadow-[0_2px_12px_rgba(255,75,38,0.4)]'
+                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+            }`}
           >
-            <ExternalLink className="w-4 h-4" />
-            <span className="hidden sm:inline">View Site</span>
+            <TrendingUp className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Lead Interest & Log</span>
+            <span className="sm:hidden">Leads</span>
+            <span className="text-[10px] px-1.5 py-0.2 rounded bg-black/40 text-white font-bold tabular-nums">
+              {analytics.totalStartProjectClicks} clicks
+            </span>
           </button>
+        </div>
+
+        {/* Global Actions */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {activeTab === 'projects' ? (
+            <>
+              <button
+                type="button"
+                onClick={handleAddNewProject}
+                className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs font-mono rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden sm:inline">+ Add Project</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSaveAll()}
+                className="px-3.5 py-2 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white font-bold text-xs font-mono rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer shadow-md"
+              >
+                <Save className="w-4 h-4" />
+                <span>Save All</span>
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={handleSimulateTestLead}
+                className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs font-mono rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Test click tracking"
+              >
+                <MousePointerClick className="w-3.5 h-3.5 text-[#ff4b26]" />
+                <span className="hidden md:inline">Test Click</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleCopyAnalyticsSummary}
+                className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-xs font-mono rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Copy metrics report"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Copy Report</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleResetAnalytics}
+                className="px-3 py-2 bg-rose-950/60 hover:bg-rose-900 border border-rose-800/50 text-rose-200 font-bold text-xs font-mono rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                title="Reset counters & log"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Reset</span>
+              </button>
+            </>
+          )}
 
           <button
+            type="button"
             onClick={onLogout}
-            title="Log out"
-            className="p-2 text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
+            className="p-2.5 bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+            title="Log Out"
           >
-            <LogOut className="w-5 h-5" />
+            <LogOut className="w-4 h-4" />
+          </button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-2.5 bg-white/5 hover:bg-white/10 text-neutral-400 hover:text-white rounded-lg transition-colors cursor-pointer ml-1"
+            title="Close Admin Panel"
+          >
+            <X className="w-5 h-5" />
           </button>
         </div>
       </header>
@@ -1112,1903 +509,812 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="absolute top-20 left-1/2 -translate-x-1/2 z-50 bg-[#161622] border border-[#ff4b26] px-5 py-2.5 shadow-2xl flex items-center gap-2.5 text-xs font-mono text-white"
+            className="absolute top-24 left-1/2 -translate-x-1/2 z-50 bg-[#161622] border border-[#ff4b26] px-5 py-2.5 shadow-2xl flex items-center gap-2.5 text-xs font-mono text-white rounded-lg"
           >
-            <Check className="w-4 h-4 text-[#ff4b26]" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
             <span>{saveNotification}</span>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Main Content Layout: Sidebar Navigation + Content Area */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Navigation Sidebar */}
-        <aside className="w-60 md:w-68 border-r border-white/10 bg-[#0c0c12] p-4 flex flex-col justify-between shrink-0">
-          <nav className="space-y-1.5 text-xs font-mono">
-            {/* Tab: Manage Posts */}
-            <button
-              onClick={() => setActiveTab('posts')}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
-                activeTab === 'posts'
-                  ? 'bg-[#ff4b26] text-white font-bold'
-                  : 'text-neutral-400 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              <FolderKanban className="w-4 h-4" />
-              <span>Mes Posts & Projets ({localProjects.length})</span>
-            </button>
+      {/* Controls & Filter Sub-Bar */}
+      {activeTab === 'projects' ? (
+        <div className="bg-[#12121b] border-b border-white/10 px-6 md:px-10 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            {/* Search Input */}
+            <div className="relative w-full sm:w-72">
+              <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by title or client..."
+                className="w-full bg-[#181824] border border-white/10 rounded-lg pl-9 pr-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-[#ff4b26]"
+              />
+            </div>
 
-            {/* Tab: Add New Post with photos & videos */}
-            <button
-              onClick={() => setActiveTab('new-post')}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
-                activeTab === 'new-post'
-                  ? 'bg-[#ff4b26] text-white font-bold'
-                  : 'text-neutral-400 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              <Plus className="w-4 h-4 text-emerald-400" />
-              <div className="flex flex-col">
-                <span className="text-white font-semibold">+ Nouveau Post</span>
-                <span className="text-[10px] text-neutral-400 font-mono">Upload Photos & Vidéos</span>
-              </div>
-            </button>
-
-            {/* Tab: Batch Photo Import */}
-            <button
-              onClick={() => setActiveTab('instagram')}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
-                activeTab === 'instagram'
-                  ? 'bg-[#ff4b26] text-white font-bold shadow-md'
-                  : 'text-neutral-400 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              <Upload className="w-4 h-4 text-emerald-400 shrink-0" />
-              <div className="flex flex-col">
-                <span className="text-white font-semibold">Import par Lots (Photos)</span>
-                <span className="text-[10px] text-neutral-400 font-mono">Glisser 5-20 photos d'un coup</span>
-              </div>
-            </button>
-
-            {/* Tab: Media Library & Upload Images */}
-            <button
-              onClick={() => setActiveTab('media-library')}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
-                activeTab === 'media-library'
-                  ? 'bg-[#ff4b26] text-white font-bold'
-                  : 'text-neutral-400 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              <ImageIcon className="w-4 h-4" />
-              <span>Media Library ({mediaLibrary.length})</span>
-            </button>
-
-            {/* Tab: Services */}
-            <button
-              onClick={() => setActiveTab('services')}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
-                activeTab === 'services'
-                  ? 'bg-[#ff4b26] text-white font-bold'
-                  : 'text-neutral-400 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>Services & Offerings</span>
-            </button>
-
-            {/* Tab: Pricing & Target Budgets */}
-            <button
-              onClick={() => setActiveTab('pricing')}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
-                activeTab === 'pricing'
-                  ? 'bg-[#ff4b26] text-white font-bold'
-                  : 'text-neutral-400 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              <DollarSign className="w-4 h-4 text-amber-400" />
-              <span>Pricing & Budgets ({localBudgetTiers.length})</span>
-            </button>
-
-            {/* Tab: Studio Profile */}
-            <button
-              onClick={() => setActiveTab('studio')}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
-                activeTab === 'studio'
-                  ? 'bg-[#ff4b26] text-white font-bold'
-                  : 'text-neutral-400 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              <Info className="w-4 h-4" />
-              <span>About & Studio Profile</span>
-            </button>
-
-            {/* Tab: Backup & Restore */}
-            <button
-              onClick={() => setActiveTab('backup')}
-              className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors cursor-pointer ${
-                activeTab === 'backup'
-                  ? 'bg-[#ff4b26] text-white font-bold'
-                  : 'text-neutral-400 hover:bg-white/5 hover:text-white'
-              }`}
-            >
-              <RotateCcw className="w-4 h-4" />
-              <span>Backup & Export</span>
-            </button>
-          </nav>
-
-          {/* Bottom Quick Help Card */}
-          <div className="p-3 bg-[#111119] border border-white/5 rounded-lg text-[11px] font-mono text-neutral-400 space-y-1.5">
-            <span className="text-[#ff4b26] font-bold block">Quick Tip</span>
-            <p className="leading-relaxed">
-              Upload visuals directly from your computer or phone without requiring an external hosting provider.
-            </p>
+            {/* Filter Segmented Control */}
+            <div className="flex items-center bg-[#181824] border border-white/10 rounded-lg p-0.5 text-xs font-mono">
+              <button
+                onClick={() => setFilterMode('all')}
+                className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
+                  filterMode === 'all' ? 'bg-white text-black font-bold' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                All ({localProjects.length})
+              </button>
+              <button
+                onClick={() => setFilterMode('featured')}
+                className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer ${
+                  filterMode === 'featured' ? 'bg-[#ff4b26] text-white font-bold' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                <Star className="w-3 h-3 fill-current" />
+                <span>Featured ({featuredCount})</span>
+              </button>
+              <button
+                onClick={() => setFilterMode('archive')}
+                className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
+                  filterMode === 'archive' ? 'bg-white/20 text-white font-bold' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                Archive ({localProjects.length - featuredCount})
+              </button>
+            </div>
           </div>
-        </aside>
 
-        {/* Content Area */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-10 bg-[#09090d]">
-          {/* ================================================================= */}
-          {/* TAB 1: MANAGE EXISTING POSTS (COPY + ASSETS)                      */}
-          {/* ================================================================= */}
-          {activeTab === 'posts' && (
-            <div className="max-w-5xl mx-auto space-y-8">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
-                <div>
-                  <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                    Manage Case Studies & Copy
-                  </h2>
-                  <p className="text-xs text-neutral-400 font-mono mt-1">
-                    Edit copy, visuals, metrics, and deliverables across your {localProjects.length} live case studies.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setActiveTab('new-post')}
-                  className="px-4 py-2.5 bg-[#ff4b26] hover:bg-white text-white hover:text-black text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-2 cursor-pointer transition-colors shrink-0 shadow-[0_4px_14px_rgba(255,75,38,0.35)]"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add New Case Study</span>
-                </button>
-              </div>
-
-              {/* Projects List */}
-              <div className="space-y-8">
-                {localProjects.map((project, idx) => (
-                  <div
-                    key={project.id}
-                    className="bg-[#12121b] border border-white/10 p-6 md:p-8 rounded-xl hover:border-[#ff4b26]/50 transition-all space-y-6"
-                  >
-                    {/* Header Row */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
-                      <div className="flex items-center gap-4">
-                        {/* Live Image Thumbnail with Upload Trigger */}
-                        <div className="relative group w-20 h-24 rounded-lg overflow-hidden border border-white/15 bg-neutral-900 shrink-0">
-                          {project.imagePromptFallback ? (
-                            <img
-                              src={project.imagePromptFallback}
-                              alt={project.title}
-                              referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-neutral-600">
-                              <FileImage className="w-6 h-6" />
-                            </div>
-                          )}
-
-                          {/* Hover Overlay to change image */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActivePostIdForUpload(project.id);
-                              postFileInputRef.current?.click();
-                            }}
-                            className="absolute inset-0 bg-black/80 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white transition-opacity cursor-pointer p-1 text-[9px] font-mono text-center"
-                            title="Change image"
-                          >
-                            <Camera className="w-4 h-4 mb-1 text-[#ff4b26]" />
-                            <span>Change</span>
-                          </button>
-                        </div>
-
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-mono text-[#ff4b26] font-bold">
-                              POST #{idx + 1}
-                            </span>
-                            <span className="text-[11px] font-mono text-neutral-400 border border-white/10 px-2 py-0.5 rounded">
-                              {project.categoryLabel}
-                            </span>
-                          </div>
-                          <h3 className="font-heading text-xl font-bold text-white mt-1">
-                            {project.title}
-                          </h3>
-                          <span className="text-xs font-mono text-neutral-400">
-                            Client: {project.client} · Year: {project.year}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 self-end sm:self-center">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActivePostIdForUpload(project.id);
-                            postFileInputRef.current?.click();
-                          }}
-                          className="px-3 py-1.5 bg-white/10 hover:bg-white text-white hover:text-black text-xs font-mono transition-colors flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Camera className="w-3.5 h-3.5" />
-                          <span>Upload Visual</span>
-                        </button>
-
-                        <button
-                          onClick={() => handleDeleteProject(project.id)}
-                          className="p-2 text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
-                          title="Delete case study"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Inputs Grid for Post Content */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-mono">
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Project Title *</label>
-                        <input
-                          type="text"
-                          value={project.title}
-                          onChange={(e) => handleUpdateProjectField(project.id, 'title', e.target.value)}
-                          className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Client / Brand *</label>
-                        <input
-                          type="text"
-                          value={project.client}
-                          onChange={(e) => handleUpdateProjectField(project.id, 'client', e.target.value)}
-                          className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Release Year</label>
-                        <input
-                          type="text"
-                          value={project.year}
-                          onChange={(e) => handleUpdateProjectField(project.id, 'year', e.target.value)}
-                          className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Filter Category</label>
-                        <select
-                          value={project.category}
-                          onChange={(e) => handleUpdateProjectField(project.id, 'category', e.target.value as ProjectCategory)}
-                          className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        >
-                          <option value="brand-identity">Brand Identity</option>
-                          <option value="sports-design">Sports Design</option>
-                          <option value="3d-webgl">3D Design</option>
-                          <option value="visual-design">Visual Design</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Displayed Category Label</label>
-                        <input
-                          type="text"
-                          value={project.categoryLabel}
-                          onChange={(e) => handleUpdateProjectField(project.id, 'categoryLabel', e.target.value)}
-                          className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        />
-                      </div>
-
-                      {/* Media Assets Manager (Multiple Photos & Videos) */}
-                      <div className="md:col-span-3 bg-black/40 border border-white/10 p-4 rounded-lg space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <label className="text-white font-bold block text-xs">
-                              Media Assets ({project.media?.length || (project.imagePromptFallback ? 1 : 0)})
-                            </label>
-                            {(project.media && project.media.length > 0) || project.imagePromptFallback || project.videoUrl ? (
-                              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
-                                ● Visible to visitors
-                              </span>
-                            ) : (
-                              <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded">
-                                ○ Hidden from visitors (Upload photo to publish)
-                              </span>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setActivePostIdForMultiMedia(project.id);
-                                existingPostMediaFileInputRef.current?.click();
-                              }}
-                              className="px-3 py-1.5 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white rounded text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow"
-                            >
-                              <Upload className="w-3.5 h-3.5" />
-                              <span>+ Add Photos & Videos</span>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Media Thumbnails Grid */}
-                        {project.media && project.media.length > 0 ? (
-                          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5 pt-1">
-                            {project.media.map((item, mIdx) => (
-                              <div
-                                key={item.id || mIdx}
-                                className="relative aspect-[4/5] bg-neutral-900 rounded-lg overflow-hidden border border-white/15 group"
-                              >
-                                {item.type === 'video' ? (
-                                  <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-900 text-cyan-400 p-2">
-                                    <Film className="w-6 h-6 mb-1" />
-                                    <span className="text-[8px] font-mono">VIDEO</span>
-                                  </div>
-                                ) : (
-                                  <img
-                                    src={item.url}
-                                    alt=""
-                                    className="w-full h-full object-cover"
-                                  />
-                                )}
-                                <div className="absolute top-1 left-1">
-                                  <span className="text-[8px] font-mono bg-black/80 text-white px-1 rounded">
-                                    #{mIdx + 1}
-                                  </span>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveMediaFromExistingPost(project.id, item.id)}
-                                  className="absolute top-1 right-1 p-1 bg-black/80 hover:bg-red-500 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                                  title="Delete this media asset"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </div>
-                            ))}
-                          </div>
-                        ) : project.imagePromptFallback ? (
-                          <div className="flex items-center gap-3">
-                            <div className="w-14 h-16 rounded overflow-hidden border border-white/15 shrink-0 bg-neutral-900">
-                              <img src={project.imagePromptFallback} alt="" className="w-full h-full object-cover" />
-                            </div>
-                            <span className="text-xs text-neutral-400">1 Cover Photo assigned. Click "+ Add Photos & Videos" to add more.</span>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-neutral-500 italic">
-                            No photos or videos uploaded yet. This post is currently hidden from visitors.
-                          </p>
-                        )}
-
-                        {/* Add Video URL Bar */}
-                        <div className="flex gap-2 pt-1">
-                          <input
-                            type="text"
-                            placeholder="Add video URL (MP4, Vimeo, WebM)..."
-                            value={activePostIdForMultiMedia === project.id ? existingVideoUrlInput : ''}
-                            onFocus={() => setActivePostIdForMultiMedia(project.id)}
-                            onChange={(e) => setExistingVideoUrlInput(e.target.value)}
-                            className="flex-1 bg-[#181824] border border-white/10 px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#ff4b26] font-mono"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => handleAddVideoToExistingPost(project.id)}
-                            className="px-3 py-1.5 bg-white/10 hover:bg-white text-white hover:text-black text-xs font-bold font-mono transition-colors cursor-pointer"
-                          >
-                            + Add Video
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="md:col-span-3">
-                        <label className="text-neutral-400 block mb-1">Project Description / Story</label>
-                        <textarea
-                          rows={2}
-                          value={project.description}
-                          onChange={(e) => handleUpdateProjectField(project.id, 'description', e.target.value)}
-                          className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26] leading-relaxed"
-                          placeholder="Short summary of the visual project..."
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+          {/* Counter Info */}
+          <div className="flex items-center gap-4 text-xs font-mono text-neutral-400">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>
+                <strong className="text-white">{featuredCount}</strong> featured on homepage
+              </span>
             </div>
-          )}
-
-          {/* ================================================================= */}
-          {/* TAB 2: CREATE NEW CASE STUDY (WIZARD WITH LIVE 4:5 PREVIEW)       */}
-          {/* ================================================================= */}
-          {activeTab === 'new-post' && (
-            <div className="max-w-4xl mx-auto space-y-8 font-mono text-xs">
-              <div className="pb-6 border-b border-white/10 flex items-center justify-between">
-                <div>
-                  <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                    Create & Publish New Case Study
-                  </h2>
-                  <p className="text-xs text-neutral-400 mt-1">
-                    Add a new piece of design or creative production to your live Medar Studio showcase.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setActiveTab('posts')}
-                  className="px-3 py-1.5 border border-white/15 text-neutral-400 hover:text-white transition-colors"
-                >
-                  Back to Posts
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateNewPost} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
-                  {/* Left Form Column */}
-                  <div className="md:col-span-8 bg-[#12121b] border border-white/10 p-6 md:p-8 rounded-xl space-y-5">
-                    <h3 className="font-heading text-base font-bold text-white">
-                      Case Study Details & Content
-                    </h3>
-
-                    <div>
-                      <label className="text-neutral-400 block mb-1">Project / Post Title *</label>
-                      <input
-                        type="text"
-                        required
-                        value={newPost.title || ''}
-                        onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-                        placeholder="e.g. Astral Chronograph"
-                        className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white text-sm focus:outline-none focus:border-[#ff4b26]"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Client or Brand *</label>
-                        <input
-                          type="text"
-                          required
-                          value={newPost.client || ''}
-                          onChange={(e) => setNewPost({ ...newPost, client: e.target.value })}
-                          placeholder="e.g. Athletic Club / Luxury House"
-                          className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Year</label>
-                        <input
-                          type="text"
-                          value={newPost.year || '2026'}
-                          onChange={(e) => setNewPost({ ...newPost, year: e.target.value })}
-                          className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Category</label>
-                        <select
-                          value={newPost.category}
-                          onChange={(e) =>
-                            setNewPost({
-                              ...newPost,
-                              category: e.target.value as ProjectCategory,
-                              categoryLabel:
-                                e.target.value === 'sports-design'
-                                  ? 'Sports Design'
-                                  : e.target.value === '3d-webgl'
-                                  ? '3D Design'
-                                  : e.target.value === 'visual-design'
-                                  ? 'Visual Design'
-                                  : 'Brand Identity'
-                            })
-                          }
-                          className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        >
-                          <option value="brand-identity">Brand Identity</option>
-                          <option value="sports-design">Sports Design</option>
-                          <option value="3d-webgl">3D Design</option>
-                          <option value="visual-design">Visual Design</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Displayed Label</label>
-                        <input
-                          type="text"
-                          value={newPost.categoryLabel || ''}
-                          onChange={(e) => setNewPost({ ...newPost, categoryLabel: e.target.value })}
-                          className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Multi-Media Uploader for New Post (Photos & Videos) */}
-                    <div className="p-5 bg-[#181824] border border-white/10 rounded-xl space-y-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-white/10">
-                        <div>
-                          <label className="text-white font-bold block text-xs flex items-center gap-2">
-                            <Upload className="w-4 h-4 text-[#ff4b26]" />
-                            <span>Téléversement Photos & Vidéos (Depuis votre appareil)</span>
-                          </label>
-                          <span className="text-[11px] text-neutral-400 block mt-0.5">
-                            Permet de mettre beaucoup de photos à la fois et des vidéos.
-                          </span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => newPostMediaFileInputRef.current?.click()}
-                          className="px-4 py-2 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white transition-colors rounded text-xs font-bold flex items-center gap-2 cursor-pointer shadow-md shrink-0"
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>+ Parcourir Photos & Vidéos</span>
-                        </button>
-                      </div>
-
-                      {/* Interactive Drag & Drop Area */}
-                      <div
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          setIsDraggingMedia(true);
-                        }}
-                        onDragLeave={() => setIsDraggingMedia(false)}
-                        onDrop={handleDropMedia}
-                        onClick={() => newPostMediaFileInputRef.current?.click()}
-                        className={`p-6 border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
-                          isDraggingMedia
-                            ? 'border-[#ff4b26] bg-[#ff4b26]/10 text-white scale-[1.01]'
-                            : 'border-white/20 bg-black/40 hover:border-white/40 text-neutral-300'
-                        }`}
-                      >
-                        <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-2.5">
-                          <Upload className="w-5 h-5 text-[#ff4b26]" />
-                        </div>
-                        <p className="text-xs font-semibold text-white mb-1">
-                          {isDraggingMedia
-                            ? 'Déposez vos photos et vidéos ici...'
-                            : 'Glissez-déposez plusieurs photos & vidéos ici, ou cliquez pour parcourir'}
-                        </p>
-                        <p className="text-[10px] font-mono text-neutral-400 max-w-sm">
-                          JPG, PNG, WEBP, GIF, MP4, WebM — Téléversement direct depuis votre PC/téléphone sans limite
-                        </p>
-                      </div>
-
-                      {/* Video URL Adder */}
-                      <div className="flex gap-2 pt-1">
-                        <input
-                          type="text"
-                          value={newVideoUrlInput}
-                          onChange={(e) => setNewVideoUrlInput(e.target.value)}
-                          placeholder="Ou collez un lien vidéo (MP4, YouTube, Vimeo, WebM)..."
-                          className="flex-1 bg-[#101019] border border-white/15 px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#ff4b26] font-mono"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleAddVideoUrlToNewPost}
-                          className="px-3.5 py-1.5 bg-white/10 hover:bg-white text-white hover:text-black text-xs font-bold font-mono rounded transition-colors cursor-pointer shrink-0"
-                        >
-                          + Ajouter Vidéo
-                        </button>
-                      </div>
-
-                      {/* Attached Media Grid */}
-                      {newPostMedia.length > 0 ? (
-                        <div className="space-y-2 pt-2">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[11px] font-mono text-neutral-300 block font-semibold">
-                              Médias attachés ({newPostMedia.length}) :
-                            </span>
-                            <span className="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
-                              ✓ Prêt à être publié aux visiteurs
-                            </span>
-                          </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2.5">
-                            {newPostMedia.map((item, mIdx) => {
-                              const isCover = (newPost.imagePromptFallback === item.url) || (mIdx === 0 && !newPost.imagePromptFallback);
-                              return (
-                                <div
-                                  key={item.id || mIdx}
-                                  className={`relative aspect-[4/5] bg-black rounded-lg overflow-hidden border-2 group ${
-                                    isCover ? 'border-[#ff4b26] ring-2 ring-[#ff4b26]/30' : 'border-white/15'
-                                  }`}
-                                >
-                                  {item.type === 'video' ? (
-                                    <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-900 text-cyan-400 p-2">
-                                      <Film className="w-6 h-6 mb-1" />
-                                      <span className="text-[8px] font-mono font-bold">VIDÉO</span>
-                                    </div>
-                                  ) : (
-                                    <img
-                                      src={item.url}
-                                      alt=""
-                                      className="w-full h-full object-cover"
-                                    />
-                                  )}
-
-                                  {/* Badge */}
-                                  <div className="absolute top-1 left-1">
-                                    {isCover ? (
-                                      <span className="text-[8px] font-mono bg-[#ff4b26] text-white px-1.5 py-0.5 rounded font-bold">
-                                        COVER
-                                      </span>
-                                    ) : (
-                                      <span className="text-[8px] font-mono bg-black/80 text-white px-1 rounded">
-                                        #{mIdx + 1}
-                                      </span>
-                                    )}
-                                  </div>
-
-                                  {/* Actions */}
-                                  <div className="absolute inset-0 bg-black/70 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center gap-1.5 transition-opacity p-1">
-                                    {!isCover && (
-                                      <button
-                                        type="button"
-                                        onClick={() => handleSetNewPostCover(item)}
-                                        className="text-[9px] font-mono bg-[#ff4b26] text-white px-2 py-0.5 rounded hover:bg-[#ff5f3c] cursor-pointer font-bold"
-                                      >
-                                        Cover
-                                      </button>
-                                    )}
-                                    <button
-                                      type="button"
-                                      onClick={() => handleRemoveNewPostMedia(item.id)}
-                                      className="text-[9px] font-mono bg-red-600 text-white p-1 rounded hover:bg-red-700 cursor-pointer"
-                                      title="Supprimer ce média"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </button>
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded text-amber-300 text-xs flex items-center gap-2">
-                          <Info className="w-4 h-4 shrink-0" />
-                          <span>
-                            Ajoutez au moins 1 photo ou vidéo. Pour les visiteurs du site, seuls les posts avec photos/vidéos sont visibles.
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <label className="text-neutral-400 block mb-1">Project Description / Story</label>
-                      <textarea
-                        rows={3}
-                        value={newPost.description || ''}
-                        onChange={(e) => setNewPost({ ...newPost, description: e.target.value })}
-                        placeholder="Brief summary of the creative artwork, client, or concept..."
-                        className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26] leading-relaxed"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      className="w-full py-4 bg-[#ff4b26] hover:bg-white text-white hover:text-black font-bold uppercase tracking-wider text-xs transition-colors cursor-pointer shadow-[0_4px_16px_rgba(255,75,38,0.35)] flex items-center justify-center gap-2"
-                    >
-                      <Check className="w-4 h-4" />
-                      <span>Publish This Project Now ({newPostMedia.length} Media)</span>
-                    </button>
-                  </div>
-
-                  {/* Right Live Preview Column */}
-                  <div className="md:col-span-4 space-y-4">
-                    <div className="flex items-center justify-between text-[11px] font-mono text-neutral-400 uppercase tracking-widest">
-                      <span>4:5 Card Preview</span>
-                      {newPostMedia.length > 0 && (
-                        <span className="text-[#ff4b26] font-bold">
-                          {newPostMedia.length} Media Attached
-                        </span>
-                      )}
-                    </div>
-                    <div className="w-full aspect-[4/5] bg-[#12121b] border border-white/15 overflow-hidden relative flex flex-col justify-between p-4 shadow-xl">
-                      {newPostMedia.length > 0 ? (
-                        newPostMedia[0].type === 'video' ? (
-                          <div className="absolute inset-0 bg-neutral-900 flex flex-col items-center justify-center text-cyan-400">
-                            <Film className="w-10 h-10 mb-2" />
-                            <span className="text-xs font-mono">Video Asset Cover</span>
-                          </div>
-                        ) : (
-                          <img
-                            src={newPost.imagePromptFallback || newPostMedia[0].url}
-                            alt="Preview"
-                            className="absolute inset-0 w-full h-full object-cover"
-                          />
-                        )
-                      ) : (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-neutral-500">
-                          <ImageIcon className="w-8 h-8 mb-2 opacity-50" />
-                          <span className="text-xs">Upload media to see preview</span>
-                        </div>
-                      )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/60 pointer-events-none" />
-
-                      <div className="relative z-10 flex items-center justify-between text-[9px] text-white/70">
-                        <span className="bg-black/60 px-2 py-0.5 border border-white/10">4:5 POST</span>
-                        <span className="bg-black/60 px-2 py-0.5 border border-white/10">{newPost.year || '2026'}</span>
-                      </div>
-
-                      <div className="relative z-10 border-t border-white/10 pt-2.5">
-                        <span className="text-[9px] text-neutral-400 uppercase block">
-                          {newPost.client || 'Client'}
-                        </span>
-                        <h4 className="font-heading font-bold text-sm text-white truncate">
-                          {newPost.title || 'Project Title'}
-                        </h4>
-                      </div>
-                    </div>
-
-                    <div className="p-3 bg-white/5 border border-white/10 text-[11px] text-neutral-400 space-y-1">
-                      <span className="text-white font-bold block">Visitor Privacy Rule</span>
-                      <p>Visitors only see this project if it contains at least 1 uploaded photo or video.</p>
-                    </div>
-                  </div>
-                </div>
-              </form>
+            <span>·</span>
+            <span>
+              <strong className="text-white">{localProjects.length}</strong> total projects
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-[#12121b] border-b border-white/10 px-6 md:px-10 py-3.5 flex flex-col sm:flex-row items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            {/* Search Input for Activity Log */}
+            <div className="relative w-full sm:w-72">
+              <Search className="w-3.5 h-3.5 text-neutral-500 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={analyticsSearchQuery}
+                onChange={(e) => setAnalyticsSearchQuery(e.target.value)}
+                placeholder="Search activity log..."
+                className="w-full bg-[#181824] border border-white/10 rounded-lg pl-9 pr-3 py-1.5 text-xs text-white font-mono focus:outline-none focus:border-[#ff4b26]"
+              />
             </div>
-          )}
 
-          {/* ================================================================= */}
-          {/* TAB: BATCH PHOTO IMPORT (NO SIMULATION, CLEAN PHOTOS ONLY)        */}
-          {/* ================================================================= */}
-          {activeTab === 'instagram' && (
-            <div className="max-w-5xl mx-auto space-y-8 font-mono text-xs">
-              {/* Header */}
-              <div className="pb-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="p-1.5 rounded-lg bg-[#ff4b26] text-white">
-                      <Upload className="w-5 h-5" />
-                    </span>
-                    <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                      Import par Lots de Photos (Sans Simulation)
-                    </h2>
-                  </div>
-                  <p className="text-xs text-neutral-400 mt-1">
-                    Importez directement vos photos par lots en un clic. Chaque photo est immédiatement intégrée dans votre portfolio sans aucune simulation externe ni mention de compte.
-                  </p>
-                </div>
-              </div>
+            {/* Filter Segmented Control for Log */}
+            <div className="flex items-center bg-[#181824] border border-white/10 rounded-lg p-0.5 text-xs font-mono">
+              <button
+                onClick={() => setAnalyticsFilter('all')}
+                className={`px-3 py-1 rounded-md transition-colors cursor-pointer ${
+                  analyticsFilter === 'all' ? 'bg-white text-black font-bold' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                All Events ({analytics.recentEvents.length})
+              </button>
+              <button
+                onClick={() => setAnalyticsFilter('clicks')}
+                className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer ${
+                  analyticsFilter === 'clicks' ? 'bg-[#ff4b26] text-white font-bold' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                <MousePointerClick className="w-3 h-3" />
+                <span>Clicks ({analytics.totalStartProjectClicks})</span>
+              </button>
+              <button
+                onClick={() => setAnalyticsFilter('views')}
+                className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer ${
+                  analyticsFilter === 'views' ? 'bg-sky-600 text-white font-bold' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                <Eye className="w-3 h-3" />
+                <span>Views ({analytics.totalFormViews})</span>
+              </button>
+              <button
+                onClick={() => setAnalyticsFilter('inquiries')}
+                className={`px-3 py-1 rounded-md transition-colors flex items-center gap-1 cursor-pointer ${
+                  analyticsFilter === 'inquiries' ? 'bg-emerald-600 text-white font-bold' : 'text-neutral-400 hover:text-white'
+                }`}
+              >
+                <MessageSquare className="w-3 h-3" />
+                <span>
+                  Inquiries ({analytics.totalEmailDirectClicks + analytics.totalWhatsAppDirectClicks + analytics.totalFormSubmissions})
+                </span>
+              </button>
+            </div>
+          </div>
 
-              {/* SECTION 1: IMPORT PAR LOTS EN 1 CLIC */}
-              <div className="bg-[#12121b] border-2 border-[#ff4b26]/50 p-6 md:p-8 rounded-xl space-y-6 shadow-xl relative overflow-hidden">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-white/10">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 bg-[#ff4b26] text-white text-[10px] font-bold rounded uppercase">
-                        Méthode Ultra Rapide
-                      </span>
-                      <h3 className="font-heading text-base md:text-lg font-bold text-white">
-                        1. Glisser-Déposer vos photos par lots (5, 10, 20 photos...)
-                      </h3>
-                    </div>
-                    <p className="text-xs text-neutral-300 mt-1">
-                      Sélectionnez vos fichiers photos directement sur votre ordinateur ou smartphone et déposez-les ici. Chaque photo devient instantanément un projet dans votre portfolio !
-                    </p>
-                  </div>
+          {/* Status info */}
+          <div className="flex items-center gap-4 text-xs font-mono text-neutral-400">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-emerald-400 font-semibold">Real-Time Lead Telemetry</span>
+            </div>
+            <span>·</span>
+            <span className="text-neutral-300">
+              Interest conversion: <strong className="text-white">{analytics.totalStartProjectClicks > 0 ? (((analytics.totalEmailDirectClicks + analytics.totalWhatsAppDirectClicks + analytics.totalFormSubmissions) / analytics.totalStartProjectClicks) * 100).toFixed(1) : '0'}%</strong>
+            </span>
+          </div>
+        </div>
+      )}
 
-                  <div className="flex items-center gap-2">
-                    <label className="text-neutral-400 text-[11px] whitespace-nowrap">Catégorie :</label>
-                    <select
-                      value={batchDefaultCategory}
-                      onChange={(e) => setBatchDefaultCategory(e.target.value as ProjectCategory)}
-                      className="bg-[#181824] border border-white/20 px-2.5 py-1.5 text-white text-xs rounded focus:outline-none focus:border-[#ff4b26]"
-                    >
-                      <option value="brand-identity">Brand Identity</option>
-                      <option value="sports-design">Sports Design</option>
-                      <option value="3d-webgl">3D Design</option>
-                      <option value="visual-design">Visual Design</option>
-                    </select>
-                  </div>
-                </div>
+      {/* Main Content Area: Tab Specific */}
+      {activeTab === 'projects' ? (
+        <main className="flex-1 overflow-y-auto p-6 md:p-10 space-y-6">
+        {filteredList.length === 0 ? (
+          <div className="py-20 text-center border border-white/10 bg-[#12121b] rounded-2xl max-w-xl mx-auto space-y-4">
+            <Layers className="w-12 h-12 text-neutral-600 mx-auto" />
+            <h3 className="text-lg font-heading font-bold text-white">No projects found</h3>
+            <p className="text-xs text-neutral-400 font-mono">
+              Try adjusting your search query or click the button below to add a project.
+            </p>
+            <button
+              type="button"
+              onClick={handleAddNewProject}
+              className="px-5 py-2.5 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white text-xs font-bold font-mono rounded-lg uppercase tracking-wider inline-flex items-center gap-2 cursor-pointer shadow-lg"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Add First Project</span>
+            </button>
+          </div>
+        ) : (
+          <div className="max-w-6xl mx-auto space-y-6">
+            {filteredList.map((project, idx) => {
+              const mediaList = project.media || [];
+              const isFeatured = project.isFeatured !== false;
 
-                {/* Dropzone Multi-Upload Express */}
+              return (
                 <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setIsDraggingBatchInstagram(true);
-                  }}
-                  onDragLeave={() => setIsDraggingBatchInstagram(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setIsDraggingBatchInstagram(false);
-                    if (e.dataTransfer.files) {
-                      handleBatchInstagramFiles(e.dataTransfer.files);
-                    }
-                  }}
-                  onClick={() => batchInstagramFileInputRef.current?.click()}
-                  className={`p-8 md:p-12 border-2 border-dashed rounded-2xl flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
-                    isDraggingBatchInstagram
-                      ? 'border-[#ff4b26] bg-[#ff4b26]/15 scale-[1.01]'
-                      : 'border-white/20 bg-black/40 hover:border-[#ff4b26]/60 hover:bg-black/60'
+                  key={project.id}
+                  className={`bg-[#12121b] border rounded-2xl p-6 transition-all duration-200 ${
+                    isFeatured
+                      ? 'border-[#ff4b26]/50 shadow-lg bg-gradient-to-r from-[#141420] to-[#12121b]'
+                      : 'border-white/10 opacity-90 hover:opacity-100 hover:border-white/20'
                   }`}
                 >
-                  <div className="w-16 h-16 rounded-full bg-[#ff4b26] flex items-center justify-center mb-4 shadow-lg">
-                    <Upload className="w-8 h-8 text-white" />
-                  </div>
-                  <h4 className="font-heading text-lg font-bold text-white mb-2">
-                    {isDraggingBatchInstagram
-                      ? 'Relâchez vos photos pour les importer toutes !'
-                      : 'Glissez ici vos photos d\'un coup (JPG, PNG, WEBP)'}
-                  </h4>
-                  <p className="text-xs text-neutral-400 max-w-md leading-relaxed mb-4">
-                    Ou cliquez pour ouvrir vos dossiers et sélectionner vos créations. Chaque photo est immédiatement ajoutée à votre portfolio en haute définition.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      batchInstagramFileInputRef.current?.click();
-                    }}
-                    className="px-6 py-3 bg-[#ff4b26] hover:bg-white text-white hover:text-black font-bold uppercase tracking-wider text-xs rounded-lg transition-all flex items-center gap-2 shadow-lg cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Sélectionner plusieurs photos depuis votre appareil</span>
-                  </button>
-                </div>
-
-                {/* Alternative : importation de liens d'images directs */}
-                <div className="pt-4 border-t border-white/10 space-y-3">
-                  <span className="text-xs text-neutral-300 font-bold block flex items-center gap-2">
-                    <LinkIcon className="w-3.5 h-3.5 text-[#ff4b26]" />
-                    <span>Alternative : Coller des liens d'images directs (1 par ligne)</span>
-                  </span>
-                  <form onSubmit={handleBatchLinksImport} className="space-y-3">
-                    <textarea
-                      rows={3}
-                      value={batchLinksText}
-                      onChange={(e) => setBatchLinksText(e.target.value)}
-                      placeholder="https://.../photo-1.jpg&#10;https://.../photo-2.png"
-                      className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white text-xs font-mono focus:outline-none focus:border-[#ff4b26]"
-                    />
-                    <button
-                      type="submit"
-                      disabled={!batchLinksText.trim()}
-                      className="px-4 py-2 bg-white/10 hover:bg-white text-white hover:text-black disabled:opacity-40 font-bold rounded transition-colors flex items-center gap-2 cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Importer ces photos dans le portfolio</span>
-                    </button>
-                  </form>
-                </div>
-              </div>
-
-              {/* SECTION 2: GESTIONNAIRE « JE GARDE CE QUE JE VEUX, J'EFFACE LE RESTE » */}
-              <div className="bg-[#12121b] border border-white/10 p-6 md:p-8 rounded-xl space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <FolderKanban className="w-4 h-4 text-[#ff4b26]" />
-                      <h3 className="font-heading text-base md:text-lg font-bold text-white">
-                        2. Gestion directe : Je garde ce que je veux, j'efface ce que je ne veux pas
-                      </h3>
-                    </div>
-                    <p className="text-xs text-neutral-400 mt-1">
-                      Voici les <strong>{localProjects.length} projet(s)</strong> actuellement dans votre portfolio. Cliquez sur « Effacer » pour supprimer en un instant ce que vous ne souhaitez pas garder.
-                    </p>
-                  </div>
-
-                  {localProjects.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleDeleteAllProjects}
-                      className="px-3.5 py-2 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white border border-red-500/30 rounded text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer self-start sm:self-center"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      <span>Tout Effacer ({localProjects.length})</span>
-                    </button>
-                  )}
-                </div>
-
-                {/* Live Projects Grid with 1-Click Delete */}
-                {localProjects.length === 0 ? (
-                  <div className="py-12 text-center border border-white/10 bg-black/30 rounded-xl space-y-2">
-                    <p className="text-neutral-400 text-xs">
-                      Votre portfolio est actuellement vide. Déposez des photos ci-dessus pour le remplir en 2 secondes !
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                    {localProjects.map((project, idx) => (
-                      <div
-                        key={project.id}
-                        className="bg-[#181824] border border-white/15 rounded-xl p-3 flex flex-col justify-between hover:border-[#ff4b26]/50 transition-all space-y-3 group"
-                      >
-                        {/* Pure Media Thumbnail */}
-                        <div className="relative aspect-[4/5] bg-black rounded-lg overflow-hidden border border-white/10">
-                          {project.videoUrl ? (
-                            <video
-                              src={project.videoUrl}
-                              className="w-full h-full object-cover"
-                              muted
-                            />
-                          ) : project.imagePromptFallback ? (
-                            <img
-                              src={project.imagePromptFallback}
-                              alt={project.title}
-                              referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-neutral-600">
-                              <FileImage className="w-8 h-8" />
-                            </div>
-                          )}
-
-                          {/* Category Badge */}
-                          <div className="absolute top-2 left-2 flex items-center gap-1.5">
-                            <span className="text-[9px] font-mono bg-black/80 text-white px-2 py-0.5 rounded border border-white/15">
-                              #{idx + 1} · {project.categoryLabel}
-                            </span>
-                            {project.videoUrl && (
-                              <span className="text-[9px] font-mono bg-[#ff4b26] text-white px-1.5 py-0.5 rounded font-bold">
-                                VIDEO
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Title & Metadata */}
-                        <div>
-                          <input
-                            type="text"
-                            value={project.title}
-                            onChange={(e) => handleUpdateProjectField(project.id, 'title', e.target.value)}
-                            placeholder="Titre du projet"
-                            className="w-full bg-[#12121b] border border-white/10 px-2.5 py-1 text-white text-xs font-bold focus:outline-none focus:border-[#ff4b26] rounded mb-1"
-                          />
-                          <div className="flex items-center justify-between text-[10px] text-neutral-400">
-                            <span>Client : {project.client && !project.client.toLowerCase().includes('instagram') ? project.client : 'Medar Studio'}</span>
-                            <span>Année : {project.year}</span>
-                          </div>
-                        </div>
-
-                        {/* Actions : Upload Photo + Delete Button */}
-                        <div className="pt-2 border-t border-white/10 flex flex-col gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setActivePostIdForUpload(project.id);
-                              postFileInputRef.current?.click();
-                            }}
-                            className="w-full py-1.5 bg-white/10 hover:bg-white text-white hover:text-black text-xs font-mono font-bold rounded transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                            title="Remplacer la photo depuis votre PC ou téléphone"
-                          >
-                            <Camera className="w-3.5 h-3.5 text-[#ff4b26]" />
-                            <span>Remplacer la photo</span>
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => {
-                              handleDeleteProject(project.id);
-                              triggerSaveNotification(`Projet "${project.title}" effacé.`);
-                            }}
-                            className="w-full py-1.5 bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white font-bold text-xs rounded transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-                            title="Effacer ce projet du site"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Effacer ce projet</span>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ================================================================= */}
-          {/* TAB 3: STUDIO MEDIA LIBRARY (LOCAL UPLOAD + GALLERY)              */}
-          {/* ================================================================= */}
-          {activeTab === 'media-library' && (
-            <div className="max-w-5xl mx-auto space-y-8 font-mono text-xs">
-              <div className="pb-6 border-b border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                    Media Library & Asset Manager
-                  </h2>
-                  <p className="text-xs text-neutral-400 mt-1">
-                    Upload photos, posters, and 3D artwork directly from your device or via external links.
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => libraryFileInputRef.current?.click()}
-                  className="px-4 py-2.5 bg-[#ff4b26] hover:bg-white text-white hover:text-black font-bold uppercase tracking-wider text-xs transition-colors flex items-center gap-2 cursor-pointer shadow-[0_4px_14px_rgba(255,75,38,0.3)] shrink-0"
-                >
-                  <Upload className="w-4 h-4" />
-                  <span>Upload Local Image</span>
-                </button>
-              </div>
-
-              {/* Add by URL input */}
-              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
-                <h3 className="font-heading text-base font-bold text-white">
-                  Add Image via External URL
-                </h3>
-                <form onSubmit={handleAddImageUrlToLibrary} className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="text"
-                    value={newImageName}
-                    onChange={(e) => setNewImageName(e.target.value)}
-                    placeholder="Artwork name (e.g. Matchday Poster 2026)"
-                    className="sm:w-64 bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                  />
-                  <input
-                    type="text"
-                    required
-                    value={newImageUrl}
-                    onChange={(e) => setNewImageUrl(e.target.value)}
-                    placeholder="https://images.unsplash.com/photo-..."
-                    className="flex-1 bg-[#181824] border border-white/15 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                  />
-                  <button
-                    type="submit"
-                    className="px-5 py-2 bg-white/10 hover:bg-white text-white hover:text-black font-bold uppercase tracking-wider text-xs transition-colors cursor-pointer shrink-0"
-                  >
-                    Add to Media Library
-                  </button>
-                </form>
-              </div>
-
-              {/* Image Grid with Quick Assign to Posts */}
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-heading text-base font-bold text-white">
-                    Available Assets ({mediaLibrary.length})
-                  </h3>
-                  <span className="text-neutral-400 text-[11px]">
-                    Select "Assign to post..." below any image to instantly update a project thumbnail
-                  </span>
-                </div>
-
-                {mediaLibrary.length === 0 ? (
-                  <div className="p-12 text-center border border-dashed border-white/15 rounded-xl bg-black/30 space-y-4">
-                    <div className="w-16 h-16 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto text-[#ff4b26]">
-                      <Upload className="w-8 h-8" />
-                    </div>
-                    <div className="space-y-1">
-                      <h4 className="font-heading text-lg font-bold text-white">
-                        Your Media Library is clean and ready
-                      </h4>
-                      <p className="text-xs text-neutral-400 max-w-md mx-auto leading-relaxed">
-                        No dummy stock images. Upload your actual graphic design, sports visuals, and 3D artwork directly from this device (phone or PC).
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => libraryFileInputRef.current?.click()}
-                      className="px-6 py-3 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white text-xs font-mono font-bold uppercase tracking-wider rounded transition-colors inline-flex items-center gap-2 cursor-pointer shadow-lg"
-                    >
-                      <Upload className="w-4 h-4" />
-                      <span>Upload Artwork from Device Now</span>
-                    </button>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {mediaLibrary.map((item) => (
-                      <div
-                        key={item.id}
-                        className="group bg-[#12121b] border border-white/10 rounded-xl overflow-hidden hover:border-[#ff4b26] transition-all flex flex-col justify-between"
-                      >
-                        <div className="relative aspect-[4/3] bg-neutral-900 overflow-hidden">
-                          <img
-                            src={item.url}
-                            alt={item.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                          <div className="absolute top-2 right-2 flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                navigator.clipboard.writeText(item.url);
-                                triggerSaveNotification('Link copied to clipboard!');
-                              }}
-                              className="p-1.5 bg-black/70 hover:bg-[#ff4b26] text-white rounded transition-colors cursor-pointer"
-                              title="Copy link"
-                            >
-                              <Copy className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteMediaItem(item.id)}
-                              className="p-1.5 bg-black/70 hover:bg-red-500 text-white rounded transition-colors cursor-pointer"
-                              title="Delete from media library"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </div>
-
-                        <div className="p-4 space-y-3">
-                          <div>
-                            <span className="font-bold text-white text-xs block truncate">
-                              {item.name}
-                            </span>
-                            <span className="text-[10px] text-neutral-400 block mt-0.5">
-                              Added on {item.date}
-                            </span>
-                          </div>
-
-                          {/* Quick Assign Dropdown */}
-                          <div className="pt-2 border-t border-white/10 flex items-center gap-2">
-                            <select
-                              onChange={(e) => {
-                                if (e.target.value) {
-                                  handleAssignImageToPost(e.target.value, item.url);
-                                  e.target.value = '';
-                                }
-                              }}
-                              defaultValue=""
-                              className="w-full bg-[#181824] border border-white/15 px-2.5 py-1.5 text-[11px] text-neutral-200 focus:outline-none focus:border-[#ff4b26]"
-                            >
-                              <option value="" disabled>
-                                Assign to a post...
-                              </option>
-                              {localProjects.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                  {p.title} ({p.client})
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Set as Founder Profile Photo */}
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setLocalStudioInfo((prev) => ({ ...prev, founderImage: item.url }));
-                              triggerSaveNotification('Image set as Founder Profile Photo!');
-                            }}
-                            className="w-full py-1.5 px-2 bg-white/5 hover:bg-[#ff4b26]/20 hover:border-[#ff4b26] border border-white/10 text-[10px] text-neutral-300 hover:text-white rounded transition-colors flex items-center justify-center gap-1.5 cursor-pointer font-mono"
-                          >
-                            <Camera className="w-3 h-3 text-[#ff4b26]" />
-                            <span>Set as Founder Photo</span>
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ================================================================= */}
-          {/* TAB 4: SERVICES                                                   */}
-          {/* ================================================================= */}
-          {activeTab === 'services' && (
-            <div className="max-w-5xl mx-auto space-y-8">
-              <div className="pb-6 border-b border-white/10">
-                <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                  Manage Studio Services & Disciplines
-                </h2>
-                <p className="text-xs text-neutral-400 font-mono mt-1">
-                  Modify titles, disciplines, and strategic descriptions for each studio offering.
-                </p>
-              </div>
-
-              <div className="space-y-6">
-                {localServices.map((service) => (
-                  <div
-                    key={service.id}
-                    className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4 font-mono text-xs"
-                  >
-                    <div className="flex items-center justify-between pb-3 border-b border-white/5">
-                      <span className="text-[#ff4b26] font-bold text-sm">
-                        {service.number} — {service.title}
+                  {/* Top Bar of Project Card */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-white/10 gap-3">
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-mono font-bold text-neutral-500">
+                        #{String(idx + 1).padStart(2, '0')}
                       </span>
-                      <span className="text-neutral-500 text-[11px]">{service.tag}</span>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Service Title</label>
-                        <input
-                          type="text"
-                          value={service.title}
-                          onChange={(e) => handleUpdateServiceField(service.id, 'title', e.target.value)}
-                          className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-neutral-400 block mb-1">Discipline / Tag</label>
-                        <input
-                          type="text"
-                          value={service.tag}
-                          onChange={(e) => handleUpdateServiceField(service.id, 'tag', e.target.value)}
-                          className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        />
-                      </div>
-
-                      <div className="md:col-span-2">
-                        <label className="text-neutral-400 block mb-1">Strategic Description</label>
-                        <textarea
-                          rows={2}
-                          value={service.description}
-                          onChange={(e) => handleUpdateServiceField(service.id, 'description', e.target.value)}
-                          className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* ================================================================= */}
-          {/* TAB 5: ABOUT & STUDIO PROFILE                                     */}
-          {/* ================================================================= */}
-          {activeTab === 'studio' && (
-            <div className="max-w-4xl mx-auto space-y-8 font-mono text-xs">
-              <div className="pb-6 border-b border-white/10">
-                <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                  Studio Profile & General Info
-                </h2>
-                <p className="text-xs text-neutral-400 mt-1">
-                  Update the official manifesto, contact details, and founder information.
-                </p>
-              </div>
-
-              {/* Manifesto & Official Text */}
-              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
-                <h3 className="font-heading text-base font-bold text-white text-sm">
-                  Official Manifesto Statement
-                </h3>
-                <div>
-                  <label className="text-neutral-400 block mb-1">Featured Pull Quote</label>
-                  <input
-                    type="text"
-                    value={localStudioInfo.officialQuote}
-                    onChange={(e) =>
-                      setLocalStudioInfo({ ...localStudioInfo, officialQuote: e.target.value })
-                    }
-                    className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-neutral-400 block mb-1">Complete Studio Paragraph</label>
-                  <textarea
-                    rows={4}
-                    value={localStudioInfo.officialParagraph}
-                    onChange={(e) =>
-                      setLocalStudioInfo({ ...localStudioInfo, officialParagraph: e.target.value })
-                    }
-                    className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26] leading-relaxed"
-                  />
-                </div>
-              </div>
-
-              {/* Founder Information */}
-              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-6">
-                <div className="pb-3 border-b border-white/10">
-                  <h3 className="font-heading text-base font-bold text-white text-sm">
-                    Founder Profile & Studio Direction
-                  </h3>
-                  <p className="text-[11px] text-neutral-400 mt-0.5">
-                    Manage founder identity, executive profile photo, and studio manifesto role.
-                  </p>
-                </div>
-
-                {/* Founder Photo Management */}
-                <div className="p-4 bg-black/40 border border-white/10 rounded-xl space-y-3">
-                  <label className="text-neutral-300 font-bold block text-xs flex items-center gap-2">
-                    <Camera className="w-4 h-4 text-[#ff4b26]" />
-                    <span>Founder Profile Photo</span>
-                  </label>
-
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-                    {/* Visual Preview */}
-                    <div 
-                      className="relative w-24 h-24 rounded-2xl overflow-hidden border border-white/20 shrink-0 bg-neutral-900 group"
-                      style={{ boxShadow: 'none', filter: 'none', backdropFilter: 'none' }}
-                    >
-                      {localStudioInfo.founderImage ? (
-                        <img
-                          src={localStudioInfo.founderImage}
-                          alt={localStudioInfo.founderName}
-                          className="w-full h-full object-cover object-center"
-                          style={{ filter: 'none', backdropFilter: 'none', imageRendering: 'auto' }}
-                        />
-                      ) : (
-                        <div 
-                          className="w-full h-full bg-[#ff4b26] flex items-center justify-center font-heading font-black text-white text-2xl"
-                          style={{ boxShadow: 'none', filter: 'none', backdropFilter: 'none' }}
-                        >
-                          {localStudioInfo.founderName
-                            .split(' ')
-                            .map((n) => n[0])
-                            .slice(0, 2)
-                            .join('')
-                            .toUpperCase() || 'MA'}
-                        </div>
-                      )}
+                      {/* FEATURED TOGGLE BADGE */}
                       <button
                         type="button"
-                        onClick={() => founderFileInputRef.current?.click()}
-                        className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-white text-[10px] font-bold transition-opacity cursor-pointer"
-                        title="Click to upload new photo"
+                        onClick={() => handleToggleFeatured(project.id)}
+                        className={`px-3 py-1 rounded-full text-xs font-mono font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+                          isFeatured
+                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
+                            : 'bg-white/5 text-neutral-400 border border-white/10 hover:bg-white/10 hover:text-white'
+                        }`}
+                        title="Click to toggle homepage display"
                       >
-                        <Camera className="w-4 h-4 mb-1 text-white" />
-                        <span>Change</span>
+                        <Star className={`w-3.5 h-3.5 ${isFeatured ? 'fill-emerald-400 text-emerald-400' : 'text-neutral-500'}`} />
+                        <span>{isFeatured ? '★ Featured on Homepage' : 'Archive Only (Click to Feature)'}</span>
                       </button>
-                    </div>
 
-                    {/* Actions & URL Input */}
-                    <div className="flex-1 space-y-3 w-full">
-                      <div className="flex flex-wrap items-center gap-2.5">
-                        <button
-                          type="button"
-                          onClick={() => founderFileInputRef.current?.click()}
-                          className="px-3.5 py-2 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2 cursor-pointer"
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Upload Photo</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setIsSelectingFounderImage(true)}
-                          className="px-3.5 py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-2 cursor-pointer border border-white/10"
-                        >
-                          <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Pick from Media Library</span>
-                        </button>
-
-                        {localStudioInfo.founderImage && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setLocalStudioInfo({ ...localStudioInfo, founderImage: '' });
-                              triggerSaveNotification('Founder photo removed (reset to monogram).');
-                            }}
-                            className="px-3 py-2 text-neutral-400 hover:text-red-400 hover:bg-red-500/10 text-xs rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            <span>Remove</span>
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Direct URL input */}
-                      <div>
-                        <input
-                          type="url"
-                          value={localStudioInfo.founderImage || ''}
-                          onChange={(e) =>
-                            setLocalStudioInfo({ ...localStudioInfo, founderImage: e.target.value })
-                          }
-                          placeholder="Or paste image URL (https://...)"
-                          className="w-full bg-[#181824] border border-white/10 px-3 py-1.5 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-[#ff4b26] rounded font-mono"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-neutral-400 block mb-1">Founder Name</label>
-                    <input
-                      type="text"
-                      value={localStudioInfo.founderName}
-                      onChange={(e) =>
-                        setLocalStudioInfo({ ...localStudioInfo, founderName: e.target.value })
-                      }
-                      className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-neutral-400 block mb-1">Official Role</label>
-                    <input
-                      type="text"
-                      value={localStudioInfo.founderRole}
-                      onChange={(e) =>
-                        setLocalStudioInfo({ ...localStudioInfo, founderRole: e.target.value })
-                      }
-                      className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="text-neutral-400 block mb-1">Vision Focus / Areas of Direction</label>
-                    <input
-                      type="text"
-                      value={localStudioInfo.founderFocus}
-                      onChange={(e) =>
-                        setLocalStudioInfo({ ...localStudioInfo, founderFocus: e.target.value })
-                      }
-                      className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <label className="text-neutral-400 block mb-1">Founder Biography</label>
-                    <textarea
-                      rows={3}
-                      value={localStudioInfo.founderBio}
-                      onChange={(e) =>
-                        setLocalStudioInfo({ ...localStudioInfo, founderBio: e.target.value })
-                      }
-                      className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26] leading-relaxed"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Coordinates */}
-              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
-                <h3 className="font-heading text-base font-bold text-white text-sm">
-                  Coordinates & Studio Location
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-neutral-400 block mb-1">Contact Email</label>
-                    <input
-                      type="email"
-                      value={localStudioInfo.email}
-                      onChange={(e) =>
-                        setLocalStudioInfo({ ...localStudioInfo, email: e.target.value })
-                      }
-                      className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-neutral-400 block mb-1">Phone Number</label>
-                    <input
-                      type="text"
-                      value={localStudioInfo.phone}
-                      onChange={(e) =>
-                        setLocalStudioInfo({ ...localStudioInfo, phone: e.target.value })
-                      }
-                      className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-neutral-400 block mb-1">City & District</label>
-                    <input
-                      type="text"
-                      value={localStudioInfo.city}
-                      onChange={(e) =>
-                        setLocalStudioInfo({ ...localStudioInfo, city: e.target.value })
-                      }
-                      className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-neutral-400 block mb-1">Full Studio Address</label>
-                    <input
-                      type="text"
-                      value={localStudioInfo.address}
-                      onChange={(e) =>
-                        setLocalStudioInfo({ ...localStudioInfo, address: e.target.value })
-                      }
-                      className="w-full bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26]"
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ================================================================= */}
-          {/* TAB: PRICING & TARGET BUDGETS                                     */}
-          {/* ================================================================= */}
-          {activeTab === 'pricing' && (
-            <div className="max-w-4xl mx-auto space-y-8 font-mono text-xs">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/10">
-                <div>
-                  <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                    Pricing & Target Budgets
-                  </h2>
-                  <p className="text-xs text-neutral-400 mt-1">
-                    Manage the budget range options displayed in the contact form for prospective clients.
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => handleSaveBudgetTiers()}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer shadow-[0_4px_15px_rgba(255,75,38,0.3)]"
-                  >
-                    <Save className="w-4 h-4" />
-                    <span>Save Pricing</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Quick One-Click Presets */}
-              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-heading text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span>Quick Budget Presets (1-Click Apply)</span>
-                  </h3>
-                  <span className="text-[10px] text-neutral-400">Click any preset to apply instantly</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                  {[
-                    {
-                      name: 'Ultra Low / Micro',
-                      tag: 'Beginners & Students',
-                      tiers: ['< €50', '€50 - €150', '€150 - €400', '€400+']
-                    },
-                    {
-                      name: 'Starter / Creator',
-                      tag: 'Recommended Default',
-                      tiers: ['< €100', '€100 - €300', '€300 - €750', '€750+']
-                    },
-                    {
-                      name: 'Accessible Studio',
-                      tag: 'Standard SMB',
-                      tiers: ['< €150', '€150 - €500', '€500 - €1,200', '€1,200+']
-                    },
-                    {
-                      name: 'Growth & Scale',
-                      tag: 'Established Brands',
-                      tiers: ['< €300', '€300 - €800', '€800 - €2,000', '€2,000+']
-                    }
-                  ].map((preset, idx) => (
-                    <div
-                      key={idx}
-                      onClick={() => handleSaveBudgetTiers(preset.tiers)}
-                      className="p-4 bg-black/40 hover:bg-[#ff4b26]/10 border border-white/10 hover:border-[#ff4b26] rounded-lg transition-all cursor-pointer group flex flex-col justify-between"
-                    >
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-bold text-white text-xs group-hover:text-[#ff4b26] transition-colors">
-                            {preset.name}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-neutral-400 block mb-3">{preset.tag}</span>
-                        <div className="space-y-1 text-[11px] text-neutral-300">
-                          {preset.tiers.map((t, i) => (
-                            <div key={i} className="flex items-center gap-1.5 truncate">
-                              <span className="w-1 h-1 rounded-full bg-[#ff4b26]" />
-                              <span>{t}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                      <span className="mt-3 text-[10px] text-[#ff4b26] font-semibold uppercase group-hover:underline">
-                        Apply Preset →
+                      <span className="text-xs font-mono text-neutral-400 border border-white/10 px-2 py-0.5 rounded">
+                        {mediaList.length} Media File{mediaList.length === 1 ? '' : 's'}
                       </span>
                     </div>
-                  ))}
-                </div>
-              </div>
 
-              {/* Active Tiers Editor */}
-              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-6">
-                <div className="flex items-center justify-between pb-3 border-b border-white/10">
-                  <div>
-                    <h3 className="font-heading text-sm font-bold text-white uppercase tracking-wider">
-                      Active Budget Options ({localBudgetTiers.length})
-                    </h3>
-                    <p className="text-[11px] text-neutral-400 mt-0.5">
-                      Edit names directly, add new ranges, or remove tiers.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  {localBudgetTiers.map((tier, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center gap-3 p-3 bg-black/40 border border-white/10 rounded-lg"
-                    >
-                      <span className="text-neutral-500 font-bold text-xs w-6 shrink-0">
-                        0{index + 1}
-                      </span>
-                      <input
-                        type="text"
-                        value={tier}
-                        onChange={(e) => {
-                          const updated = [...localBudgetTiers];
-                          updated[index] = e.target.value;
-                          setLocalBudgetTiers(updated);
-                        }}
-                        className="flex-1 bg-[#181824] border border-white/10 px-3 py-2 text-white focus:outline-none focus:border-[#ff4b26] rounded text-xs font-mono"
-                        placeholder="e.g. < €100 or €100 - €300"
-                      />
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
                       <button
                         type="button"
                         onClick={() => {
-                          if (localBudgetTiers.length <= 2) {
-                            triggerSaveNotification('Minimum 2 budget options required for client selection.');
-                            return;
-                          }
-                          const updated = localBudgetTiers.filter((_, i) => i !== index);
-                          setLocalBudgetTiers(updated);
+                          setActiveUploadProjectId(project.id);
+                          fileInputRef.current?.click();
                         }}
-                        className="p-2 text-neutral-400 hover:text-red-400 hover:bg-red-500/10 rounded transition-colors"
-                        title="Delete tier"
+                        className="px-3.5 py-1.5 bg-white/10 hover:bg-white text-white hover:text-black font-mono font-bold text-xs rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                        title="Attach multiple photos or videos"
+                      >
+                        <Upload className="w-3.5 h-3.5 text-[#ff4b26]" />
+                        <span>+ Add Photos / Videos</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteProject(project.id)}
+                        className="p-1.5 bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white rounded-lg transition-colors cursor-pointer"
+                        title="Delete this project"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
-                  ))}
-                </div>
-
-                {/* Add New Tier */}
-                <div className="pt-2 flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="text"
-                    value={newBudgetTierInput}
-                    onChange={(e) => setNewBudgetTierInput(e.target.value)}
-                    placeholder="Enter new budget range (e.g. €750 - €1,500 or < 500 MAD)..."
-                    className="flex-1 bg-[#181824] border border-white/10 px-4 py-2.5 text-white placeholder-neutral-500 text-xs focus:outline-none focus:border-[#ff4b26] rounded font-mono"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!newBudgetTierInput.trim()) return;
-                      const updated = [...localBudgetTiers, newBudgetTierInput.trim()];
-                      setLocalBudgetTiers(updated);
-                      setNewBudgetTierInput('');
-                    }}
-                    className="px-4 py-2.5 bg-white/10 hover:bg-[#ff4b26] text-white text-xs font-bold uppercase tracking-wider rounded transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Add Tier</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Live Preview Card */}
-              <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-heading text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                    <Eye className="w-4 h-4 text-[#ff4b26]" />
-                    <span>Live Public Form Preview</span>
-                  </h3>
-                  <span className="text-[10px] text-emerald-400">Updated in real-time</span>
-                </div>
-
-                <div className="p-5 bg-black/60 border border-white/10 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="block text-xs font-mono uppercase tracking-wider text-neutral-400">
-                      Target Budget
-                    </label>
-                    <span className="text-[10px] font-mono text-emerald-400">
-                      Accessible beginner & starter pricing
-                    </span>
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {localBudgetTiers.map((range, idx) => (
-                      <div
-                        key={idx}
-                        className={`p-2.5 text-center text-xs font-mono border transition-colors ${
-                          idx === 1
-                            ? 'bg-[#ff4b26] text-white border-[#ff4b26] font-bold shadow-[0_2px_10px_rgba(255,75,38,0.4)]'
-                            : 'bg-black/30 border-white/[0.08] text-neutral-400'
-                        }`}
-                      >
-                        {range}
+
+                  {/* Main Project Form Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-5 items-start">
+                    {/* Left: Media Assets Preview (Multiple Photos & Videos) */}
+                    <div className="lg:col-span-5 space-y-3">
+                      <div className="flex items-center justify-between text-xs font-mono text-neutral-400">
+                        <span>Project Media Gallery</span>
+                        <span className="text-[11px] text-neutral-500">
+                          {mediaList.length === 0 ? 'No photos yet' : `${mediaList.length} files attached`}
+                        </span>
                       </div>
-                    ))}
+
+                      {mediaList.length === 0 ? (
+                        <div
+                          onClick={() => {
+                            setActiveUploadProjectId(project.id);
+                            fileInputRef.current?.click();
+                          }}
+                          className="h-44 border-2 border-dashed border-white/15 hover:border-[#ff4b26]/60 rounded-xl bg-black/40 hover:bg-black/60 flex flex-col items-center justify-center text-center p-4 cursor-pointer transition-all group"
+                        >
+                          <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-2 group-hover:border-[#ff4b26]/50">
+                            <Upload className="w-4 h-4 text-[#ff4b26]" />
+                          </div>
+                          <span className="text-xs font-bold text-white mb-0.5">
+                            Upload Photos & Videos
+                          </span>
+                          <span className="text-[11px] font-mono text-neutral-500 max-w-xs">
+                            Click here to select multiple images or video files from your device.
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          {/* Grid of uploaded media items */}
+                          <div className="grid grid-cols-3 gap-2">
+                            {mediaList.map((m, mIdx) => (
+                              <div
+                                key={m.id || mIdx}
+                                className="relative aspect-[4/5] bg-black rounded-lg overflow-hidden border border-white/15 group shadow"
+                              >
+                                {m.type === 'video' ? (
+                                  <div className="w-full h-full flex flex-col items-center justify-center bg-neutral-900 text-cyan-400 p-2 text-center">
+                                    <Film className="w-6 h-6 mb-1" />
+                                    <span className="text-[8px] font-mono text-white truncate max-w-full">
+                                      Video
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <img
+                                    src={m.url}
+                                    alt=""
+                                    referrerPolicy="no-referrer"
+                                    className="w-full h-full object-cover"
+                                  />
+                                )}
+
+                                {/* Cover indicator on first item */}
+                                {mIdx === 0 && (
+                                  <span className="absolute top-1 left-1 text-[8px] font-mono font-bold bg-[#ff4b26] text-white px-1.5 py-0.5 rounded shadow">
+                                    COVER
+                                  </span>
+                                )}
+
+                                {/* Delete media item button */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveMediaItem(project.id, m.id)}
+                                  className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/80 hover:bg-red-600 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow"
+                                  title="Delete this file"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveUploadProjectId(project.id);
+                              fileInputRef.current?.click();
+                            }}
+                            className="w-full py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white rounded-lg text-xs font-mono font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5 text-[#ff4b26]" />
+                            <span>Add more photos/videos to this project</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right: Project Information Fields */}
+                    <div className="lg:col-span-7 space-y-4">
+                      {/* Title & Client Inputs */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[11px] font-mono text-neutral-400 block mb-1">
+                            Project Title
+                          </label>
+                          <input
+                            type="text"
+                            value={project.title}
+                            onChange={(e) => handleUpdateField(project.id, 'title', e.target.value)}
+                            placeholder="e.g. Apex Athletic System"
+                            className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white text-xs font-bold rounded-lg focus:outline-none focus:border-[#ff4b26]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-mono text-neutral-400 block mb-1">
+                            Client / Brand
+                          </label>
+                          <input
+                            type="text"
+                            value={project.client}
+                            onChange={(e) => handleUpdateField(project.id, 'client', e.target.value)}
+                            placeholder="e.g. Medar Studio"
+                            className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white text-xs rounded-lg focus:outline-none focus:border-[#ff4b26]"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Year & Category */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[11px] font-mono text-neutral-400 block mb-1">
+                            Year
+                          </label>
+                          <input
+                            type="text"
+                            value={project.year}
+                            onChange={(e) => handleUpdateField(project.id, 'year', e.target.value)}
+                            placeholder="2025"
+                            className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white text-xs rounded-lg focus:outline-none focus:border-[#ff4b26]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] font-mono text-neutral-400 block mb-1">
+                            Discipline / Category
+                          </label>
+                          <input
+                            type="text"
+                            value={project.categoryLabel || 'Brand Identity'}
+                            onChange={(e) => handleUpdateField(project.id, 'categoryLabel', e.target.value)}
+                            placeholder="e.g. Brand Identity, Sports Design..."
+                            className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white text-xs rounded-lg focus:outline-none focus:border-[#ff4b26]"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Description */}
+                      <div>
+                        <label className="text-[11px] font-mono text-neutral-400 block mb-1">
+                          Project Description & Overview
+                        </label>
+                        <textarea
+                          rows={3}
+                          value={project.description}
+                          onChange={(e) => handleUpdateField(project.id, 'description', e.target.value)}
+                          placeholder="Brief explanation of the project visual narrative and art direction..."
+                          className="w-full bg-[#181824] border border-white/15 px-3 py-2 text-white text-xs rounded-lg focus:outline-none focus:border-[#ff4b26] leading-relaxed"
+                        />
+                      </div>
+                    </div>
                   </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </main>
+      ) : (
+        /* Lead Interest & Telemetry Main Dashboard */
+        <main className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8">
+          <div className="max-w-6xl mx-auto space-y-8">
+            {/* 6 Key Metric Summary Cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+              {/* Card 1: Start a Project Clicks */}
+              <div className="bg-[#12121b] border border-[#ff4b26]/40 rounded-2xl p-4 sm:p-5 relative overflow-hidden group">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400">
+                    'Start Project' Clicks
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-[#ff4b26]/20 border border-[#ff4b26]/40 flex items-center justify-center text-[#ff4b26]">
+                    <MousePointerClick className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-heading text-3xl sm:text-4xl font-black text-white tabular-nums tracking-tight">
+                  {analytics.totalStartProjectClicks}
+                </div>
+                <div className="mt-2 text-[10px] font-mono text-neutral-400 truncate">
+                  Total CTA Button Clicks
                 </div>
               </div>
 
-              {/* Actions Footer inside Pricing Tab */}
-              <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => {
-                    const beginnerDefault = ['< €100', '€100 - €300', '€300 - €750', '€750+'];
-                    handleSaveBudgetTiers(beginnerDefault);
-                  }}
-                  className="px-4 py-2 text-neutral-400 hover:text-white transition-colors"
-                >
-                  Reset to Beginner Defaults
-                </button>
+              {/* Card 2: Contact Form Views */}
+              <div className="bg-[#12121b] border border-sky-500/30 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400">
+                    Form In-View / Opened
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-400">
+                    <Eye className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-heading text-3xl sm:text-4xl font-black text-white tabular-nums tracking-tight">
+                  {analytics.totalFormViews}
+                </div>
+                <div className="mt-2 text-[10px] font-mono text-neutral-400 truncate">
+                  #contact section arrivals
+                </div>
+              </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleSaveBudgetTiers()}
-                  className="flex items-center gap-2 px-6 py-3 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white font-bold uppercase tracking-wider rounded-lg transition-colors cursor-pointer shadow-[0_4px_15px_rgba(255,75,38,0.3)]"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>Save Changes</span>
-                </button>
+              {/* Card 3: Direct Email / Gmail Clicks */}
+              <div className="bg-[#12121b] border border-rose-500/30 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400">
+                    Direct Email Clicks
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-rose-500/20 border border-rose-500/40 flex items-center justify-center text-rose-400">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-heading text-3xl sm:text-4xl font-black text-white tabular-nums tracking-tight">
+                  {analytics.totalEmailDirectClicks}
+                </div>
+                <div className="mt-2 text-[10px] font-mono text-neutral-400 truncate">
+                  Gmail Web & mailto clicks
+                </div>
+              </div>
+
+              {/* Card 4: WhatsApp Hotline */}
+              <div className="bg-[#12121b] border border-emerald-500/30 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400">
+                    WhatsApp Inquiries
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                    <MessageSquare className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-heading text-3xl sm:text-4xl font-black text-white tabular-nums tracking-tight">
+                  {analytics.totalWhatsAppDirectClicks}
+                </div>
+                <div className="mt-2 text-[10px] font-mono text-neutral-400 truncate">
+                  Direct WhatsApp Hotline chats
+                </div>
+              </div>
+
+              {/* Card 5: Briefs Submitted */}
+              <div className="bg-[#12121b] border border-amber-500/30 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400">
+                    Briefs Submitted
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+                    <FileText className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-heading text-3xl sm:text-4xl font-black text-white tabular-nums tracking-tight">
+                  {analytics.totalFormSubmissions}
+                </div>
+                <div className="mt-2 text-[10px] font-mono text-neutral-400 truncate">
+                  Full brief submissions
+                </div>
+              </div>
+
+              {/* Card 6: Engagement Rate */}
+              <div className="bg-[#12121b] border border-violet-500/30 rounded-2xl p-4 sm:p-5 relative overflow-hidden">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-[11px] font-mono uppercase tracking-wider text-neutral-400">
+                    Lead Interest Rate
+                  </span>
+                  <div className="w-8 h-8 rounded-lg bg-violet-500/20 border border-violet-500/40 flex items-center justify-center text-violet-400">
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
+                </div>
+                <div className="font-heading text-3xl sm:text-4xl font-black text-white tabular-nums tracking-tight">
+                  {analytics.totalStartProjectClicks > 0
+                    ? `${(((analytics.totalEmailDirectClicks + analytics.totalWhatsAppDirectClicks + analytics.totalFormSubmissions) / analytics.totalStartProjectClicks) * 100).toFixed(0)}%`
+                    : '0%'}
+                </div>
+                <div className="mt-2 text-[10px] font-mono text-neutral-400 truncate">
+                  Inquiries / CTA Clicks
+                </div>
               </div>
             </div>
-          )}
 
-          {/* ================================================================= */}
-          {/* TAB 6: BACKUP & EXPORT                                            */}
-          {/* ================================================================= */}
-          {activeTab === 'backup' && (
-            <div className="max-w-4xl mx-auto space-y-8 font-mono text-xs">
-              <div className="pb-6 border-b border-white/10">
-                <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
-                  Backup, Export & Restore
-                </h2>
-                <p className="text-xs text-neutral-400 mt-1">
-                  Manage data persistence in your browser or download a portable JSON backup.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Export Card */}
-                <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Download className="w-5 h-5 text-[#ff4b26]" />
-                    <h3 className="font-heading text-base font-bold text-white">
-                      Export Studio Configuration
-                    </h3>
-                  </div>
-                  <p className="text-neutral-400 text-xs leading-relaxed">
-                    Download all case studies, uploaded visuals, services, and profile texts in JSON format as a secure backup.
-                  </p>
-                  <button
-                    onClick={handleExportJSON}
-                    className="w-full py-3 bg-white/10 hover:bg-white text-white hover:text-black font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <Download className="w-4 h-4" />
-                    <span>Download JSON Backup</span>
-                  </button>
-                </div>
-
-                {/* Import Card */}
-                <div className="bg-[#12121b] border border-white/10 p-6 rounded-xl space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Upload className="w-5 h-5 text-[#ff4b26]" />
-                    <h3 className="font-heading text-base font-bold text-white">
-                      Import Studio Backup
-                    </h3>
-                  </div>
-                  <p className="text-neutral-400 text-xs leading-relaxed">
-                    Restore a previously exported backup file to reload all your projects and copy in one click.
-                  </p>
-                  <label className="w-full py-3 bg-white/10 hover:bg-[#ff4b26] text-white font-bold uppercase tracking-wider transition-colors cursor-pointer flex items-center justify-center gap-2 text-center block">
-                    <Upload className="w-4 h-4" />
-                    <span>Choose JSON Backup File</span>
-                    <input
-                      type="file"
-                      accept=".json"
-                      onChange={handleImportJSON}
-                      className="hidden"
-                    />
-                  </label>
-                </div>
-              </div>
-
-              {/* Reset to Factory Defaults */}
-              <div className="bg-[#1a1114] border border-red-500/20 p-6 rounded-xl space-y-4">
-                <div className="flex items-center gap-3">
-                  <RotateCcw className="w-5 h-5 text-red-400" />
-                  <h3 className="font-heading text-base font-bold text-white">
-                    Reset to Studio Defaults
-                  </h3>
-                </div>
-                <p className="text-neutral-400 text-xs leading-relaxed">
-                  This action resets all case studies, manifesto texts, and services back to original Medar Studio defaults.
-                </p>
-
-                {confirmReset ? (
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={() => {
-                        onResetDefaults();
-                        onClose();
-                      }}
-                      className="px-5 py-3 bg-red-600 hover:bg-red-500 text-white font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                    >
-                      Confirm Factory Reset Now
-                    </button>
-                    <button
-                      onClick={() => setConfirmReset(false)}
-                      className="px-4 py-3 bg-white/10 hover:bg-white/20 text-white font-mono uppercase tracking-wider transition-colors cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setConfirmReset(true)}
-                    className="px-5 py-3 bg-red-500/20 hover:bg-red-500 text-red-200 hover:text-white font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                  >
-                    Reset to Factory Defaults
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </main>
-      </div>
-
-      {/* Pick Founder Image from Media Library Modal */}
-      {isSelectingFounderImage && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#12121b] border border-white/20 rounded-2xl max-w-2xl w-full max-h-[85vh] flex flex-col overflow-hidden shadow-2xl">
-            <div className="p-4 border-b border-white/10 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Camera className="w-4 h-4 text-[#ff4b26]" />
-                <h3 className="font-heading font-bold text-white text-sm">
-                  Select Founder Profile Photo from Library
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsSelectingFounderImage(false)}
-                className="p-1 text-neutral-400 hover:text-white rounded cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-4 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {mediaLibrary.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => {
-                    setLocalStudioInfo((prev) => ({ ...prev, founderImage: item.url }));
-                    setIsSelectingFounderImage(false);
-                    triggerSaveNotification('Founder photo updated from Media Library!');
-                  }}
-                  className="group relative aspect-square rounded-xl overflow-hidden border border-white/10 hover:border-[#ff4b26] cursor-pointer bg-neutral-900 transition-all"
-                >
-                  <img
-                    src={item.url}
-                    alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center p-2 text-center transition-opacity">
-                    <Check className="w-5 h-5 text-[#ff4b26] mb-1" />
-                    <span className="text-[11px] text-white font-bold truncate w-full">
-                      {item.name}
+            {/* Two-Column Section: Left Attribution & Funnel, Right Live Activity Log */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+              {/* Left Column: CTA Source Attribution & Conversion Funnel */}
+              <div className="lg:col-span-5 space-y-6">
+                {/* CTA Source Attribution Card */}
+                <div className="bg-[#12121b] border border-white/10 rounded-2xl p-6 space-y-5">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <div className="flex items-center gap-2">
+                      <MousePointerClick className="w-4 h-4 text-[#ff4b26]" />
+                      <h3 className="font-heading text-sm font-bold text-white">
+                        'Start a Project' Click Breakdown
+                      </h3>
+                    </div>
+                    <span className="text-xs font-mono text-neutral-400">
+                      {analytics.totalStartProjectClicks} total
                     </span>
-                    <span className="text-[9px] text-[#ff4b26] font-semibold mt-0.5">Use as Profile Photo</span>
+                  </div>
+
+                  <div className="space-y-4 text-xs font-mono">
+                    {/* Source 1: Header Navbar */}
+                    <div>
+                      <div className="flex justify-between text-neutral-300 mb-1">
+                        <span>Top Navigation Bar CTA</span>
+                        <span className="text-white font-bold">
+                          {analytics.clicksBySource.navbar} ({analytics.totalStartProjectClicks > 0 ? Math.round((analytics.clicksBySource.navbar / analytics.totalStartProjectClicks) * 100) : 0}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-[#181824] rounded-full h-2 overflow-hidden border border-white/5">
+                        <div
+                          className="bg-[#ff4b26] h-full transition-all duration-300"
+                          style={{
+                            width: `${analytics.totalStartProjectClicks > 0 ? (analytics.clicksBySource.navbar / analytics.totalStartProjectClicks) * 100 : 0}%`
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Source 2: About / Collaborate Banner */}
+                    <div>
+                      <div className="flex justify-between text-neutral-300 mb-1">
+                        <span>About Section Banner CTA</span>
+                        <span className="text-white font-bold">
+                          {analytics.clicksBySource.aboutBanner} ({analytics.totalStartProjectClicks > 0 ? Math.round((analytics.clicksBySource.aboutBanner / analytics.totalStartProjectClicks) * 100) : 0}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-[#181824] rounded-full h-2 overflow-hidden border border-white/5">
+                        <div
+                          className="bg-amber-500 h-full transition-all duration-300"
+                          style={{
+                            width: `${analytics.totalStartProjectClicks > 0 ? (analytics.clicksBySource.aboutBanner / analytics.totalStartProjectClicks) * 100 : 0}%`
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Source 3: Mobile Drawer Menu */}
+                    <div>
+                      <div className="flex justify-between text-neutral-300 mb-1">
+                        <span>Mobile Drawer Menu CTA</span>
+                        <span className="text-white font-bold">
+                          {analytics.clicksBySource.mobileDrawer} ({analytics.totalStartProjectClicks > 0 ? Math.round((analytics.clicksBySource.mobileDrawer / analytics.totalStartProjectClicks) * 100) : 0}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-[#181824] rounded-full h-2 overflow-hidden border border-white/5">
+                        <div
+                          className="bg-sky-500 h-full transition-all duration-300"
+                          style={{
+                            width: `${analytics.totalStartProjectClicks > 0 ? (analytics.clicksBySource.mobileDrawer / analytics.totalStartProjectClicks) * 100 : 0}%`
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Source 4: All Projects Modal CTA */}
+                    <div>
+                      <div className="flex justify-between text-neutral-300 mb-1">
+                        <span>Portfolio Archive Overlay CTA</span>
+                        <span className="text-white font-bold">
+                          {analytics.clicksBySource.allProjectsModal} ({analytics.totalStartProjectClicks > 0 ? Math.round((analytics.clicksBySource.allProjectsModal / analytics.totalStartProjectClicks) * 100) : 0}%)
+                        </span>
+                      </div>
+                      <div className="w-full bg-[#181824] rounded-full h-2 overflow-hidden border border-white/5">
+                        <div
+                          className="bg-emerald-500 h-full transition-all duration-300"
+                          style={{
+                            width: `${analytics.totalStartProjectClicks > 0 ? (analytics.clicksBySource.allProjectsModal / analytics.totalStartProjectClicks) * 100 : 0}%`
+                          }}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
 
-            <div className="p-4 border-t border-white/10 flex items-center justify-between bg-black/40">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSelectingFounderImage(false);
-                  founderFileInputRef.current?.click();
-                }}
-                className="text-xs text-[#ff4b26] hover:underline flex items-center gap-1.5 cursor-pointer"
-              >
-                <Upload className="w-3.5 h-3.5" />
-                <span>Upload new photo from device instead</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsSelectingFounderImage(false)}
-                className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white text-xs rounded transition-colors cursor-pointer"
-              >
-                Close
-              </button>
+                {/* Lead Conversion Funnel */}
+                <div className="bg-[#12121b] border border-white/10 rounded-2xl p-6 space-y-4">
+                  <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+                    <BarChart3 className="w-4 h-4 text-emerald-400" />
+                    <h3 className="font-heading text-sm font-bold text-white">
+                      Lead Conversion Funnel
+                    </h3>
+                  </div>
+
+                  <div className="space-y-3 text-xs font-mono">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-[#181824] border border-white/5">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-6 h-6 rounded-full bg-[#ff4b26]/20 text-[#ff4b26] flex items-center justify-center font-bold text-[11px]">
+                          1
+                        </span>
+                        <span>Clicked 'Start a Project'</span>
+                      </div>
+                      <span className="font-bold text-white tabular-nums">
+                        {analytics.totalStartProjectClicks}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-[#181824] border border-white/5">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-6 h-6 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold text-[11px]">
+                          2
+                        </span>
+                        <span>Form Viewed / Opened</span>
+                      </div>
+                      <span className="font-bold text-white tabular-nums">
+                        {analytics.totalFormViews}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-[#181824] border border-white/5">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[11px]">
+                          3
+                        </span>
+                        <span>Inbound Action (Email / WhatsApp / Form)</span>
+                      </div>
+                      <span className="font-bold text-emerald-400 tabular-nums">
+                        {analytics.totalEmailDirectClicks + analytics.totalWhatsAppDirectClicks + analytics.totalFormSubmissions}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Privacy & Zero-Intermediary Guarantee */}
+                <div className="bg-[#0f0f17] border border-white/10 rounded-2xl p-5 text-xs font-mono text-neutral-400 space-y-2">
+                  <div className="flex items-center gap-2 text-white font-bold">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span>Zero-Intermediary Telemetry</span>
+                  </div>
+                  <p className="leading-relaxed text-[11px] text-neutral-400">
+                    Lead counters and interaction events are tracked directly within your browser and persisted in secure localStorage. No third-party ad networks, telemetry cookies, or external servers are involved.
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Column: Live Chronological Activity Log */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="bg-[#12121b] border border-white/10 rounded-2xl p-6">
+                  {/* Activity Log Header */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-white/10 gap-3 mb-4">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-[#ff4b26]" />
+                      <h3 className="font-heading text-sm font-bold text-white">
+                        Live Activity Stream & Audit Log
+                      </h3>
+                      <span className="text-[10px] font-mono bg-white/10 text-neutral-300 px-2 py-0.5 rounded">
+                        {analytics.recentEvents.length} Recorded
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSimulateTestLead}
+                        className="px-2.5 py-1 bg-white/5 hover:bg-white/15 text-neutral-300 hover:text-white rounded text-xs font-mono transition-colors flex items-center gap-1 cursor-pointer"
+                        title="Add a test click to verify tracking"
+                      >
+                        <Plus className="w-3 h-3 text-[#ff4b26]" />
+                        <span>Add Test Event</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Events Stream */}
+                  {analytics.recentEvents.length === 0 ? (
+                    <div className="py-16 text-center space-y-3">
+                      <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-neutral-500">
+                        <Activity className="w-6 h-6" />
+                      </div>
+                      <h4 className="font-heading text-base font-bold text-white">
+                        No lead activity recorded yet
+                      </h4>
+                      <p className="text-xs text-neutral-400 font-mono max-w-sm mx-auto leading-relaxed">
+                        Interactions will appear here in real time as prospective clients click 'Start a Project' or initiate inquiries.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleSimulateTestLead}
+                        className="mt-3 px-4 py-2 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white font-mono text-xs font-bold rounded-lg transition-colors inline-flex items-center gap-2 cursor-pointer"
+                      >
+                        <MousePointerClick className="w-3.5 h-3.5" />
+                        <span>Simulate Test Click</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-[560px] overflow-y-auto pr-1">
+                      {analytics.recentEvents
+                        .filter((ev) => {
+                          if (analyticsFilter === 'clicks' && ev.type !== 'start_project_click') return false;
+                          if (analyticsFilter === 'views' && ev.type !== 'form_view') return false;
+                          if (
+                            analyticsFilter === 'inquiries' &&
+                            ev.type !== 'email_direct_click' &&
+                            ev.type !== 'whatsapp_direct_click' &&
+                            ev.type !== 'form_submit'
+                          )
+                            return false;
+
+                          if (analyticsSearchQuery.trim()) {
+                            const q = analyticsSearchQuery.toLowerCase();
+                            const matchLabel = ev.label.toLowerCase().includes(q);
+                            const matchSource = (ev.source || '').toLowerCase().includes(q);
+                            const matchDetails = (ev.details || '').toLowerCase().includes(q);
+                            return matchLabel || matchSource || matchDetails;
+                          }
+                          return true;
+                        })
+                        .map((ev) => {
+                          let badgeBg = 'bg-[#ff4b26]/20 text-[#ff4b26] border-[#ff4b26]/40';
+                          let IconComp = MousePointerClick;
+
+                          if (ev.type === 'form_view') {
+                            badgeBg = 'bg-sky-500/20 text-sky-400 border-sky-500/40';
+                            IconComp = Eye;
+                          } else if (ev.type === 'email_direct_click') {
+                            badgeBg = 'bg-rose-500/20 text-rose-400 border-rose-500/40';
+                            IconComp = Mail;
+                          } else if (ev.type === 'whatsapp_direct_click') {
+                            badgeBg = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+                            IconComp = MessageSquare;
+                          } else if (ev.type === 'form_submit') {
+                            badgeBg = 'bg-amber-500/20 text-amber-400 border-amber-500/40';
+                            IconComp = FileText;
+                          } else if (ev.type === 'copy_brief') {
+                            badgeBg = 'bg-neutral-500/20 text-neutral-300 border-neutral-500/40';
+                            IconComp = Copy;
+                          }
+
+                          return (
+                            <div
+                              key={ev.id}
+                              className="p-3.5 bg-[#181824] hover:bg-[#1c1c2a] border border-white/5 hover:border-white/15 rounded-xl transition-all duration-150 flex items-start justify-between gap-3"
+                            >
+                              <div className="flex items-start gap-3 min-w-0">
+                                <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${badgeBg}`}>
+                                  <IconComp className="w-4 h-4" />
+                                </div>
+
+                                <div className="min-w-0 space-y-0.5">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span className="font-heading text-xs font-bold text-white tracking-tight">
+                                      {ev.label}
+                                    </span>
+                                    {ev.source && (
+                                      <span className="text-[10px] font-mono bg-white/10 text-neutral-300 px-1.5 py-0.2 rounded border border-white/10">
+                                        {ev.source}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {ev.details && (
+                                    <p className="text-[11px] font-mono text-neutral-400 leading-relaxed truncate">
+                                      {ev.details}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="text-right shrink-0">
+                                <span className="text-[10px] font-mono text-neutral-400 block tabular-nums">
+                                  {ev.formattedTime}
+                                </span>
+                                <span className="text-[9px] font-mono text-neutral-500 block">
+                                  {ev.formattedDate}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        </main>
       )}
     </div>
   );

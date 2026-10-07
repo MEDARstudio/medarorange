@@ -23,6 +23,7 @@ export interface CaseStudy {
   media?: ProjectMediaItem[];
   imagePromptFallback?: string;
   videoUrl?: string;
+  isFeatured?: boolean;
   accentColor?: string;
   gradientTheme?: string;
   tagline?: string;
@@ -114,6 +115,10 @@ export interface StudioGeneralInfo {
   founderImage?: string;
   instagramHandle?: string;
   instagramUrl?: string;
+  facebookUrl?: string;
+  linkedinUrl?: string;
+  xUrl?: string;
+  tiktokUrl?: string;
   instagramToken?: string;
 }
 

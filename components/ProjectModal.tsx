@@ -155,16 +155,40 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
                       style={{ imageRendering: 'auto' }}
                     />
                   ) : (
-                    <div className="absolute inset-0 w-full h-full bg-[#12121b] flex flex-col items-center justify-center p-6 text-center">
-                      <Layers className="w-10 h-10 text-[#ff4b26] mb-2" />
-                      <span className="text-sm font-bold text-white mb-1">Visual Artwork</span>
+                    <div className="absolute inset-0 w-full h-full bg-[#0a0a10] border border-white/10 flex flex-col justify-between p-8 text-center relative overflow-hidden">
+                      <div 
+                        className="absolute -top-20 -right-20 w-60 h-60 rounded-full blur-3xl opacity-20 pointer-events-none"
+                        style={{ backgroundColor: project.accentColor || '#ff4b26' }}
+                      />
+                      <div className="relative z-10 flex items-center justify-between text-xs font-mono text-neutral-400">
+                        <span className="font-bold tracking-widest uppercase">MEDAR STUDIO PORTFOLIO</span>
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: project.accentColor || '#ff4b26' }} />
+                      </div>
+                      <div className="relative z-10 my-auto py-8">
+                        <div className="w-16 h-16 mx-auto rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mb-4">
+                          <Layers className="w-8 h-8 text-[#ff4b26]" />
+                        </div>
+                        <span className="text-xs font-mono uppercase tracking-widest text-neutral-400 block mb-1">
+                          {project.categoryLabel}
+                        </span>
+                        <h3 className="font-heading text-2xl font-bold text-white tracking-tight">
+                          {project.title}
+                        </h3>
+                        <p className="text-xs font-mono text-neutral-400 mt-2 max-w-sm mx-auto">
+                          Visual assets & high-resolution project files ready for showcase.
+                        </p>
+                      </div>
+                      <div className="relative z-10 pt-3 border-t border-white/10 flex items-center justify-between text-[10px] font-mono text-neutral-400">
+                        <span>Client: {displayClient}</span>
+                        <span>Year: {project.year}</span>
+                      </div>
                     </div>
                   )}
 
                   {/* Top Overlay Badge */}
                   <div className="relative z-10 flex items-center justify-between text-[10px] font-mono text-white/90">
                     <span className="bg-black/80 px-2 py-0.5 border border-white/15">
-                      {isVideo ? 'VIDEO ASSET' : '4:5 POST'}
+                      {isVideo ? 'VIDEO ASSET' : 'STUDIO ARTWORK'}
                     </span>
                     {mediaItems.length > 1 && (
                       <span className="bg-black/80 px-2 py-0.5 border border-white/15 text-white flex items-center gap-1 font-mono">
