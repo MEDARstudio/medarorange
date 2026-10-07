@@ -306,7 +306,8 @@ const DEFAULT_STUDIO_INFO: StudioGeneralInfo = {
   linkedinUrl: 'https://linkedin.com/company/medarstudio',
   xUrl: 'https://x.com/medarstudio',
   tiktokUrl: 'https://tiktok.com/@medarstudio',
-  instagramToken: ''
+  instagramToken: '',
+  formspreeEndpoint: 'https://formspree.io/f/xnpjpvaw'
 };
 
 // Default Target Budgets (Ultra Accessible for Beginners, Creators, Startups)
@@ -352,6 +353,9 @@ const App: React.FC = () => {
         if (parsed.address && parsed.address.includes('Hauteville')) {
           parsed.address = '';
           parsed.city = 'Worldwide';
+        }
+        if (!parsed.formspreeEndpoint) {
+          parsed.formspreeEndpoint = 'https://formspree.io/f/xnpjpvaw';
         }
         return parsed;
       }

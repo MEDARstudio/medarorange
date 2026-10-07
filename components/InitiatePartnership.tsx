@@ -18,7 +18,8 @@ import {
   Trophy,
   Box,
   Monitor,
-  Flame
+  Flame,
+  AlertCircle
 } from 'lucide-react';
 import { StudioGeneralInfo } from '../types';
 import { GmailIcon, WhatsAppIcon } from './SocialLinks';
@@ -145,6 +146,7 @@ export const InitiatePartnership: React.FC<InitiatePartnershipProps> = ({
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const contactSectionRef = React.useRef<HTMLElement>(null);
 
   // Sync if selectedService changes from exterior
@@ -190,16 +192,56 @@ export const InitiatePartnership: React.FC<InitiatePartnershipProps> = ({
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formState.name || !formState.email) return;
 
-    trackFormSubmit(formState.discipline, formState.name);
+    setSubmitError(null);
     setIsSubmitting(true);
-    setTimeout(() => {
+
+    const endpoint = studioInfo.formspreeEndpoint || 'https://formspree.io/f/xnpjpvaw';
+
+    const payload = {
+      name: formState.name,
+      email: formState.email,
+      phoneWhatsapp: formState.phoneWhatsapp || 'Non renseigné',
+      company: formState.company || 'Particulier / Non spécifié',
+      discipline: formState.discipline,
+      deliverables: formState.deliverables.length > 0 ? formState.deliverables.join(', ') : 'À définir ensemble',
+      budget: formState.budget,
+      timeline: formState.timeline,
+      message: formState.notes || 'Aucune note additionnelle',
+      _replyto: formState.email,
+      _subject: `[Medar Studio] Nouvelle demande de commission — ${formState.name} (${formState.discipline})`
+    };
+
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        trackFormSubmit(formState.discipline, formState.name);
+        setIsSubmitted(true);
+      } else {
+        const errorData = await response.json().catch(() => null);
+        const errorMsg =
+          errorData?.error ||
+          (errorData?.errors && errorData.errors.map((item: any) => item.message).join(', ')) ||
+          'Erreur lors de l’envoi. Veuillez réessayer ou utiliser l’option WhatsApp / Gmail.';
+        setSubmitError(errorMsg);
+      }
+    } catch (err: any) {
+      console.error('Formspree dispatch error:', err);
+      setSubmitError('Erreur de transmission réseau. Vous pouvez également nous contacter directement via WhatsApp ou Gmail.');
+    } finally {
       setIsSubmitting(false);
-      setIsSubmitted(true);
-    }, 700);
+    }
   };
 
   const generateEmailBody = () => {
@@ -464,14 +506,20 @@ export const InitiatePartnership: React.FC<InitiatePartnershipProps> = ({
               animate={{ opacity: 1, scale: 1 }}
               className="py-16 text-center max-w-xl mx-auto space-y-6"
             >
-              <div className="w-16 h-16 rounded-full bg-[#ff4b26]/20 border border-[#ff4b26] flex items-center justify-center mx-auto text-[#ff4b26]">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/60 flex items-center justify-center mx-auto text-emerald-400 shadow-[0_0_24px_rgba(16,185,129,0.3)]">
                 <Check className="w-8 h-8" />
               </div>
-              <h4 className="font-heading text-3xl font-bold text-white">
-                Brief Registered by Medar Studio.
-              </h4>
+              <div className="space-y-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-mono uppercase tracking-wider rounded-full">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+                  <span>Email transmis directement à medarstudio</span>
+                </div>
+                <h4 className="font-heading text-3xl font-bold text-white">
+                  Brief Transmis avec Succès !
+                </h4>
+              </div>
               <p className="text-sm text-neutral-300 leading-relaxed">
-                Thank you <strong className="text-white">{formState.name}</strong>. Your commission parameters have been securely transmitted to our lead directors. We will analyze your specifications and respond within 12 hours.
+                Merci <strong className="text-white">{formState.name}</strong> ! Vos paramètres de commission ont été transmis directement par email à <strong className="text-white">{studioInfo.email || 'medarstudio@gmail.com'}</strong> via notre passerelle Formspree. Notre équipe analysera votre cahier des charges et vous répondra sous 12 heures.
               </p>
 
               {/* Fast Forward via WhatsApp & Direct Email buttons */}
@@ -479,33 +527,25 @@ export const InitiatePartnership: React.FC<InitiatePartnershipProps> = ({
                 <button
                   type="button"
                   onClick={sendViaWhatsAppDirect}
-                  className="w-full sm:w-auto px-5 py-3 bg-[#25D366] hover:bg-[#20ba5a] text-black font-mono text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-3 bg-[#25D366] hover:bg-[#20ba5a] text-black font-mono text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-[0_4px_16px_rgba(37,211,102,0.25)]"
                 >
                   <WhatsAppIcon className="w-4 h-4" />
-                  <span>Send via WhatsApp</span>
+                  <span>Doubler sur WhatsApp</span>
                 </button>
                 <button
                   type="button"
                   onClick={sendViaGmailWebDirect}
-                  className="w-full sm:w-auto px-5 py-3 bg-[#EA4335] hover:bg-[#d93b2d] text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-3 bg-[#171720] hover:bg-[#20202c] border border-white/20 hover:border-white/40 text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer"
                 >
                   <GmailIcon className="w-4 h-4" />
-                  <span>Open in Gmail (Direct)</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={sendViaEmailDirect}
-                  className="w-full sm:w-auto px-5 py-3 bg-white/10 hover:bg-white/20 text-white font-mono text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Default Email App</span>
+                  <span>Ouvrir dans Gmail</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setIsSubmitted(false)}
-                  className="w-full sm:w-auto px-5 py-3 bg-transparent hover:bg-white/5 border border-white/15 text-neutral-400 hover:text-white font-mono text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                  className="w-full sm:w-auto px-5 py-3 bg-white/5 hover:bg-white/10 border border-white/15 text-neutral-300 hover:text-white font-mono text-xs uppercase tracking-wider transition-colors cursor-pointer"
                 >
-                  Edit / New Brief
+                  Nouveau brief / Modifier
                 </button>
               </div>
             </motion.div>
@@ -719,6 +759,32 @@ export const InitiatePartnership: React.FC<InitiatePartnershipProps> = ({
                 </div>
               </div>
 
+              {/* Submit Error Banner with Instant Alternates */}
+              {submitError && (
+                <div className="p-4 bg-rose-950/60 border border-rose-500/40 rounded-xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-mono text-rose-200">
+                  <div className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+                    <span>{submitError}</span>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      type="button"
+                      onClick={sendViaWhatsAppDirect}
+                      className="px-3 py-1.5 bg-[#25D366] text-black font-bold text-[11px] rounded transition-colors cursor-pointer"
+                    >
+                      Via WhatsApp
+                    </button>
+                    <button
+                      type="button"
+                      onClick={sendViaGmailWebDirect}
+                      className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white font-bold text-[11px] rounded transition-colors cursor-pointer"
+                    >
+                      Via Gmail
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Commission Summary Terminal & Dual Transmit Actions */}
               <div className="p-5 sm:p-6 bg-[#08080c] border border-white/[0.1] flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-6">
                 <div className="space-y-1.5 text-xs font-mono">
@@ -731,6 +797,10 @@ export const InitiatePartnership: React.FC<InitiatePartnershipProps> = ({
                   </div>
                   <div className="text-neutral-500 text-[11px]">
                     {formState.deliverables.length} module{formState.deliverables.length > 1 ? 's' : ''} selected · Studio Non-Disclosure Agreement active
+                  </div>
+                  <div className="text-[10px] text-emerald-400 font-mono flex items-center gap-1.5 pt-0.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>Envoi direct par email vers medarstudio (Formspree actif)</span>
                   </div>
                 </div>
 
@@ -757,17 +827,21 @@ export const InitiatePartnership: React.FC<InitiatePartnershipProps> = ({
                     <span>via Gmail Direct</span>
                   </button>
 
-                  {/* Option C: Standard Studio Submission */}
+                  {/* Option C: Standard Studio Submission via Formspree */}
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-6 py-3.5 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer shadow-[0_4px_20px_rgba(255,75,38,0.35)]"
+                    className="px-6 py-3.5 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white font-mono text-xs font-bold uppercase tracking-wider transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer shadow-[0_4px_20px_rgba(255,75,38,0.35)]"
+                    title="Envoyer le brief directement par email à medarstudio via Formspree"
                   >
                     {isSubmitting ? (
-                      <span>Registering Brief...</span>
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Envoi direct...</span>
+                      </>
                     ) : (
                       <>
-                        <span>Submit Brief</span>
+                        <span>Envoyer le Brief</span>
                         <Send className="w-3.5 h-3.5" />
                       </>
                     )}

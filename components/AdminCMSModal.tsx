@@ -68,7 +68,12 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
   onClose,
   onLogout,
   projects,
-  onUpdateProjects
+  onUpdateProjects,
+  studioInfo,
+  onUpdateStudioInfo,
+  budgetTiers,
+  onUpdateBudgetTiers,
+  onResetDefaults
 }) => {
   const [activeTab, setActiveTab] = useState<'projects' | 'analytics'>('analytics');
   const [localProjects, setLocalProjects] = useState<CaseStudy[]>(projects);
@@ -81,6 +86,12 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
   const [analytics, setAnalytics] = useState<LeadAnalyticsData>(getLeadAnalytics());
   const [analyticsFilter, setAnalyticsFilter] = useState<'all' | 'clicks' | 'views' | 'inquiries'>('all');
   const [analyticsSearchQuery, setAnalyticsSearchQuery] = useState('');
+
+  // Formspree Integration State
+  const [isTestingFormspree, setIsTestingFormspree] = useState(false);
+  const [formspreeEndpointInput, setFormspreeEndpointInput] = useState(
+    studioInfo?.formspreeEndpoint || 'https://formspree.io/f/xnpjpvaw'
+  );
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -158,6 +169,56 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
 
     navigator.clipboard.writeText(report);
     triggerNotification('Lead metrics copied to clipboard!');
+  };
+
+  // Test direct submission to Formspree
+  const handleTestFormspree = async () => {
+    setIsTestingFormspree(true);
+    const endpoint = formspreeEndpointInput || 'https://formspree.io/f/xnpjpvaw';
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: 'Mohamed Amine (Admin Test)',
+          email: 'medarstudio@gmail.com',
+          discipline: 'Vérification Système Formspree',
+          deliverables: 'Test de transmission directe',
+          message: 'Ce message confirme que Formspree transmet les formulaires directement vers votre email medarstudio.',
+          _subject: '[TEST MEDAR STUDIO] Validation passerelle Formspree'
+        })
+      });
+
+      if (res.ok) {
+        triggerNotification('Test envoyé avec succès vers medarstudio via Formspree !');
+      } else {
+        triggerNotification('Réponse Formspree reçue. Vérifiez la validation de votre email Formspree.');
+      }
+    } catch (err) {
+      console.error(err);
+      triggerNotification('Erreur réseau lors du test Formspree.');
+    } finally {
+      setIsTestingFormspree(false);
+    }
+  };
+
+  // Save updated Formspree endpoint
+  const handleSaveFormspreeEndpoint = () => {
+    const clean = formspreeEndpointInput.trim();
+    if (!clean) return;
+    if (onUpdateStudioInfo && studioInfo) {
+      const updated = { ...studioInfo, formspreeEndpoint: clean };
+      onUpdateStudioInfo(updated);
+      try {
+        localStorage.setItem('medar_studio_general', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    triggerNotification('Lien Formspree enregistré avec succès !');
   };
 
   // Save all projects to parent and localStorage
@@ -1158,6 +1219,84 @@ const AdminCMSModal: React.FC<AdminCMSModalProps> = ({
                       <span className="font-bold text-emerald-400 tabular-nums">
                         {analytics.totalEmailDirectClicks + analytics.totalWhatsAppDirectClicks + analytics.totalFormSubmissions}
                       </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Formspree Email Gateway Routing Card */}
+                <div className="bg-[#12121b] border border-[#ff4b26]/30 rounded-2xl p-6 space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-[#ff4b26]" />
+                      <h3 className="font-heading text-sm font-bold text-white">
+                        Passerelle Formspree // medarstudio
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[11px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 border border-emerald-500/30 rounded">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>Actif</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 text-xs font-mono">
+                    <div>
+                      <span className="text-[11px] text-neutral-400 block mb-1">
+                        Endpoint Formspree (Envoi direct vers medarstudio) :
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={formspreeEndpointInput}
+                          onChange={(e) => setFormspreeEndpointInput(e.target.value)}
+                          placeholder="https://formspree.io/f/xnpjpvaw"
+                          className="flex-1 bg-[#181824] border border-white/15 px-3 py-2 text-white text-xs rounded-lg font-mono focus:outline-none focus:border-[#ff4b26]"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleSaveFormspreeEndpoint}
+                          className="px-3 py-2 bg-white/10 hover:bg-white/20 text-white rounded-lg transition-colors font-bold cursor-pointer"
+                          title="Enregistrer le lien Formspree"
+                        >
+                          Sauver
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-[#181824] border border-white/5 rounded-lg flex items-center justify-between text-[11px]">
+                      <span className="text-neutral-400">Destination des emails :</span>
+                      <strong className="text-white">medarstudio@gmail.com</strong>
+                    </div>
+
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        type="button"
+                        onClick={handleTestFormspree}
+                        disabled={isTestingFormspree}
+                        className="flex-1 py-2.5 bg-[#ff4b26] hover:bg-[#ff5f3c] text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60 cursor-pointer"
+                      >
+                        {isTestingFormspree ? (
+                          <>
+                            <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <span>Test en cours...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Tester l'envoi Formspree</span>
+                          </>
+                        )}
+                      </button>
+
+                      <a
+                        href="https://formspree.io/forms/xnpjpvaw/submissions"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-neutral-300 hover:text-white rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
+                        title="Ouvrir le tableau de bord Formspree"
+                      >
+                        <span>Formspree</span>
+                        <ArrowUpRight className="w-3.5 h-3.5" />
+                      </a>
                     </div>
                   </div>
                 </div>

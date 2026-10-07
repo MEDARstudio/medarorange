@@ -120,6 +120,7 @@ export interface StudioGeneralInfo {
   xUrl?: string;
   tiktokUrl?: string;
   instagramToken?: string;
+  formspreeEndpoint?: string;
 }
 
 export type PaletteMood = 'vermilion' | 'obsidian' | 'solaris' | 'kinetic-mint';
